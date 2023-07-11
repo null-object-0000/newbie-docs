@@ -21,6 +21,11 @@ pnpm install
 pnpm dev
 ```
 
+``` bash
+npm install -D cz-git
+git cz
+```
+
 ## 技术栈
 
 - [Vue 3.0](https://cn.vuejs.org/)
