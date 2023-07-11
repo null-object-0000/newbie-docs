@@ -1,0 +1,11 @@
+{
+	"scripts": {},
+	"config": {
+		"commitizen": {
+			"path": "node_modules/cz-git"
+		}
+	},
+	"devDependencies": {
+		"cz-git": "^1.7.0"
+	}
+}
