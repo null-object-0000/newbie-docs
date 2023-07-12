@@ -1,10 +1,10 @@
-# newbee-docs
+# newbie-docs
 
 ## 功能特性
 
 ## 开发计划
 
-- [ ] 完成 [codex.docs](https://github.com/codex-team/codex.docs) 所有能力
+- [ ] 基于 Vue 3.0 完成 [codex.docs](https://github.com/codex-team/codex.docs) 所有能力
 - [ ] 参考 [语雀](https://www.feishu.cn/product/docs)，完成知识库管理能力
 - [ ] 参考 [飞书](https://www.yuque.com/dashboard)，扩充快类型
     - [ ] `标题`支持手动切换级别 1 - 9
@@ -16,13 +16,15 @@
 ### 本地开发
 
 ``` bash
-cd newbee-docs-website
+cd newbie-docs-website
 pnpm install
 pnpm dev
 ```
 
 ``` bash
-npm install -D cz-git
+npm install -g commitizen
+
+pnpm install
 git cz
 ```
 
