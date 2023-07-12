@@ -4,10 +4,10 @@
       <docs-icon-book-type-default style="margin-right: 10px" /><span class="arco-page-header-title">{{ docs.title
       }}</span>
     </a>
-    <ul class="docs-header__menu">
+    <!-- <ul class="docs-header__menu">
       <li v-if="userStore.isLogin" class="docs-header__menu-add docs-header__menu-add--desktop">
         <a class="docs-button docs-button--primary docs-button--small docs-button--with-icon docs-button--with-label"
-          href="/page/new">
+          @click="createDoc">
           <div class="docs-button__icon">
             <docs-icon-plus />
           </div>
@@ -21,7 +21,7 @@
           </div>
         </a>
       </li>
-    </ul>
+    </ul> -->
   </header>
 </template>
 
@@ -29,6 +29,7 @@
 import type { PropType } from "vue";
 import type { Doc } from "@/types/global";
 import { useUserStore } from "@/stores/user";
+
 defineProps({
   docs: {
     type: Object as PropType<Doc>,
@@ -36,7 +37,13 @@ defineProps({
   },
 });
 
+const emits = defineEmits(["onCreate"]);
+
 const userStore = useUserStore();
+
+const createDoc = function () {
+  emits("onCreate")
+}
 </script>
 
 <style scoped></style>

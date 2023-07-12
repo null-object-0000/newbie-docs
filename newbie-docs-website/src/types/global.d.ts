@@ -2,10 +2,10 @@ import type { OutputBlockData, EditorConfig } from "@editorjs/editorjs";
 
 export interface Doc {
   id: string;
-  parentId: string;
+  parentId?: string;
   path: string;
   title: string;
-  child?: Doc[];
+  child: Doc[];
   parent?: Doc;
   /**
    * 是否已展开

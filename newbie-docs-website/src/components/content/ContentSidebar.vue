@@ -4,7 +4,7 @@
     <aside class="docs-sidebar__content">
       <span class="docs-sidebar__search-wrapper" :data-shortcut="shortcutText">
         <input v-model="keyword" @input="search" class="docs-sidebar__search" type="text" placeholder="搜索" />
-        <div class="docs-sidebar__create">
+        <div class="docs-sidebar__create" @click="createDoc">
           <svg width="1em" height="1em" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"
             class="larkui-icon larkui-icon-add icon-svg ReaderLayout-module_actionItem_CbOzz index-module_size_wVASz"
             data-name="Add" style="width: 16px; min-width: 16px; height: 16px;">
@@ -24,14 +24,16 @@
               <span>
                 {{ rootItem.title }}
               </span>
-              <button v-if="rootItem.child && keywordIncludes(rootItem.child.map(i => i.title))"
+              <button
+                v-if="rootItem.child && rootItem.child.length > 0 && keywordIncludes(rootItem.child.map(i => i.title))"
                 class="docs-sidebar__section-toggler" @click="(event) => extend(event, rootItem)">
                 <docs-icon-arrow-up v-if="rootItem.expand" />
                 <docs-icon-arrow-down v-else />
               </button>
             </div>
           </router-link>
-          <ul v-if="rootItem.child && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
+          <ul
+            v-if="rootItem.child && rootItem.child.length > 0 && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
             class="docs-sidebar__section-list" :style="{ 'max-height': `${31 * rootItem.child.length}px` }">
             <template v-for="(item) of rootItem.child" :key="item.path">
               <li v-if="keywordIncludes(item.title)">
@@ -88,6 +90,8 @@ const props = defineProps({
   }
 });
 
+const emits = defineEmits(["onCreate"]);
+
 const { docs, activePath } = toRefs(props);
 
 const sidebar = reactive({
@@ -113,12 +117,12 @@ const search = () => {
 };
 
 const keywordIncludes = function (str?: string | string[]): boolean {
-  if (keyword.value.length <= 0) {
-    return true
-  }
-
   if (str === undefined) {
     return false
+  }
+
+  if (keyword.value.length <= 0) {
+    return true
   }
 
   if (Array.isArray(str)) {
@@ -140,6 +144,10 @@ const rootItemIsActive = function (rootItem: Doc): boolean {
     // 判断子集是否有被激活的
     return rootItem.child.some(i => i.path === activePath?.value);
   }
+}
+
+const createDoc = function () {
+  emits("onCreate")
 }
 </script>
 

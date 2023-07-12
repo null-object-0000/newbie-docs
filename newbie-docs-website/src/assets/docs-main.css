@@ -634,7 +634,7 @@ li.docs-header__menu-add--mobile {
   appearance: none;
   background-color: #f3f6f8;
   background-color: var(--color-input-primary);
-  background-image: url(dbac3290b2f792ab889c.svg);
+  background-image: url("../svg/arrow-down.svg");
   background-position: right 15px center;
   background-repeat: no-repeat;
   border: 1px solid transparent;
@@ -1876,7 +1876,7 @@ li.docs-header__menu-add--mobile {
 
 .docs-sidebar__search {
   appearance: none;
-  background: url(f0aa37170f78540c49a5.svg) left 10px center no-repeat;
+  background: url("../svg/search.svg") left 10px center no-repeat;
   background-color: #f3f6f8;
   background-color: var(--color-input-primary);
   border: 1px solid transparent;

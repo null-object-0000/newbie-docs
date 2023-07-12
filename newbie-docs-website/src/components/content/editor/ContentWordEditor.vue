@@ -17,6 +17,7 @@
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
 
 import { onBeforeUnmount, ref, shallowRef, onMounted } from 'vue'
+// @ts-ignore
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
 // 编辑器实例，必须用 shallowRef

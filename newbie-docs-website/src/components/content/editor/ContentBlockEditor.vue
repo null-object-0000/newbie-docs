@@ -1,33 +1,57 @@
 <template>
+    parentId: {{ doc.parentId }}
     <section data-module="writing">
         <header class="writing-header">
             <div class="writing-header__inner-container">
+                <div class="uri-input-wrapper">
+                    <label for="uri-input">Id</label>
+                    <input :disabled="true" type="text" id="uri-input" class="uri-input" name="uri-input"
+                        placeholder="URI (Optional)" :value="doc.id">
+                </div>
                 <div class="select-wrapper">
-                    <label for="parent">Parent Page</label>
+                    <label for="parent">父级页面</label>
                     <select v-model="doc.parentId" id="parent" name="parent">
-                        <option value="0">Root</option>
-                        <template v-for="rootItem of docs.child">
-                            <option :value="rootItem.id">{{ rootItem.title }}</option>
+                        <option value="root">—</option>
+                        <template v-for="rootItem of  docs.child ">
+                            <option v-if="rootItem.id !== 'home'" :value="rootItem.id">{{ rootItem.title }}</option>
                             <template v-if="rootItem.child">
-                                <template v-for="item of rootItem.child">
-                                    <option :value="item.id">&nbsp;&nbsp;{{ item.title }}</option>
+                                <template v-for="item of  rootItem.child ">
+                                    <option :value="item.id">&nbsp;&nbsp;{{ item.title }}
+                                    </option>
                                 </template>
                             </template>
                         </template>
                     </select>
                 </div>
-                <div class="select-wrapper" v-if="doc.parentId">
-                    <label for="above">Put Above</label>
+                <div class="select-wrapper">
+                    <label for="above">置于上方</label>
                     <select id="above" name="above">
                         <option value="0">—</option>
-                        <template v-for="rootItem of docs.child">
-                            <option :value="rootItem.id">&nbsp;&nbsp;{{ rootItem.title }}</option>
+                        <template v-for=" item  of  getChild([docs], doc.parentId) ">
+                            <option v-if="doc.parentId && item.id !== 'home' && item.id !== doc.id" :value="item.id">
+                                &nbsp;&nbsp;{{ item.title }}
+                            </option>
                         </template>
                     </select>
                 </div>
-                <div class="uri-input-wrapper">
-                    <label for="uri-input">Alias</label>
-                    <input type="text" id="uri-input" class="uri-input" name="uri-input" placeholder="URI (Optional)" :value="doc.path">
+                <div>
+                    <label>&nbsp;&nbsp;&nbsp;</label>
+                    <div class="flex_wrap">
+                        <a @click="onChange()"
+                            class="docs-button docs-button--warning docs-button--small docs-button--with-icon docs-button--with-label page__header-button">
+                            <div class="docs-button__icon">
+                                <docs-icon-pencil />
+                            </div>
+                            更新
+                        </a>
+                        <a @click="onPreview()"
+                            class="docs-button docs-button--primary docs-button--small docs-button--with-icon docs-button--with-label page__header-button">
+                            <div class="docs-button__icon">
+                                <docs-icon-pencil />
+                            </div>
+                            预览
+                        </a>
+                    </div>
                 </div>
             </div>
         </header>
@@ -101,7 +125,7 @@ const props = defineProps({
         required: true,
     },
 });
-const emits = defineEmits(["onChange"]);
+const emits = defineEmits(["onChange", "onPreview"]);
 
 const { editorConfig, doc } = toRefs(props);
 
@@ -113,9 +137,9 @@ const defaultConfig = {
         header: {
             class: EHeader,
             inlineToolbar: ["marker", "link"],
-            config: {
-                placeholder: editorConfig.value.headerPlaceholder || "",
-            },
+            // config: {
+            //     placeholder: editorConfig.value.headerPlaceholder || "",
+            // },
             shortcut: "CMD+SHIFT+H",
         },
 
@@ -233,12 +257,22 @@ const defaultConfig = {
 let editor: EditorJS;
 const config = Object.assign(defaultConfig, editorConfig.value)
 
-const onChange = (api?: API, event?: BlockMutationEvent | BlockMutationEvent[]) => {
-    editor.save().then((outputData) => {
+const onChange = (api?: API, event?: BlockMutationEvent | BlockMutationEvent[], callback?: any) => {
+    editor && editor.save().then((outputData) => {
+        // 如果第一个块是 header 则将 header 的内容作为 title
+        if (outputData.blocks && outputData.blocks.length > 0 && outputData.blocks[0].type === 'header') {
+            doc.value.title = outputData.blocks[0].data.text;
+        }
         doc.value.blocks = outputData.blocks;
         emits('onChange', event, outputData.blocks);
     });
 };
+
+const onPreview = () => {
+    onChange(undefined, undefined, () => {
+        emits('onPreview')
+    })
+}
 
 config.data = {
     blocks: doc.value.blocks || [],
@@ -258,6 +292,26 @@ watch(doc, () => {
 whenever(ctrl_s, () => {
     onChange()
 })
+
+const getChild = function (data: Doc[], id?: string): Doc[] | undefined {
+    if (id === undefined) {
+        return;
+    }
+
+    for (const item of data) {
+        if (item.id === id) {
+            return item.child;
+        }
+
+        if (item.child && item.child.length > 0) {
+            const child = getChild(item.child, id);
+            if (child) {
+                return child;
+            }
+        }
+    }
+    return undefined;
+}
 </script>
   
 <style>
@@ -267,6 +321,14 @@ whenever(ctrl_s, () => {
 
 .writing-editor #editorjs .tc-toolbox__toggler svg {
     fill: currentColor;
+}
+
+.writing-header__inner-container>* {
+    flex: 0 1 25%;
+}
+
+.flex_wrap {
+    width: 185px;
 }
 </style>
   

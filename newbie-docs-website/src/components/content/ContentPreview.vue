@@ -2,12 +2,13 @@
     <article class="page" data-module="page">
         <header class="page__header">
             <div class="page__header-nav">
-                <template v-if="doc.parent">
-                    <router-link v-if="doc.parent.parent" class="page__header-nav-item" :to="doc.parent.parent.path">{{
-                        doc.parent.parent.title }}</router-link>
-                    <docs-icon-arrow-right v-if="doc.parent.parent" />
-                    <router-link class="page__header-nav-item" :to="doc.parent.path">{{
-                        doc.parent.title }}</router-link>
+                <template v-if="getParent([docs], doc.parentId)">
+                    <router-link v-if="getParentParent([docs], doc.parentId)" class="page__header-nav-item"
+                        :to="getParentParent([docs], doc.parentId)?.path || ''">{{
+                            getParentParent([docs], doc.parentId)?.title }}</router-link>
+                    <docs-icon-arrow-right v-if="getParentParent([docs], doc.parentId)" />
+                    <router-link class="page__header-nav-item" :to="getParent([docs], doc.parentId)?.path || ''">{{
+                        getParent([docs], doc.parentId)?.title }}</router-link>
                     <docs-icon-arrow-right />
                 </template>
             </div>
@@ -41,14 +42,17 @@ import type { Doc } from '@/types/global';
 import { useUserStore } from '@/stores/user';
 
 const props = defineProps({
+    docs: {
+        type: Object as PropType<Doc>,
+        required: true,
+    },
     doc: {
         type: Object as PropType<Doc>,
-        default: () => { },
-        required: false,
+        required: true,
     },
 });
 
-const { doc } = toRefs(props);
+const { docs, doc } = toRefs(props);
 
 const emits = defineEmits(['onEdit']);
 
@@ -86,4 +90,40 @@ watch(doc, () => {
         }
     })
 }, { immediate: true })
+
+const getParent = (data: Doc[], id?: string): Doc | undefined => {
+    if (id === undefined) {
+        return
+    }
+
+    for (const item of data) {
+        if (item.id === id) {
+            return item;
+        }
+        if (item.child && item.child.length > 0) {
+            const parent = getParent(item.child, id);
+            if (parent) {
+                return parent;
+            }
+        }
+    }
+}
+
+const getParentParent = (data: Doc[], id?: string): Doc | undefined => {
+    if (id === undefined) {
+        return
+    }
+
+    for (const item of data) {
+        if (item.id === id) {
+            return getParent([docs.value], item.parentId);
+        }
+        if (item.child && item.child.length > 0) {
+            const parent = getParentParent(item.child, id);
+            if (parent) {
+                return parent;
+            }
+        }
+    }
+}
 </script>
