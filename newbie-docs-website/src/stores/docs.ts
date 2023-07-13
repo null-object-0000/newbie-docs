@@ -34,9 +34,39 @@ export const useDocsStore = defineStore('docs', () => {
     return id;
   }
 
+  const getLevel = function (space: string, doc: Doc | string) {
+    if (typeof doc === 'string' && doc === 'root') {
+      return 1
+    }
+
+    const docs = get(space)
+
+    if (typeof doc === 'string') {
+      doc = findDocBy(docs, 'id', doc) as Doc
+    }
+
+    if (!doc) {
+      return
+    }
+
+    let level = 1
+    let parentId = doc.parentId
+    while (parentId) {
+      level++
+      const parentDoc = findDocBy(docs, 'id', parentId)
+      if (!parentDoc) {
+        break
+      }
+      parentId = parentDoc.parentId
+    }
+
+    return level
+  }
+
   const getDefaultDocs = function (space: string): Doc {
     return {
       id: 'root',
+      editor: 'block',
       // TODO: 这里的 title 应该是从后端获取的，暂时写死
       title: "万象开放平台 - 营销产品部",
       path: "/" + space,
@@ -44,6 +74,7 @@ export const useDocsStore = defineStore('docs', () => {
         {
           id: 'home',
           parentId: space,
+          editor: 'block',
           title: "首页",
           path: `/${space}/home`,
           child: []
@@ -153,6 +184,6 @@ export const useDocsStore = defineStore('docs', () => {
     }
   }
 
-  return { get, put, remove, changeId, generateId }
+  return { get, put, remove, changeId, generateId, getLevel }
 })
 

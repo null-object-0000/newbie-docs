@@ -14,12 +14,15 @@ export interface Doc {
   blocks?: OutputBlockData[];
   createTime?: number;
   updateTime?: number;
+  /**
+   * 编辑器类型（markdown、word、block）
+   */
+  editor: string;
 }
 
 export interface ContentViewConfig {
   currentDoc?: Doc;
   editMode: boolean;
-  editorType: string;
 }
 
 export interface CustomEditorConfig extends EditorConfig {

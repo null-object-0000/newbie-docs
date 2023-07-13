@@ -3,23 +3,25 @@
     <CHeader :docs="docs" @on-create="onCreate"></CHeader>
 
     <div class="docs">
-      <CSidebar :docs="docs" :active-path="route.path" :editor-type="config.editorType" @on-create="onCreate"></CSidebar>
+      <CSidebar :docs="docs" :active-path="route.path" :editor-type="config.currentDoc?.editor" @on-create="onCreate">
+      </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.id !== 'home'" class="docs__content"
-          :class="config.editMode && config.editorType === 'word' ? 'docs_content_word_editor' : ''">
+          :class="config.editMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
-            <CBlockEditor v-if="config.editMode && config.editorType === 'block'" :docs="docs"
-              :editor-config="{ headerPlaceholder: '请输入标题' }" :doc="config.currentDoc" @on-change="onEditorChange"
-              @on-preview="onPreview">
-            </CBlockEditor>
-            <CWordEditor v-if="config.editMode && config.editorType === 'word'">
-            </CWordEditor>
-
-            <CPreview v-if="!config.editMode" :docs="docs" :doc="config.currentDoc" @onEdit="config.editMode = true">
+            <template v-if="config.editMode">
+              <CBlockEditor v-if="config.currentDoc.editor === 'block'" :docs="docs"
+                :editor-config="{ headerPlaceholder: '请输入标题' }" :doc="config.currentDoc" @on-change="onEditorChange"
+                @on-preview="onPreview">
+              </CBlockEditor>
+              <CWordEditor v-else-if="config.currentDoc.editor === 'word'">
+              </CWordEditor>
+            </template>
+            <CPreview v-else :docs="docs" :doc="config.currentDoc" @onEdit="config.editMode = true">
             </CPreview>
           </div>
 
-          <aside v-if="!config.editMode || config.editorType !== 'word'" class="docs__aside-right">
+          <aside v-if="!config.editMode || config.currentDoc.editor !== 'word'" class="docs__aside-right">
             <COutline :doc="config.currentDoc"></COutline>
           </aside>
         </div>
@@ -42,6 +44,8 @@ import CPreview from "@/components/content/ContentPreview.vue";
 import COutline from "@/components/content/ContentOutline.vue";
 import { useRoute, useRouter } from "vue-router";
 import { nextTick, reactive, watch } from "vue";
+
+import { Message } from '@arco-design/web-vue';
 
 import type { Doc, ContentViewConfig } from "@/types/global";
 import { useDocsStore } from "@/stores/docs";
@@ -94,7 +98,6 @@ const getCurrentDoc = function (data: Doc[]): Doc | undefined {
 const config: ContentViewConfig = reactive({
   currentDoc: getCurrentDoc([docs]),
   editMode: false,
-  editorType: 'block',
 });
 
 // 监听路由变化
@@ -121,12 +124,21 @@ const onCreate = function () {
   console.log('onCreate', 'id', id)
 
   let parentId = config.currentDoc?.id || "home";
+  parentId = parentId === 'home' ? 'root' : parentId
+
+  let level = docsStore.getLevel(space, parentId)
+  if (level && level > 2) {
+    Message.error('暂时只支持两级目录')
+    return
+  }
 
   const doc: Doc = {
     id,
+    parentId,
+    // TODO: 临时写死，后续需要根据用户选择的编辑器类型来决定
+    editor: "block",
     path: `/${space}/${id}`,
     title: "无标题文档",
-    parentId: parentId === 'home' ? 'root' : parentId,
     blocks: [
       {
         type: "header",

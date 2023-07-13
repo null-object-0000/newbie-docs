@@ -1,5 +1,8 @@
 {
-	"scripts": {},
+	"scripts": {
+		"dev": "pnpm run website:dev",
+		"website:dev": "cd newbie-docs-website && pnpm run dev"
+	},
 	"config": {
 		"commitizen": {
 			"path": "node_modules/cz-git"
