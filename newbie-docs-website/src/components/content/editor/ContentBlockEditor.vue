@@ -1,5 +1,4 @@
 <template>
-    parentId: {{ doc.parentId }}
     <section data-module="writing">
         <header class="writing-header">
             <div class="writing-header__inner-container">
@@ -10,24 +9,27 @@
                 </div>
                 <div class="select-wrapper">
                     <label for="parent">父级页面</label>
-                    <select v-model="doc.parentId" id="parent" name="parent">
+                    <select v-model="parentId" id="parent" name="parent" @change="parentChange">
                         <option value="root">—</option>
                         <template v-for="rootItem of  docs.child ">
-                            <option v-if="rootItem.id !== 'home'" :value="rootItem.id">{{ rootItem.title }}</option>
-                            <template v-if="rootItem.child">
+                            <option v-if="rootItem.id !== 'home' && rootItem.id !== doc.id" :value="rootItem.id">
+                                {{ rootItem.id }} - {{ rootItem.title }}
+                            </option>
+                            <!-- 暂时不支持子级 -->
+                            <!-- <template v-if="rootItem.child">
                                 <template v-for="item of  rootItem.child ">
                                     <option :value="item.id">&nbsp;&nbsp;{{ item.title }}
                                     </option>
                                 </template>
-                            </template>
+                            </template> -->
                         </template>
                     </select>
                 </div>
                 <div class="select-wrapper">
                     <label for="above">置于上方</label>
-                    <select id="above" name="above">
-                        <option value="0">—</option>
-                        <template v-for=" item  of  getChild([docs], doc.parentId) ">
+                    <select v-model="aboveId" id="above" name="above" @change="aboveChange">
+                        <option>—</option>
+                        <template v-for="item of getChild(doc.parentId)">
                             <option v-if="doc.parentId && item.id !== 'home' && item.id !== doc.id" :value="item.id">
                                 &nbsp;&nbsp;{{ item.title }}
                             </option>
@@ -93,12 +95,14 @@ import RawTool from '@editorjs/raw';
 // @ts-ignore
 import Table from "@editorjs/table";
 
-import { toRefs, watch } from "vue";
+import { ref, toRefs, watch, reactive } from "vue";
 import type { PropType } from "vue";
 
-import type { Doc, CustomEditorConfig } from "../../../types/global";
+import type { Doc, CustomEditorConfig, DocsStorageEnum } from "@/types/global";
 
 import { useMagicKeys, whenever } from '@vueuse/core'
+import { useDocsApi } from "@/api/docs";
+import { Message } from '@arco-design/web-vue';
 
 const { ctrl_s } = useMagicKeys({
     passive: false,
@@ -110,6 +114,14 @@ const { ctrl_s } = useMagicKeys({
 })
 
 const props = defineProps({
+    space: {
+        type: String,
+        required: true,
+    },
+    spaceData: {
+        type: Object,
+        required: true,
+    },
     editorConfig: {
         type: Object as PropType<CustomEditorConfig>,
         default: () => { },
@@ -117,8 +129,7 @@ const props = defineProps({
     },
     doc: {
         type: Object as PropType<Doc>,
-        default: () => { },
-        required: false,
+        required: true,
     },
     docs: {
         type: Object as PropType<Doc>,
@@ -127,7 +138,12 @@ const props = defineProps({
 });
 const emits = defineEmits(["onChange", "onPreview"]);
 
-const { editorConfig, doc } = toRefs(props);
+const { space, spaceData, editorConfig, doc } = toRefs(props);
+
+const docsApi = useDocsApi('localStorage', spaceData.value)
+
+let parentId = ref(doc.value.parentId)
+let aboveId = ref(null)
 
 const defaultConfig = {
     tools: {
@@ -258,6 +274,7 @@ let editor: EditorJS;
 const config = Object.assign(defaultConfig, editorConfig.value)
 
 const onChange = (api?: API, event?: BlockMutationEvent | BlockMutationEvent[], callback?: any) => {
+    console.log('onChange', api, event, callback)
     editor && editor.save().then((outputData) => {
         // 如果第一个块是 header 则将 header 的内容作为 title
         if (outputData.blocks && outputData.blocks.length > 0 && outputData.blocks[0].type === 'header') {
@@ -282,6 +299,8 @@ config.onChange = onChange
 editor = new EditorJS(config);
 
 watch(doc, () => {
+    parentId.value = doc.value.parentId
+    aboveId.value = null
     if (editor && editor.render) {
         editor.render({
             blocks: doc.value.blocks || [],
@@ -293,24 +312,52 @@ whenever(ctrl_s, () => {
     onChange()
 })
 
-const getChild = function (data: Doc[], id?: string): Doc[] | undefined {
-    if (id === undefined) {
-        return;
+const parentChange = () => {
+    // 如果当前节点有子节点的话，不允许修改父级
+    if (doc.value.child && doc.value.child.length > 0) {
+        parentId.value = doc.value.parentId
+        Message.error('当前节点有子节点，不允许修改父级')
+        return
     }
 
-    for (const item of data) {
-        if (item.id === id) {
-            return item.child;
-        }
-
-        if (item.child && item.child.length > 0) {
-            const child = getChild(item.child, id);
-            if (child) {
-                return child;
-            }
+    if (parentId.value) {
+        const result = docsApi.changeParentId(space.value, doc.value.id, parentId.value)
+        if (!result) {
+            Message.error('修改父级失败')
         }
     }
-    return undefined;
+    console.log('parentChange', parentId)
+}
+
+const getChild = (parentId?: string) => {
+    if (parentId) {
+        return docsApi.findChild(spaceData.value[space.value].array, parentId)
+    }
+}
+
+const aboveChange = () => {
+    const child = getChild(doc.value.parentId)
+    let currentIndex = child!.findIndex((item) => {
+        return item.id === doc.value.id
+    })
+    let aboveIndex = child!.findIndex((item) => {
+        return item.id === aboveId.value
+    })
+
+    aboveIndex = aboveIndex === undefined ? -1 : aboveIndex
+
+    if (currentIndex < aboveIndex) {
+        aboveIndex = aboveIndex - 1
+    }
+
+    // 判断当前节点是否在目标节点的上面
+
+    if (aboveIndex >= 0) {
+        const result = docsApi.splice(space.value, doc.value.id, aboveIndex)
+        if (!result) {
+            Message.error('置于上方失败')
+        }
+    }
 }
 </script>
   

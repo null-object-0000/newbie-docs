@@ -1,23 +1,25 @@
 <template>
   <div class="content-view">
-    <CHeader :docs="docs" @on-create="onCreate"></CHeader>
+    <CHeader :docs="config.spaceData[space].tree" @on-create="onCreate"></CHeader>
 
     <div class="docs">
-      <CSidebar :docs="docs" :active-path="route.path" :editor-type="config.currentDoc?.editor" @on-create="onCreate">
+      <CSidebar :docs="config.spaceData[space].tree" :active-path="route.path" :editor-type="config.currentDoc?.editor"
+        @on-create="onCreate">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.id !== 'home'" class="docs__content"
           :class="config.editMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
             <template v-if="config.editMode">
-              <CBlockEditor v-if="config.currentDoc.editor === 'block'" :docs="docs"
-                :editor-config="{ headerPlaceholder: '请输入标题' }" :doc="config.currentDoc" @on-change="onEditorChange"
-                @on-preview="onPreview">
+              <CBlockEditor v-if="config.currentDoc.editor === 'block'" :space="space" :space-data="config.spaceData"
+                :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview">
               </CBlockEditor>
               <CWordEditor v-else-if="config.currentDoc.editor === 'word'">
               </CWordEditor>
             </template>
-            <CPreview v-else :docs="docs" :doc="config.currentDoc" @onEdit="config.editMode = true">
+            <CPreview v-else :docs="config.spaceData[space].tree" :doc="config.currentDoc"
+              @onEdit="config.editMode = true">
             </CPreview>
           </div>
 
@@ -25,7 +27,7 @@
             <COutline :doc="config.currentDoc"></COutline>
           </aside>
         </div>
-        <CHome :docs="docs" v-else></CHome>
+        <CHome :docs="config.spaceData[space].tree" v-else></CHome>
       </template>
     </div>
   </div>
@@ -48,39 +50,28 @@ import { nextTick, reactive, watch } from "vue";
 import { Message } from '@arco-design/web-vue';
 
 import type { Doc, ContentViewConfig } from "@/types/global";
-import { useDocsStore } from "@/stores/docs";
+import { useDocsApi } from "@/api/docs";
 
 const route = useRoute();
 const router = useRouter();
 
 const space = route.params.space as string;
 
-const docsStore = useDocsStore()
+const config: ContentViewConfig = reactive({
+  spaceData: {},
+  currentDoc: null,
+  editMode: false,
+});
 
-const docs = docsStore.get(space);
+const docsApi = useDocsApi('localStorage', config.spaceData);
 
-// 给所有的 doc 添加 parent 属性 并默认展开所有的 doc
-const initDocs = function (data: Doc[]) {
-  for (const item of data) {
-    item.expand = true;
-    item.blocks = item.blocks || [
-      {
-        type: "header",
-        data: {
-          text: item.title,
-          level: 2,
-        },
-      },
-    ];
+docsApi.init(space);
 
-    if (item.child && item.child.length > 0) {
-      initDocs(item.child);
-    }
+const getCurrentDoc = function (data?: Doc[] | null): Doc | undefined {
+  if (!data) {
+    return;
   }
-};
-initDocs([docs]);
 
-const getCurrentDoc = function (data: Doc[]): Doc | undefined {
   for (const item of data) {
     if (item.path === route.path) {
       return JSON.parse(JSON.stringify(item));
@@ -95,10 +86,7 @@ const getCurrentDoc = function (data: Doc[]): Doc | undefined {
   }
 };
 
-const config: ContentViewConfig = reactive({
-  currentDoc: getCurrentDoc([docs]),
-  editMode: false,
-});
+config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
 
 // 监听路由变化
 watch(route, () => {
@@ -106,27 +94,28 @@ watch(route, () => {
     router.push({ path: `/${space}/home` });
   }
   // 判断当前路由是否存在，不存在就跳回首页
-  else if (!getCurrentDoc([docs])) {
+  else if (!getCurrentDoc([config.spaceData[space].tree])) {
     router.push({ path: `/${space}/home` });
   }
 
-  config.currentDoc = getCurrentDoc([docs]);
+  config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
 }, { immediate: true });
 
 const onEditorChange = function (event: Event, blocks: any) {
   const doc = config.currentDoc as Doc;
   doc.blocks = blocks;
-  docsStore.put(space, doc)
+  console.log('onEditorChange', 'doc', doc.parentId)
+  docsApi.put(space, doc);
 };
 
 const onCreate = function () {
-  const id = docsStore.generateId(12)
+  const id = docsApi.generateId(12)
   console.log('onCreate', 'id', id)
 
   let parentId = config.currentDoc?.id || "home";
   parentId = parentId === 'home' ? 'root' : parentId
 
-  let level = docsStore.getLevel(space, parentId)
+  let level = docsApi.getLevel(space, parentId)
   if (level && level > 2) {
     Message.error('暂时只支持两级目录')
     return
@@ -151,7 +140,8 @@ const onCreate = function () {
     child: []
   };
 
-  docsStore.put(space, doc)
+  docsApi.put(space, doc);
+
   router.push(doc.path)
   config.editMode = true
 };

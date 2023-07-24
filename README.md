@@ -16,7 +16,6 @@
 ### 本地开发
 
 ``` bash
-cd newbie-docs-website
 pnpm install
 pnpm dev
 ```
