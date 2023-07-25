@@ -24,7 +24,7 @@
                     </div>
                 </div>
 
-                <div v-if="docs.child.length <= 1 || true" class="docs-content-home__default_content">
+                <div v-if="docs.child!.length <= 1 || true" class="docs-content-home__default_content">
                     <p> 👋
                         <text style="font-weight: bold; display: inline-block;">
                             欢迎来到知识库
@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, type PropType } from "vue";
+import { type PropType } from "vue";
 import type { Doc } from "@/types/global";
 
 defineProps({
@@ -56,7 +56,7 @@ defineProps({
 const getTotalDocCount = function (data: Doc[]): number {
     let count = 0;
     for (const item of data) {
-        count += item.child.length;
+        count += item.child!.length;
         if (item.child && item.child.length > 0) {
             count += getTotalDocCount(item.child);
         }

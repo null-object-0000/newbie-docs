@@ -109,7 +109,6 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         }
 
         data = Array.isArray(data) ? data : this.tree2array(data) as Doc[]
-        console.log('findChild', data, parentId)
         return data.filter(doc => doc.parentId === parentId)
     }
 

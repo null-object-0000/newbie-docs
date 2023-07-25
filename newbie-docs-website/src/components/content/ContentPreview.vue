@@ -79,18 +79,6 @@ const formatTime = (time?: number) => {
 
 };
 
-watch(doc, () => {
-    nextTick(() => {
-        // 判断是否有锚点，没有的话就不滚动到页面顶部
-        if (window.location.hash) {
-            const anchor = document.querySelector(window.location.hash);
-            anchor && anchor.scrollIntoView();
-        } else {
-            window.scrollTo(0, 0)
-        }
-    })
-}, { immediate: true })
-
 const getParent = (data: Doc[], id?: string): Doc | undefined => {
     if (id === undefined) {
         return

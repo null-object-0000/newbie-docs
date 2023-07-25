@@ -34,7 +34,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
                 delete item.child
             }
 
-            console.log(from, '__updateCache', space, JSON.stringify(super.array2tree(docs)))
             this.spaceData[space] = {
                 tree: super.array2tree(docs) as Doc,
                 array: docs

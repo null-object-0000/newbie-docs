@@ -1,7 +1,5 @@
 <template>
   <div class="content-view">
-    <CHeader :docs="config.spaceData[space].tree" @on-create="onCreate"></CHeader>
-
     <div class="docs">
       <CSidebar :docs="config.spaceData[space].tree" :active-path="route.path" :editor-type="config.currentDoc?.editor"
         @on-create="onCreate">
@@ -24,7 +22,7 @@
           </div>
 
           <aside v-if="!config.editMode || config.currentDoc.editor !== 'word'" class="docs__aside-right">
-            <COutline :doc="config.currentDoc"></COutline>
+            <COutline :doc="config.currentDoc" :edit-mode="config.editMode"></COutline>
           </aside>
         </div>
         <CHome :docs="config.spaceData[space].tree" v-else></CHome>
@@ -38,7 +36,6 @@ import "@/assets/docs-main.css";
 import "@/assets/docs-code-styling.css";
 
 import CHome from "@/components/content/ContentHome.vue";
-import CHeader from "@/components/content/ContentHeader.vue";
 import CSidebar from "@/components/content/ContentSidebar.vue";
 import CBlockEditor from "@/components/content/editor/ContentBlockEditor.vue";
 import CWordEditor from "@/components/content/editor/ContentWordEditor.vue";
@@ -51,9 +48,11 @@ import { Message } from '@arco-design/web-vue';
 
 import type { Doc, ContentViewConfig } from "@/types/global";
 import { useDocsApi } from "@/api/docs";
+import { useConfigStore } from "@/stores/config";
 
 const route = useRoute();
 const router = useRouter();
+const configStore = useConfigStore();
 
 const space = route.params.space as string;
 
@@ -99,12 +98,24 @@ watch(route, () => {
   }
 
   config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
+  configStore.setHeader('/', config.spaceData[space].tree.title);
 }, { immediate: true });
+
+watch(config, () => {
+    nextTick(() => {
+        // 判断是否有锚点，没有的话就不滚动到页面顶部
+        if (window.location.hash) {
+            const anchor = document.querySelector(window.location.hash);
+            anchor && anchor.scrollIntoView();
+        } else {
+            window.scrollTo(0, 0)
+        }
+    })
+}, { immediate: true })
 
 const onEditorChange = function (event: Event, blocks: any) {
   const doc = config.currentDoc as Doc;
   doc.blocks = blocks;
-  console.log('onEditorChange', 'doc', doc.parentId)
   docsApi.put(space, doc);
 };
 
