@@ -32,7 +32,7 @@ const parseLink = function (linkUrl: string): URL {
     try {
         return new URL(linkUrl);
     } catch (e) {
-        console.log(e);
+        console.error(e);
         return new URL('')
     }
 }

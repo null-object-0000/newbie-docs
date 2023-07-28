@@ -9,6 +9,8 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract splice(space: string, id: string, index: number): boolean;
     abstract changeId(space: string, oldId: string, newId: string): boolean;
     abstract changeParentId(space: string, id: string, parentId: string): boolean;
+    abstract getTotalDocCount(space: string): number;
+    abstract getTotalWordCount(space: string): number;
 
     array2tree(docs?: Doc | Doc[]): Doc | undefined {
         if (!docs || !Array.isArray(docs)) {
@@ -55,8 +57,6 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         for (const doc of result) {
             delete doc.child
         }
-
-        console.log('tree2array', result)
 
         return result
     }

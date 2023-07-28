@@ -22,8 +22,7 @@ pnpm dev
 
 ``` bash
 npm install -g commitizen
-
-pnpm install
+git add .
 git cz
 ```
 

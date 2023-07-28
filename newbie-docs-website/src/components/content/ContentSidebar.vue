@@ -4,21 +4,28 @@
     <aside class="docs-sidebar__content">
       <span class="docs-sidebar__search-wrapper" :data-shortcut="shortcutText">
         <input v-model="keyword" @input="search" class="docs-sidebar__search" type="text" placeholder="搜索" />
-        <div class="docs-sidebar__create" @click="createDoc">
-          <svg width="1em" height="1em" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"
-            class="larkui-icon larkui-icon-add icon-svg ReaderLayout-module_actionItem_CbOzz index-module_size_wVASz"
-            data-name="Add" style="width: 16px; min-width: 16px; height: 16px;">
-            <path
-              d="M128 28c5.523 0 10 4.477 10 10v80h80c5.523 0 10 4.477 10 10s-4.477 10-10 10h-80v80c0 5.523-4.477 10-10 10s-10-4.477-10-10v-80H38c-5.523 0-10-4.477-10-10s4.477-10 10-10h80V38c0-5.523 4.477-10 10-10Z"
-              fill="currentColor" fill-rule="evenodd"></path>
-          </svg>
-        </div>
+        <a-dropdown trigger="hover" position="bl" @select="createDoc">
+          <div class="docs-sidebar__create">
+            <svg width="1em" height="1em" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"
+              class="larkui-icon larkui-icon-add icon-svg ReaderLayout-module_actionItem_CbOzz index-module_size_wVASz"
+              data-name="Add" style="width: 16px; min-width: 16px; height: 16px;">
+              <path
+                d="M128 28c5.523 0 10 4.477 10 10v80h80c5.523 0 10 4.477 10 10s-4.477 10-10 10h-80v80c0 5.523-4.477 10-10 10s-10-4.477-10-10v-80H38c-5.523 0-10-4.477-10-10s4.477-10 10-10h80V38c0-5.523 4.477-10 10-10Z"
+                fill="currentColor" fill-rule="evenodd"></path>
+            </svg>
+          </div>
+          <template #content>
+            <a-doption value="block"><template #icon><icon-code-block /></template>Block</a-doption>
+            <a-doption value="word"><template #icon><icon-file /></template>Word</a-doption>
+            <a-doption value="link"><template #icon><icon-link /></template>Link</a-doption>
+          </template>
+        </a-dropdown>
       </span>
-      <template v-for="(rootItem) of docs.child" :key="rootItem.path">
-        <section class="docs-sidebar__section"
+      <template v-for="(rootItem) of docs.child">
+        <section class="docs-sidebar__section" :key="rootItem.path"
           v-if="keywordIncludes(rootItem.title) || keywordIncludes(rootItem?.child?.map(i => i.title))"
           :class="rootItem.expand ? '' : 'docs-sidebar__section--animated docs-sidebar__section--collapsed'">
-          <router-link class="docs-sidebar__section-title-wrapper" :to="rootItem.path">
+          <div class="docs-sidebar__section-title-wrapper docs-sidebar-link" @click="jump2(rootItem.path)">
             <div class="docs-sidebar__section-title"
               :class="rootItemIsActive(rootItem) ? 'docs-sidebar__section-title--active' : ''">
               <span>
@@ -31,18 +38,18 @@
                 <docs-icon-arrow-down v-else />
               </button>
             </div>
-          </router-link>
+          </div>
           <ul
             v-if="rootItem.child && rootItem.child.length > 0 && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
             class="docs-sidebar__section-list" :style="{ 'max-height': `${31 * rootItem.child.length}px` }">
             <template v-for="(item) of rootItem.child" :key="item.path">
               <li v-if="keywordIncludes(item.title)">
-                <router-link class="docs-sidebar__section-list-item-wrapper" :to="item.path">
+                <div class="docs-sidebar__section-list-item-wrapper docs-sidebar-link" @click="jump2(item.path)">
                   <div class="docs-sidebar__section-list-item"
                     :class="item.path === activePath ? 'docs-sidebar__section-list-item--active' : ''">
                     <span>{{ item.title }}</span>
                   </div>
-                </router-link>
+                </div>
               </li>
             </template>
           </ul>
@@ -60,6 +67,10 @@
 import { reactive, ref, watch, type PropType, toRefs } from "vue";
 import type { Doc } from "@/types/global";
 import { useMagicKeys, whenever } from '@vueuse/core'
+import router from "@/router";
+import { useConfigStore } from "@/stores/config";
+
+const configStore = useConfigStore();
 
 const { ctrl_j } = useMagicKeys({
   passive: false,
@@ -90,7 +101,7 @@ const props = defineProps({
   }
 });
 
-const emits = defineEmits(["onCreate"]);
+const emit = defineEmits(["onCreate"]);
 
 const { docs, activePath } = toRefs(props);
 
@@ -146,8 +157,13 @@ const rootItemIsActive = function (rootItem: Doc): boolean {
   }
 }
 
-const createDoc = function () {
-  emits("onCreate")
+const createDoc = function (value: string | number | Record<string, any> | undefined, ev: Event) {
+  emit("onCreate", ev, value);
+}
+
+const jump2 = (path: string) => {
+  configStore.docEditMode = false
+  router.push(path)
 }
 </script>
 
@@ -194,5 +210,13 @@ const createDoc = function () {
   width: 16px;
   min-width: 16px;
   height: 16px;
+}
+
+.arco-dropdown-option-icon svg {
+  fill: none;
+}
+
+.docs-sidebar-link {
+  cursor: pointer;
 }
 </style>

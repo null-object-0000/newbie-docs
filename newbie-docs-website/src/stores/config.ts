@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
-import { reactive } from "vue";
+import { reactive, ref } from "vue";
 
 export const useConfigStore = defineStore('config', () => {
+    const docEditMode = ref(false);
     const header = reactive({
         path: '/',
         title: 'Newbie Docs',
@@ -12,8 +13,10 @@ export const useConfigStore = defineStore('config', () => {
         header.title = title;
     }
 
+
     return {
         header,
-        setHeader
+        docEditMode,
+        setHeader,
     }
 });

@@ -1,3 +1,4 @@
+import type { OutputBlockData } from "@editorjs/editorjs";
 import { Doc, UseDocsApiFunction, DocData } from "@/types/global";
 import { BaseUseDocsApi } from "./base";
 
@@ -108,7 +109,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
 
         child = child.filter(item => item.id !== id)
-        
+
         child.splice(index, 0, doc)
 
         for (let sort = 0; sort < child.length; sort++) {
@@ -146,8 +147,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     changeParentId(space: string, id: string, parentId: string): boolean {
-        console.log('changeParentId', space, id, parentId)
-
         if (id === parentId) {
             return false;
         }
@@ -160,10 +159,44 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         const doc = docs.find(item => item.id === id)
         if (doc) {
             doc.parentId = parentId
-            console.log('changeParentId.result', doc.parentId, JSON.stringify(docs))
             return this.__updateCache('changeParentId', space, docs)
         } else {
             return false
         }
+    }
+
+    getTotalDocCount(space: string): number {
+        let docs = this.__get(space) as Doc[]
+        docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')
+
+        return docs.length
+    }
+
+    getTotalWordCount(space: string): number {
+        let docs = this.__get(space) as Doc[]
+        docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')
+
+        console.log('docs', docs)
+
+        let wordCount = 0
+        for (const item of docs) {
+            if (item.editor === 'block') {
+                const content = item.content as OutputBlockData[]
+                wordCount += content.reduce((prev, current) => {
+                    if (current.type === 'list') {
+                        const lengths = current.data.items.map((item: { content: string; }) => item.content.length)
+                        prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
+                    } else {
+                        prev += current.data.text.length
+                    }
+                    return prev
+                }, 0)
+            } else if (item.editor === 'word') {
+                const content = item.content as string
+                wordCount += content.length
+            }
+        }
+
+        return wordCount;
     }
 }

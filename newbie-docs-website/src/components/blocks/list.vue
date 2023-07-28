@@ -1,6 +1,6 @@
 <template>
   <component :is="block.data.style === 'ordered' ? 'ol' : 'ul'" :class="'block-list block-list--' + block.data.style">
-    <li v-for="item of block.data.items">{{ item }}</li>
+    <li v-for="item of block.data.items">{{ item.content }}</li>
   </component>
 </template>
   
