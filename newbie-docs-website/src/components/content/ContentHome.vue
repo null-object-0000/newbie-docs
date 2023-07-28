@@ -16,15 +16,15 @@
 
                     <div class="docs-content-home__statistics">
                         <span class="docs-content-home__docCount">
-                            <b class="docs-content-home__count">{{ getTotalDocCount([docs]) - 1 }}</b>文档
+                            <b class="docs-content-home__count">{{ totalDocCount }}</b>文档
                         </span>
                         <span class="docs-content-home__wordCount">
-                            <b class="docs-content-home__count">{{ getTotalWordCount([docs]) }}</b>字
+                            <b class="docs-content-home__count">{{ totalWordCount }}</b>字
                         </span>
                     </div>
                 </div>
 
-                <div v-if="docs.child!.length <= 1 || true" class="docs-content-home__default_content">
+                <div v-if="totalDocCount <= 1 || true" class="docs-content-home__default_content">
                     <p> 👋
                         <text style="font-weight: bold; display: inline-block;">
                             欢迎来到知识库
@@ -43,30 +43,37 @@
 </template>
 
 <script setup lang="ts">
-import { type PropType } from "vue";
+import { toRefs, watch, type PropType } from "vue";
 import type { Doc } from "@/types/global";
+import { useDocsApi } from "@/api/docs";
+import { ref } from "vue";
 
-defineProps({
+const props = defineProps({
+    space: {
+        type: String,
+        required: true,
+    },
+    spaceData: {
+        type: Object,
+        required: true,
+    },
     docs: {
         type: Object as PropType<Doc>,
         required: true,
     },
 });
 
-const getTotalDocCount = function (data: Doc[]): number {
-    let count = 0;
-    for (const item of data) {
-        count += item.child!.length;
-        if (item.child && item.child.length > 0) {
-            count += getTotalDocCount(item.child);
-        }
-    }
-    return count;
-}
+const { space, spaceData } = toRefs(props);
 
-const getTotalWordCount = function (data: Doc[]): number {
-    return 0;
-}
+const docsApi = useDocsApi('localStorage', spaceData.value)
+
+const totalDocCount = ref(0)
+const totalWordCount = ref(0)
+
+watch(spaceData, () => {
+    totalDocCount.value = docsApi.getTotalDocCount(space.value)
+    totalWordCount.value = docsApi.getTotalWordCount(space.value)
+}, { immediate: true })
 
 </script>
 
