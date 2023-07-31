@@ -2,18 +2,16 @@
   <div data-module="sidebar" class="docs-sidebar docs-sidebar--animated"
     :class="sidebar.collapsed ? 'docs-sidebar--collapsed' : ''">
     <aside class="docs-sidebar__content">
+
       <span class="docs-sidebar__search-wrapper" :data-shortcut="shortcutText">
-        <input v-model="keyword" @input="search" class="docs-sidebar__search" type="text" placeholder="搜索" />
+        <a-input ref="searchInputRef" v-model="keyword" @input="search" class="docs-sidebar__search" type="text" placeholder="搜索" />
+
         <a-dropdown trigger="hover" position="bl" @select="createDoc">
-          <div class="docs-sidebar__create">
-            <svg width="1em" height="1em" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"
-              class="larkui-icon larkui-icon-add icon-svg ReaderLayout-module_actionItem_CbOzz index-module_size_wVASz"
-              data-name="Add" style="width: 16px; min-width: 16px; height: 16px;">
-              <path
-                d="M128 28c5.523 0 10 4.477 10 10v80h80c5.523 0 10 4.477 10 10s-4.477 10-10 10h-80v80c0 5.523-4.477 10-10 10s-10-4.477-10-10v-80H38c-5.523 0-10-4.477-10-10s4.477-10 10-10h80V38c0-5.523 4.477-10 10-10Z"
-                fill="currentColor" fill-rule="evenodd"></path>
-            </svg>
-          </div>
+          <a-button class="docs-sidebar__create" type="outline">
+            <template #icon>
+              <icon-plus />
+            </template>
+          </a-button>
           <template #content>
             <a-doption value="block"><template #icon><icon-code-block /></template>Block</a-doption>
             <a-doption value="word"><template #icon><icon-file /></template>Word</a-doption>
@@ -61,6 +59,15 @@
       <docs-icon-arrow-left />
     </div>
   </div>
+
+  <a-modal v-model:visible="linkModalData.visible" title="链接" @ok="createLinkDoc">
+    <a-form :model="linkModalData.form" auto-label-width>
+      <a-form-item field="url" label="Url"
+        :rules="[{ required: true, message: '请输入 url' }, { type: 'url', message: '请输入完整有效的 url' }]">
+        <a-input v-model="linkModalData.form.url" />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -81,9 +88,11 @@ const { ctrl_j } = useMagicKeys({
   },
 })
 
+const searchInputRef = ref<HTMLElement | null>(null)
+
 whenever(ctrl_j, () => {
   // 激活 class 等于 docs-sidebar__search 的输入框
-  (document.querySelector('.docs-sidebar__search') as HTMLElement)?.focus()
+  searchInputRef.value?.focus()
 })
 
 const props = defineProps({
@@ -114,6 +123,13 @@ const extend = function (event: Event, rootItem: Doc) {
   event.preventDefault();
   event.stopPropagation();
 };
+
+const linkModalData = reactive({
+  visible: false,
+  form: {
+    url: '',
+  }
+})
 
 let shortcutText = ref('Ctrl + J');
 
@@ -158,7 +174,16 @@ const rootItemIsActive = function (rootItem: Doc): boolean {
 }
 
 const createDoc = function (value: string | number | Record<string, any> | undefined, ev: Event) {
-  emit("onCreate", ev, value);
+  if (value === 'link') {
+    linkModalData.visible = true
+    return
+  }
+
+  emit("onCreate", ev, { editor: value });
+}
+
+const createLinkDoc = function (ev: Event) {
+  emit("onCreate", ev, { editor: 'link', content: linkModalData.form.url });
 }
 
 const jump2 = (path: string) => {
@@ -189,6 +214,7 @@ const jump2 = (path: string) => {
 .docs-sidebar__search {
   display: flex;
   width: calc(100% - 32px);
+  height: 34px;
 }
 
 .docs-sidebar__create {
@@ -210,10 +236,6 @@ const jump2 = (path: string) => {
   width: 16px;
   min-width: 16px;
   height: 16px;
-}
-
-.arco-dropdown-option-icon svg {
-  fill: none;
 }
 
 .docs-sidebar-link {

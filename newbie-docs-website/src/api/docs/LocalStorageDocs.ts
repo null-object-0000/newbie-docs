@@ -186,14 +186,20 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
                     if (current.type === 'list') {
                         const lengths = current.data.items.map((item: { content: string; }) => item.content.length)
                         prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
+                    } else if (current.type === 'table') {
+                        const lengths = current.data.content.map((item: string[]) => item.reduce((prev: number, current: string) => prev + current.length, 0))
+                        prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
                     } else {
                         prev += current.data.text.length
                     }
                     return prev
                 }, 0)
             } else if (item.editor === 'word') {
+                // 去除掉html标签，只保留文字
                 const content = item.content as string
-                wordCount += content.length
+                const reg = /<[^>]+>/g
+                const text = content.replace(reg, '')
+                wordCount += text.length
             }
         }
 
