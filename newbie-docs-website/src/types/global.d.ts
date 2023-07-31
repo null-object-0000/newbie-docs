@@ -11,7 +11,7 @@ export interface Doc {
    * 是否已展开
    */
   expand?: boolean;
-  blocks?: OutputBlockData[];
+  content?: OutputBlockData[] | string;
   createTime?: number;
   updateTime?: number;
   sort?: number;
@@ -29,7 +29,6 @@ export interface DocData {
 export interface ContentViewConfig {
   spaceData: Record<string, DocData>;
   currentDoc?: Doc | null;
-  editMode: boolean;
 }
 
 export interface CustomEditorConfig extends EditorConfig {
@@ -55,4 +54,6 @@ export interface UseDocsApiFunction {
   changeParentId: (space: string, id: string, parentId: string) => boolean;
 
   getLevel(space: string, doc: Doc | string);
+  getTotalDocCount: (space: string) => number;
+  getTotalWordCount: (space: string) => number;
 }

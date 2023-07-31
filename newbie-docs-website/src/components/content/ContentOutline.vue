@@ -3,7 +3,7 @@
         <header class="table-of-content__header">大纲</header>
         <section class="table-of-content__list">
             <li class="table-of-content__list-item" :class="tag.classes" v-for="tag of config.tags">
-                <a :href="editMode ? undefined : tag.linkTarget">{{ tag.innerText }}</a>
+                <a :href="configStore.docEditMode ? undefined : tag.linkTarget">{{ tag.innerText }}</a>
             </li>
         </section>
     </section>
@@ -12,6 +12,9 @@
 <script setup lang="ts">
 import { Doc } from '@/types/global';
 import { nextTick, reactive, watch, type PropType, toRefs } from 'vue';
+import { useConfigStore } from '@/stores/config';
+
+const configStore = useConfigStore();
 
 interface Tag {
     linkTarget: string;
@@ -24,13 +27,9 @@ const props = defineProps({
         type: Object as PropType<Doc>,
         required: true,
     },
-    editMode: {
-        type: Boolean,
-        required: true,
-    },
 });
 
-const { doc, editMode } = toRefs(props);
+const { doc } = toRefs(props);
 
 const config = reactive({ tags: [] as Tag[] })
 
@@ -38,7 +37,6 @@ const tocElementItemIndent = (number: number) => `table-of-content__list-item--i
 
 const refreshTags = () => {
     const tags = Array.from(document.querySelectorAll('.block-header,.ce-header')) as HTMLElement[]
-    console.log('refreshTags')
 
     config.tags = []
     for (const tag of tags) {

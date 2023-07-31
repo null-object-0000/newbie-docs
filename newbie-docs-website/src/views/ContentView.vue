@@ -6,26 +6,36 @@
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.id !== 'home'" class="docs__content"
-          :class="config.editMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
+          :class="configStore.docEditMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
-            <template v-if="config.editMode">
+            <template v-if="configStore.docEditMode">
               <CBlockEditor v-if="config.currentDoc.editor === 'block'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
                 :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview">
               </CBlockEditor>
-              <CWordEditor v-else-if="config.currentDoc.editor === 'word'">
+              <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :space="space" :space-data="config.spaceData"
+                :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview">
               </CWordEditor>
             </template>
-            <CPreview v-else :docs="config.spaceData[space].tree" :doc="config.currentDoc"
-              @onEdit="config.editMode = true">
-            </CPreview>
+            <template v-else>
+              <CBlockPreview v-if="config.currentDoc.editor === 'block'" :docs="config.spaceData[space].tree"
+                :doc="config.currentDoc" @onEdit="configStore.docEditMode = true">
+              </CBlockPreview>
+              <CLinkPreview v-else-if="config.currentDoc.editor === 'link'" :docs="config.spaceData[space].tree"
+                :doc="config.currentDoc" @onEdit="configStore.docEditMode = true">
+              </CLinkPreview>
+              <CWordPreview v-else :docs="config.spaceData[space].tree" :doc="config.currentDoc"
+                @onEdit="configStore.docEditMode = true">
+              </CWordPreview>
+            </template>
           </div>
 
-          <aside v-if="!config.editMode || config.currentDoc.editor !== 'word'" class="docs__aside-right">
-            <COutline :doc="config.currentDoc" :edit-mode="config.editMode"></COutline>
+          <aside v-if="!configStore.docEditMode || config.currentDoc.editor !== 'word'" class="docs__aside-right">
+            <COutline :doc="config.currentDoc" :edit-mode="configStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome :docs="config.spaceData[space].tree" v-else></CHome>
+        <CHome :space="space" :space-data="config.spaceData" :docs="config.spaceData[space].tree" v-else></CHome>
       </template>
     </div>
   </div>
@@ -39,12 +49,14 @@ import CHome from "@/components/content/ContentHome.vue";
 import CSidebar from "@/components/content/ContentSidebar.vue";
 import CBlockEditor from "@/components/content/editor/ContentBlockEditor.vue";
 import CWordEditor from "@/components/content/editor/ContentWordEditor.vue";
-import CPreview from "@/components/content/ContentPreview.vue";
+import CBlockPreview from "@/components/content/preview/ContentBlockPreview.vue";
+import CWordPreview from "@/components/content/preview/ContentWordPreview.vue";
+import CLinkPreview from "@/components/content/preview/ContentLinkPreview.vue";
 import COutline from "@/components/content/ContentOutline.vue";
 import { useRoute, useRouter } from "vue-router";
 import { nextTick, reactive, watch } from "vue";
 
-import { Message } from '@arco-design/web-vue';
+import { Message, Notification, type NotificationConfig, type NotificationReturn } from '@arco-design/web-vue';
 
 import type { Doc, ContentViewConfig } from "@/types/global";
 import { useDocsApi } from "@/api/docs";
@@ -59,7 +71,6 @@ const space = route.params.space as string;
 const config: ContentViewConfig = reactive({
   spaceData: {},
   currentDoc: null,
-  editMode: false,
 });
 
 const docsApi = useDocsApi('localStorage', config.spaceData);
@@ -91,38 +102,57 @@ config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
 watch(route, () => {
   if (route.path === "/" + space || route.path === "/" + space + "/") {
     router.push({ path: `/${space}/home` });
+    return
   }
   // 判断当前路由是否存在，不存在就跳回首页
   else if (!getCurrentDoc([config.spaceData[space].tree])) {
     router.push({ path: `/${space}/home` });
+    return
   }
 
   config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
   configStore.setHeader('/', config.spaceData[space].tree.title);
+  document.title = config.spaceData[space].tree.title
+
+  console.log('route changed', route.path, config.currentDoc)
 }, { immediate: true });
 
-watch(config, () => {
-    nextTick(() => {
-        // 判断是否有锚点，没有的话就不滚动到页面顶部
-        if (window.location.hash) {
-            const anchor = document.querySelector(window.location.hash);
-            anchor && anchor.scrollIntoView();
-        } else {
-            window.scrollTo(0, 0)
-        }
-    })
+watch(route, () => {
+  nextTick(() => {
+    // 判断是否有锚点，没有的话就不滚动到页面顶部
+    if (window.location.hash) {
+      const anchor = document.querySelector(window.location.hash);
+      anchor && anchor.scrollIntoView();
+    } else {
+      window.scrollTo(0, 0)
+    }
+  })
 }, { immediate: true })
 
-const onEditorChange = function (event: Event, blocks: any) {
+let historyNotification = [] as NotificationReturn[]
+const onEditorChange = function (event: Event, content: any, showSuccessTips?: boolean) {
   const doc = config.currentDoc as Doc;
-  doc.blocks = blocks;
-  docsApi.put(space, doc);
+  doc.content = content;
+  if (docsApi.put(space, doc)) {
+    if (showSuccessTips) {
+      // 保留最近的 3 个通知
+      if (historyNotification.length > 2) {
+        historyNotification.shift()?.close()
+      }
+
+      const notificationInstance = Notification.success({
+        // id: 'save-doc-success',
+        title: '文档已保存'
+      } as NotificationConfig)
+      historyNotification.push(notificationInstance)
+    }
+  } else {
+    Notification.error('文档保存失败')
+  }
 };
 
-const onCreate = function () {
+const onCreate = function (ev: Event, value: { editor: string, content: any } | undefined) {
   const id = docsApi.generateId(12)
-  console.log('onCreate', 'id', id)
-
   let parentId = config.currentDoc?.id || "home";
   parentId = parentId === 'home' ? 'root' : parentId
 
@@ -132,14 +162,13 @@ const onCreate = function () {
     return
   }
 
-  const doc: Doc = {
-    id,
-    parentId,
-    // TODO: 临时写死，后续需要根据用户选择的编辑器类型来决定
-    editor: "block",
-    path: `/${space}/${id}`,
-    title: "无标题文档",
-    blocks: [
+  let content;
+  if (value?.editor === 'word') {
+    content = value?.content || ''
+  } else if (value?.editor === 'link') {
+    content = value?.content || ''
+  } else {
+    content = value?.content || [
       {
         type: "header",
         data: {
@@ -147,18 +176,29 @@ const onCreate = function () {
           level: 2,
         },
       },
-    ],
-    child: []
+    ]
+  }
+
+  const doc: Doc = {
+    id,
+    parentId,
+    editor: value?.editor || "block",
+    path: `/${space}/${id}`,
+    title: "无标题文档",
+    content,
+    child: [],
+    createTime: Date.now(),
   };
 
   docsApi.put(space, doc);
 
   router.push(doc.path)
-  config.editMode = true
+  configStore.docEditMode = true
 };
 
 const onPreview = function () {
-  config.editMode = false;
+  console.log('onPreview')
+  configStore.docEditMode = false;
 };
 </script>
 

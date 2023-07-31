@@ -1,37 +1,9 @@
 <template>
     <article class="page" data-module="page">
-        <header class="page__header">
-            <div class="page__header-nav">
-                <template v-if="getParent([docs], doc.parentId)">
-                    <router-link v-if="getParentParent([docs], doc.parentId)" class="page__header-nav-item"
-                        :to="getParentParent([docs], doc.parentId)?.path || ''">{{
-                            getParentParent([docs], doc.parentId)?.title }}</router-link>
-                    <docs-icon-arrow-right v-if="getParentParent([docs], doc.parentId)" />
-                    <router-link class="page__header-nav-item" :to="getParent([docs], doc.parentId)?.path || ''">{{
-                        getParent([docs], doc.parentId)?.title }}</router-link>
-                    <docs-icon-arrow-right />
-                </template>
-            </div>
-            <time class="page__header-time"> 最后编辑于{{ formatTime(doc.updateTime || doc.createTime) }}
-            </time>
-            <a v-if="userStore.isLogin" @click="onEdit"
-                class="docs-button docs-button--primary docs-button--small docs-button--with-icon docs-button--with-label page__header-button">
-                <div class="docs-button__icon">
-                    <docs-icon-pencil />
-                </div>
-                编辑
-            </a>
-        </header>
-        <h1 class="page__title">
-            {{ doc.title }}
-        </h1>
+        <ContentPreviewHeader :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewHeader>
+
         <section class="page__content">
-            <template v-for="(block, index) of doc.blocks">
-                <div v-if="index !== 0 || block.type !== 'header'" class="page__content-block">
-                    <component v-if="isComponentExists('eb-' + block.type)" :is="'eb-' + block.type" :block="block" />
-                    <div v-else style="background-color: pink;">eb-{{ block.type }}: {{ block.data }}</div>
-                </div>
-            </template>
+            <div v-html="doc.content"></div>
         </section>
     </article>
 </template>
@@ -40,6 +12,7 @@
 import { resolveComponent, type PropType, watch, toRefs, nextTick } from 'vue';
 import type { Doc } from '@/types/global';
 import { useUserStore } from '@/stores/user';
+import ContentPreviewHeader from './ContentPreviewHeader.vue';
 
 const props = defineProps({
     docs: {

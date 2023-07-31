@@ -810,11 +810,11 @@ li.docs-header__menu-add--mobile {
   }
 }
 
-.codex-editor__redactor .ce-block:first-of-type .ce-header {
+/* .codex-editor__redactor .ce-block:first-of-type .ce-header {
   font-size: 36px;
   font-weight: 800;
   margin: 0;
-}
+} */
 
 .cdx-block {
   padding: 10px 0;
