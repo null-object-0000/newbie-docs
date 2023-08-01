@@ -630,7 +630,7 @@ li.docs-header__menu-add--mobile {
   margin-bottom: 6px;
 }
 
-.writing-header__inner-container select {
+/* .writing-header__inner-container select {
   appearance: none;
   background-color: #f3f6f8;
   background-color: var(--color-input-primary);
@@ -644,19 +644,19 @@ li.docs-header__menu-add--mobile {
   padding: 10px 30px 10px 10px;
   position: relative;
   width: 100%;
-}
+} */
 
-.writing-header__inner-container select:focus {
+/* .writing-header__inner-container select:focus {
   border: 1px solid #477cff;
   border: 1px solid var(--color-input-border);
   box-shadow: 0 0 0 3px rgba(18, 155, 255, 0.33);
-}
+} */
 
-.writing-header__inner-container select:focus-visible {
+/* .writing-header__inner-container select:focus-visible {
   outline: none;
-}
+} */
 
-.writing-header__inner-container input {
+/* .writing-header__inner-container input {
   background-color: #f3f6f8;
   background-color: var(--color-input-primary);
   border: 1px solid transparent;
@@ -665,17 +665,17 @@ li.docs-header__menu-add--mobile {
   line-height: 18px;
   padding: 10px;
   width: 100%;
-}
+} */
 
-.writing-header__inner-container input:focus {
+/* .writing-header__inner-container input:focus {
   border: 1px solid #477cff;
   border: 1px solid var(--color-input-border);
   box-shadow: 0 0 0 3px rgba(18, 155, 255, 0.33);
-}
+} */
 
-.writing-header__inner-container input:focus-visible {
+/* .writing-header__inner-container input:focus-visible {
   outline: none;
-}
+} */
 
 .writing-buttons {
   display: flex;

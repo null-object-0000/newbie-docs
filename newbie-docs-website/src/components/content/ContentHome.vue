@@ -1,5 +1,5 @@
 <template>
-    <div class="docs-content-home">
+    <div class="docs-content-home" :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${randomCoverImg()}') center top / 100% no-repeat` }">
         <div class="docs-content-home__wrapper">
             <div class="docs-content-home__body">
                 <div class="docs-content-home__header">
@@ -70,6 +70,12 @@ const docsApi = useDocsApi('localStorage', spaceData.value)
 const totalDocCount = ref(0)
 const totalWordCount = ref(0)
 
+const randomCoverImg = () =>{
+    const maxIndex = 5
+    const randomIndex = Math.floor(Math.random() * maxIndex) + 1
+    return `/img/cover_${randomIndex}.png`
+}
+
 watch(spaceData, () => {
     totalDocCount.value = docsApi.getTotalDocCount(space.value)
     totalWordCount.value = docsApi.getTotalWordCount(space.value)
@@ -81,7 +87,6 @@ watch(spaceData, () => {
 .docs-content-home {
     width: 100%;
     /* min-height: calc(100vh - 60px - var(--layout-height-header)); */
-    background: linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url("/img/cover_3.png") center top / 100% no-repeat;
     will-change: padding-left;
 }
 

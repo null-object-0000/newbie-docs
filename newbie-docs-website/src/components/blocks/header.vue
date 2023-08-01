@@ -1,7 +1,7 @@
 <template>
   <component :id="id" :is="'h' + block.data.level" :class="'block-header block-header--' + block.data.level">
     <CopyButton classes="block-header__copy-button" :text-to-copy="textToCopy"
-      :aria-label="'Copy Link to the ' + block.data.text" />
+      :aria-label="'Copy Link to the ' + block.data.text"></CopyButton>
     <a :href="'#' + id">
       {{ block.data.text }}
     </a>
