@@ -1,10 +1,10 @@
 <template>
   <div data-module="sidebar" class="docs-sidebar docs-sidebar--animated"
-    :class="sidebar.collapsed ? 'docs-sidebar--collapsed' : ''">
+    :class="sidebar.collapsed ? 'docs-sidebar--collapsed' : ''" ref="sidebarRef">
     <aside class="docs-sidebar__content">
-
       <span class="docs-sidebar__search-wrapper" :data-shortcut="shortcutText">
-        <a-input ref="searchInputRef" v-model="keyword" @input="search" class="docs-sidebar__search" type="text" placeholder="搜索" />
+        <a-input ref="searchInputRef" v-model="keyword" @input="search" class="docs-sidebar__search" type="text"
+          placeholder="搜索" />
 
         <a-dropdown trigger="hover" position="bl" @select="createDoc">
           <a-button class="docs-sidebar__create" type="outline">
@@ -15,39 +15,25 @@
           <template #content>
             <a-doption value="block"><template #icon><icon-code-block /></template>Block</a-doption>
             <a-doption value="word"><template #icon><icon-file /></template>Word</a-doption>
-            <a-doption value="link"><template #icon><icon-link /></template>Link</a-doption>
+            <a-doption disabled value="link"><template #icon><icon-link /></template>Link</a-doption>
           </template>
         </a-dropdown>
       </span>
       <template v-for="(rootItem) of docs.child">
-        <section class="docs-sidebar__section" :key="rootItem.path"
+        <section class="docs-sidebar__section" :key="rootItem.id"
           v-if="keywordIncludes(rootItem.title) || keywordIncludes(rootItem?.child?.map(i => i.title))"
           :class="rootItem.expand ? '' : 'docs-sidebar__section--animated docs-sidebar__section--collapsed'">
-          <div class="docs-sidebar__section-title-wrapper docs-sidebar-link" @click="jump2(rootItem.path)">
-            <div class="docs-sidebar__section-title"
-              :class="rootItemIsActive(rootItem) ? 'docs-sidebar__section-title--active' : ''">
-              <span>
-                {{ rootItem.title }}
-              </span>
-              <button
-                v-if="rootItem.child && rootItem.child.length > 0 && keywordIncludes(rootItem.child.map(i => i.title))"
-                class="docs-sidebar__section-toggler" @click="(event) => extend(event, rootItem)">
-                <docs-icon-arrow-up v-if="rootItem.expand" />
-                <docs-icon-arrow-down v-else />
-              </button>
-            </div>
-          </div>
+          <SideBarTitle :is-list="false" :edit-mode="renameDocId === rootItem.id" :item="rootItem"
+            :active="rootItemIsActive(rootItem) && renameDocId !== rootItem.id" :keyword="keyword" @on-create="onCreate"
+            @on-setting="onSetting" @on-renamed="onRenamed"></SideBarTitle>
           <ul
             v-if="rootItem.child && rootItem.child.length > 0 && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
             class="docs-sidebar__section-list" :style="{ 'max-height': `${31 * rootItem.child.length}px` }">
-            <template v-for="(item) of rootItem.child" :key="item.path">
+            <template v-for="(item) of rootItem.child" :key="item.id">
               <li v-if="keywordIncludes(item.title)">
-                <div class="docs-sidebar__section-list-item-wrapper docs-sidebar-link" @click="jump2(item.path)">
-                  <div class="docs-sidebar__section-list-item"
-                    :class="item.path === activePath ? 'docs-sidebar__section-list-item--active' : ''">
-                    <span>{{ item.title }}</span>
-                  </div>
-                </div>
+                <SideBarTitle :is-list="true" :edit-mode="renameDocId === item.id" :item="item"
+                  :active="item.path === activePath" :keyword="keyword" @on-create="onCreate" @on-setting="onSetting"
+                  @on-renamed="onRenamed"></SideBarTitle>
               </li>
             </template>
           </ul>
@@ -71,13 +57,23 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch, type PropType, toRefs } from "vue";
+import { reactive, ref, toRefs, type PropType } from "vue";
 import type { Doc } from "@/types/global";
 import { useMagicKeys, whenever } from '@vueuse/core'
-import router from "@/router";
+import SideBarTitle from "./SidebarTitle.vue";
+import { useClipboard } from '@vueuse/core'
+import { Message } from "@arco-design/web-vue";
+import { useDocsApi } from "@/api/docs";
 import { useConfigStore } from "@/stores/config";
+import { useRouter } from "vue-router";
+import { Modal } from '@arco-design/web-vue';
 
+const router = useRouter();
 const configStore = useConfigStore();
+
+const sidebarRef = ref(null)
+const source = ref('')
+const clipboard = useClipboard({ source })
 
 const { ctrl_j } = useMagicKeys({
   passive: false,
@@ -96,6 +92,14 @@ whenever(ctrl_j, () => {
 })
 
 const props = defineProps({
+  space: {
+    type: String,
+    required: true,
+  },
+  spaceData: {
+    type: Object,
+    required: true,
+  },
   docs: {
     type: Object as PropType<Doc>,
     required: true,
@@ -114,15 +118,13 @@ const emit = defineEmits(["onCreate"]);
 
 const { docs, activePath } = toRefs(props);
 
+const { space, spaceData } = toRefs(props);
+
+const docsApi = useDocsApi('localStorage', spaceData.value)
+
 const sidebar = reactive({
   collapsed: false,
 });
-
-const extend = function (event: Event, rootItem: Doc) {
-  rootItem.expand = !rootItem.expand;
-  event.preventDefault();
-  event.stopPropagation();
-};
 
 const linkModalData = reactive({
   visible: false,
@@ -179,16 +181,60 @@ const createDoc = function (value: string | number | Record<string, any> | undef
     return
   }
 
-  emit("onCreate", ev, { editor: value });
+  onCreate(ev, { parentId: 'root', editor: value as string });
+}
+
+const onCreate = function (ev: Event, value: { parentId?: string, editor: string, content?: any } | undefined) {
+  emit("onCreate", ev, value);
+};
+
+const renameDocId = ref('')
+const onSetting = function (ev: Event, value: { id: string, doc: Doc, action: string | number | Record<string, any> | undefined }) {
+  const docLink = `${location.protocol}//${location.host}${value.doc.path}`
+  if (value.action === 'rename') {
+    renameDocId.value = value.doc.id
+  } else if (value.action === 'edit') {
+    router.push(value.doc.path)
+    configStore.docEditMode = true
+  } else if (value.action === 'copy') {
+    const newDoc = JSON.parse(JSON.stringify(value.doc))
+    newDoc.id = docsApi.generateId(12)
+    newDoc.title = `${newDoc.title} - 副本`
+    newDoc.child = []
+    newDoc.path = `/${space.value}/${newDoc.id}`
+    docsApi.put(space.value, newDoc)
+    router.push(newDoc.path)
+  } else if (value.action === 'delete') {
+    Modal.warning({
+      title: `确认框`,
+      simple: true,
+      content: `确认删除 ${value.doc.title} 吗？`,
+      hideCancel: false,
+      onOk: () => {
+        docsApi.remove(space.value, value.doc.id)
+        if (value.doc.path === activePath?.value) {
+          router.push(`/${space.value}`)
+        }
+      }
+    })
+  } else if (value.action === 'copyLink') {
+    clipboard.copy(docLink)
+    Message.success('链接复制成功')
+  } else if (value.action === 'openLink') {
+    window.open(docLink)
+  }
+}
+
+const onRenamed = function (ev: Event, value: { id: string, doc: Doc, title: string }) {
+  if (value.title && value.title.length > 0) {
+    docsApi.changeTitle(space.value, value.id, value.title)
+  }
+
+  renameDocId.value = ''
 }
 
 const createLinkDoc = function (ev: Event) {
-  emit("onCreate", ev, { editor: 'link', content: linkModalData.form.url });
-}
-
-const jump2 = (path: string) => {
-  configStore.docEditMode = false
-  router.push(path)
+  onCreate(ev, { editor: 'link', content: linkModalData.form.url });
 }
 </script>
 
@@ -198,17 +244,9 @@ const jump2 = (path: string) => {
   margin-top: 10px;
 }
 
-.docs-sidebar__section-list-item--active,
-.docs-sidebar__section-title--active {
-  background: #EFF0F0;
-  color: #262626;
-  font-weight: 700;
-  border-radius: 6px;
-  border: 1.5px solid #EFF0F0;
-}
-
 .docs-sidebar__search-wrapper {
   display: flex;
+  margin-bottom: 15px;
 }
 
 .docs-sidebar__search {
@@ -240,5 +278,9 @@ const jump2 = (path: string) => {
 
 .docs-sidebar-link {
   cursor: pointer;
+}
+
+.docs-sidebar__section {
+  margin-top: 5px;
 }
 </style>

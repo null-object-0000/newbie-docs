@@ -165,6 +165,22 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
+    changeTitle(space: string, id: string, newTitle: string): boolean {
+        if (!newTitle || newTitle.length <= 0) {
+            return false
+        }
+
+        let docs = this.__get(space) as Doc[]
+        const doc = docs.find(item => item.id === id)
+        if (doc) {
+            doc.title = newTitle
+
+            return this.__updateCache('changeTitle', space, docs)
+        } else {
+            return false
+        }
+    }
+
     getTotalDocCount(space: string): number {
         let docs = this.__get(space) as Doc[]
         docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')

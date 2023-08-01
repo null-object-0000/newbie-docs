@@ -102,7 +102,7 @@ const getParentParent = (data: Doc[], id?: string): Doc | undefined => {
 }
 </script>
 
-<style scoped>
+<style>
 @media (min-width: 1050px) {
     .page__header {
         position: fixed;
@@ -114,7 +114,14 @@ const getParentParent = (data: Doc[], id?: string): Doc | undefined => {
     }
 }
 
-.page__header-time {
+.page__header .page__header-time {
     width: 180px;
+}
+
+.page__header .arco-breadcrumb-item {
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

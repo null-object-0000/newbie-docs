@@ -15,7 +15,6 @@
 <script setup lang="ts">
 import { resolveComponent, type PropType, toRefs } from 'vue';
 import type { Doc } from '@/types/global';
-import type { OutputBlockData, EditorConfig } from "@editorjs/editorjs";
 import ContentPreviewHeader from './ContentPreviewHeader.vue';
 
 const props = defineProps({

@@ -38,6 +38,10 @@ export class UseRestDocsApi extends BaseUseDocsApi implements UseDocsApiFunction
         return false;
     }
 
+    changeTitle(space: string, id: string, newTitle: string): boolean {
+        return false
+    }
+
     getTotalDocCount(space: string): number {
         return 0;
     }

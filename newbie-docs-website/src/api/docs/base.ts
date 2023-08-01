@@ -9,6 +9,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract splice(space: string, id: string, index: number): boolean;
     abstract changeId(space: string, oldId: string, newId: string): boolean;
     abstract changeParentId(space: string, id: string, parentId: string): boolean;
+    abstract changeTitle(space: string, id: string, newTitle: string): boolean;
     abstract getTotalDocCount(space: string): number;
     abstract getTotalWordCount(space: string): number;
 

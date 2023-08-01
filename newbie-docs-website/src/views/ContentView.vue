@@ -1,8 +1,8 @@
 <template>
   <div class="content-view">
     <div class="docs">
-      <CSidebar :docs="config.spaceData[space].tree" :active-path="route.path" :editor-type="config.currentDoc?.editor"
-        @on-create="onCreate">
+      <CSidebar :space="space" :space-data="config.spaceData" :docs="config.spaceData[space].tree"
+        :active-path="route.path" :editor-type="config.currentDoc?.editor" @on-create="onCreate">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.id !== 'home'" class="docs__content"
@@ -112,9 +112,11 @@ watch(route, () => {
 
   config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
   configStore.setHeader('/', config.spaceData[space].tree.title);
-  document.title = config.spaceData[space].tree.title
-
-  console.log('route changed', route.path, config.currentDoc)
+  if (config.currentDoc) {
+    document.title = config.currentDoc.title + ' - ' + config.spaceData[space].tree.title
+  } else {
+    document.title = config.spaceData[space].tree.title
+  }
 }, { immediate: true });
 
 watch(route, () => {
@@ -151,9 +153,13 @@ const onEditorChange = function (event: Event, content: any, showSuccessTips?: b
   }
 };
 
-const onCreate = function (ev: Event, value: { editor: string, content: any } | undefined) {
+const onCreate = function (ev: Event, value: { parentId?: string, editor: string, content: any } | undefined) {
   const id = docsApi.generateId(12)
-  let parentId = config.currentDoc?.id || "home";
+  let parentId = value?.parentId
+  if (parentId === undefined || parentId.length <= 0) {
+    parentId = config.currentDoc?.id || "home";
+  }
+
   parentId = parentId === 'home' ? 'root' : parentId
 
   let level = docsApi.getLevel(space, parentId)
@@ -200,6 +206,13 @@ const onPreview = function () {
   console.log('onPreview')
   configStore.docEditMode = false;
 };
+
+watch(() => config.currentDoc?.title, () => {
+  if (config.currentDoc?.id) {
+    config.currentDoc = docsApi.get(space, config.currentDoc?.id)
+    console.log('config.watch.refresh', config.currentDoc?.title)
+  }
+})
 </script>
 
 <style scoped>

@@ -52,6 +52,7 @@ export interface UseDocsApiFunction {
 
   changeId: (space: string, oldId: string, newId: string) => boolean;
   changeParentId: (space: string, id: string, parentId: string) => boolean;
+  changeTitle: (space: string, id: string, newTitle: string) => boolean;
 
   getLevel(space: string, doc: Doc | string);
   getTotalDocCount: (space: string) => number;
