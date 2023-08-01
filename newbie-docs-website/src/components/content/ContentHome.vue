@@ -76,9 +76,9 @@ const randomCoverImg = () =>{
     return `/img/cover_${randomIndex}.png`
 }
 
-watch(spaceData, () => {
-    totalDocCount.value = docsApi.getTotalDocCount(space.value)
-    totalWordCount.value = docsApi.getTotalWordCount(space.value)
+watch(spaceData, async () => {
+    totalDocCount.value = await docsApi.getTotalDocCount(space.value)
+    totalWordCount.value = await docsApi.getTotalWordCount(space.value)
 }, { immediate: true })
 
 </script>

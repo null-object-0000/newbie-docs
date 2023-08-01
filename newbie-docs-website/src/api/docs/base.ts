@@ -1,17 +1,17 @@
 import { Doc, UseDocsApiFunction } from "@/types/global";
 
 export abstract class BaseUseDocsApi implements UseDocsApiFunction {
-    abstract init(space: string): void;
-    abstract get(space: string, id?: string): Doc | undefined;
-    abstract put(space: string, doc: Doc): boolean;
-    abstract exists(space: string, id: string): boolean;
-    abstract remove(space: string, id: string): boolean;
-    abstract splice(space: string, id: string, index: number): boolean;
-    abstract changeId(space: string, oldId: string, newId: string): boolean;
-    abstract changeParentId(space: string, id: string, parentId: string): boolean;
-    abstract changeTitle(space: string, id: string, newTitle: string): boolean;
-    abstract getTotalDocCount(space: string): number;
-    abstract getTotalWordCount(space: string): number;
+    abstract init(space: string): Promise<void>;
+    abstract get(space: string, id?: string): Promise<Doc | undefined>;
+    abstract put(space: string, doc: Doc): Promise<boolean>;
+    abstract exists(space: string, id: string): Promise<boolean>;
+    abstract remove(space: string, id: string): Promise<boolean>;
+    abstract splice(space: string, id: string, index: number): Promise<boolean>;
+    abstract changeId(space: string, oldId: string, newId: string): Promise<boolean>;
+    abstract changeParentId(space: string, id: string, parentId: string): Promise<boolean>;
+    abstract changeTitle(space: string, id: string, newTitle: string): Promise<boolean>;
+    abstract getTotalDocCount(space: string): Promise<number>;
+    abstract getTotalWordCount(space: string): Promise<number>;
 
     array2tree(docs?: Doc | Doc[]): Doc | undefined {
         if (!docs || !Array.isArray(docs)) {
@@ -104,7 +104,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         }
     }
 
-    findChild(data: Doc | Doc[] | undefined, parentId: string): Doc[] | undefined {
+    async findChild(data: Doc | Doc[] | undefined, parentId: string): Promise<Doc[] | undefined> {
         if (!data) {
             return
         }
@@ -113,7 +113,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         return data.filter(doc => doc.parentId === parentId)
     }
 
-    generateId(length: number) {
+    async generateId(length: number): Promise<string> {
         const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
         const alphabet = 'abcdefghijklmnopqrstuvwxyz';
         const firstChar = alphabet.charAt(Math.floor(Math.random() * 26)); // 随机选择一个字母作为开头
@@ -127,12 +127,12 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         return id;
     }
 
-    getLevel(space: string, doc: Doc | string) {
+    async getLevel(space: string, doc: Doc | string): Promise<number | undefined> {
         if (typeof doc === 'string' && doc === 'root') {
             return 1
         }
 
-        const docs = this.get(space)
+        const docs = await this.get(space)
 
         if (typeof doc === 'string') {
             doc = this.findDocBy(docs, 'id', doc) as Doc

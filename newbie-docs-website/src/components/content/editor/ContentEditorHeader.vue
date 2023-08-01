@@ -63,7 +63,7 @@
   
 <script setup lang="ts">
 import { ref, toRefs, watch, type PropType } from "vue";
-import type { Doc, CustomEditorConfig } from "@/types/global";
+import type { Doc } from "@/types/global";
 import { useDocsApi } from "@/api/docs";
 import { Message } from '@arco-design/web-vue';
 import { useMagicKeys, whenever } from '@vueuse/core'
@@ -122,7 +122,7 @@ watch(doc, () => {
     aboveId.value = null
 }, { immediate: true });
 
-const parentChange = () => {
+const parentChange = async () => {
     // 如果当前节点有子节点的话，不允许修改父级
     if (doc.value.child && doc.value.child.length > 0) {
         parentId.value = doc.value.parentId
@@ -131,21 +131,21 @@ const parentChange = () => {
     }
 
     if (parentId.value) {
-        const result = docsApi.changeParentId(space.value, doc.value.id, parentId.value)
+        const result = await docsApi.changeParentId(space.value, doc.value.id, parentId.value)
         if (!result) {
             Message.error('修改父级失败')
         }
     }
 }
 
-const getChild = (parentId?: string) => {
+const getChild = async (parentId?: string) => {
     if (parentId) {
-        return docsApi.findChild(spaceData.value[space.value].array, parentId)
+        return await docsApi.findChild(spaceData.value[space.value].array, parentId)
     }
 }
 
-const aboveChange = () => {
-    const child = getChild(doc.value.parentId)
+const aboveChange = async () => {
+    const child = await getChild(doc.value.parentId)
     let currentIndex = child!.findIndex((item) => {
         return item.id === doc.value.id
     })
@@ -162,7 +162,7 @@ const aboveChange = () => {
     // 判断当前节点是否在目标节点的上面
 
     if (aboveIndex >= 0) {
-        const result = docsApi.splice(space.value, doc.value.id, aboveIndex)
+        const result = await docsApi.splice(space.value, doc.value.id, aboveIndex)
         if (!result) {
             Message.error('置于上方失败')
         }

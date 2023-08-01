@@ -3,12 +3,15 @@ import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { UseRestDocsApi } from "./RestDocs";
 
 export function useDocsApi(storage: DocsStorageEnum, spaceData: Record<string, DocData>): UseDocsApiFunction {
+  let docsApi;
   switch (storage) {
     case "localStorage":
-      return new UseLocalStorageDocsApi(spaceData);
+      docsApi = new UseLocalStorageDocsApi(spaceData);
     case "rest":
-      return new UseRestDocsApi(spaceData);
+      docsApi = new UseRestDocsApi(spaceData);
     default:
-      return new UseLocalStorageDocsApi(spaceData);
+      docsApi = new UseLocalStorageDocsApi(spaceData);
   }
+
+  return docsApi;
 }

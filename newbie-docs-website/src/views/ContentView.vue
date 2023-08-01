@@ -55,9 +55,7 @@ import CLinkPreview from "@/components/content/preview/ContentLinkPreview.vue";
 import COutline from "@/components/content/ContentOutline.vue";
 import { useRoute, useRouter } from "vue-router";
 import { nextTick, reactive, watch } from "vue";
-
 import { Message, Notification, type NotificationConfig, type NotificationReturn } from '@arco-design/web-vue';
-
 import type { Doc, ContentViewConfig } from "@/types/global";
 import { useDocsApi } from "@/api/docs";
 import { useConfigStore } from "@/stores/config";
@@ -75,7 +73,7 @@ const config: ContentViewConfig = reactive({
 
 const docsApi = useDocsApi('localStorage', config.spaceData);
 
-docsApi.init(space);
+await docsApi.init(space);
 
 const getCurrentDoc = function (data?: Doc[] | null): Doc | undefined {
   if (!data) {
@@ -95,8 +93,6 @@ const getCurrentDoc = function (data?: Doc[] | null): Doc | undefined {
     }
   }
 };
-
-config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
 
 // 监听路由变化
 watch(route, () => {
@@ -132,10 +128,10 @@ watch(route, () => {
 }, { immediate: true })
 
 let historyNotification = [] as NotificationReturn[]
-const onEditorChange = function (event: Event, content: any, showSuccessTips?: boolean) {
+const onEditorChange = async function (event: Event, content: any, showSuccessTips?: boolean) {
   const doc = config.currentDoc as Doc;
   doc.content = content;
-  if (docsApi.put(space, doc)) {
+  if (await docsApi.put(space, doc)) {
     if (showSuccessTips) {
       // 保留最近的 3 个通知
       if (historyNotification.length > 2) {
@@ -153,8 +149,8 @@ const onEditorChange = function (event: Event, content: any, showSuccessTips?: b
   }
 };
 
-const onCreate = function (ev: Event, value: { parentId?: string, editor: string, content: any } | undefined) {
-  const id = docsApi.generateId(12)
+const onCreate = async function (ev: Event, value: { parentId?: string, editor: string, content: any } | undefined) {
+  const id = await docsApi.generateId(12)
   let parentId = value?.parentId
   if (parentId === undefined || parentId.length <= 0) {
     parentId = config.currentDoc?.id || "home";
@@ -162,7 +158,7 @@ const onCreate = function (ev: Event, value: { parentId?: string, editor: string
 
   parentId = parentId === 'home' ? 'root' : parentId
 
-  let level = docsApi.getLevel(space, parentId)
+  let level = await docsApi.getLevel(space, parentId)
   if (level && level > 2) {
     Message.error('暂时只支持两级目录')
     return
@@ -196,7 +192,7 @@ const onCreate = function (ev: Event, value: { parentId?: string, editor: string
     createTime: Date.now(),
   };
 
-  docsApi.put(space, doc);
+  await docsApi.put(space, doc);
 
   router.push(doc.path)
   configStore.docEditMode = true
@@ -207,10 +203,9 @@ const onPreview = function () {
   configStore.docEditMode = false;
 };
 
-watch(() => config.currentDoc?.title, () => {
+watch(() => config.currentDoc?.title, async () => {
   if (config.currentDoc?.id) {
-    config.currentDoc = docsApi.get(space, config.currentDoc?.id)
-    console.log('config.watch.refresh', config.currentDoc?.title)
+    config.currentDoc = await docsApi.get(space, config.currentDoc?.id)
   }
 })
 </script>

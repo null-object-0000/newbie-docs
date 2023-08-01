@@ -189,7 +189,7 @@ const onCreate = function (ev: Event, value: { parentId?: string, editor: string
 };
 
 const renameDocId = ref('')
-const onSetting = function (ev: Event, value: { id: string, doc: Doc, action: string | number | Record<string, any> | undefined }) {
+const onSetting = async function (ev: Event, value: { id: string, doc: Doc, action: string | number | Record<string, any> | undefined }) {
   const docLink = `${location.protocol}//${location.host}${value.doc.path}`
   if (value.action === 'rename') {
     renameDocId.value = value.doc.id
@@ -198,11 +198,11 @@ const onSetting = function (ev: Event, value: { id: string, doc: Doc, action: st
     configStore.docEditMode = true
   } else if (value.action === 'copy') {
     const newDoc = JSON.parse(JSON.stringify(value.doc))
-    newDoc.id = docsApi.generateId(12)
+    newDoc.id = await docsApi.generateId(12)
     newDoc.title = `${newDoc.title} - 副本`
     newDoc.child = []
     newDoc.path = `/${space.value}/${newDoc.id}`
-    docsApi.put(space.value, newDoc)
+    await docsApi.put(space.value, newDoc)
     router.push(newDoc.path)
   } else if (value.action === 'delete') {
     Modal.warning({
@@ -210,8 +210,8 @@ const onSetting = function (ev: Event, value: { id: string, doc: Doc, action: st
       simple: true,
       content: `确认删除 ${value.doc.title} 吗？`,
       hideCancel: false,
-      onOk: () => {
-        docsApi.remove(space.value, value.doc.id)
+      onOk: async () => {
+        await docsApi.remove(space.value, value.doc.id)
         if (value.doc.path === activePath?.value) {
           router.push(`/${space.value}`)
         }
@@ -225,9 +225,9 @@ const onSetting = function (ev: Event, value: { id: string, doc: Doc, action: st
   }
 }
 
-const onRenamed = function (ev: Event, value: { id: string, doc: Doc, title: string }) {
+const onRenamed = async function (ev: Event, value: { id: string, doc: Doc, title: string }) {
   if (value.title && value.title.length > 0) {
-    docsApi.changeTitle(space.value, value.id, value.title)
+    await docsApi.changeTitle(space.value, value.id, value.title)
   }
 
   renameDocId.value = ''

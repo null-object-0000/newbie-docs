@@ -11,7 +11,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         this.spaceData = spaceData
     }
 
-    init(space: string): void {
+    async init(space: string): Promise<void> {
         const cache = localStorage.getItem('docs_' + space);
         if (cache) {
             this.__updateCache('__get', space, JSON.parse(cache))
@@ -57,12 +57,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return docs
     }
 
-    get(space: string, id?: string): Doc | undefined {
+    async get(space: string, id?: string): Promise<Doc | undefined> {
         const docs = this.__get(space, id)
         return super.array2tree(docs)
     }
 
-    put(space: string, doc: Doc): boolean {
+    async put(space: string, doc: Doc): Promise<boolean> {
         let docs = this.__get(space) as Doc[]
 
         // 如果指定了 sort 就用指定的，否则默认插入到当前父级 child 中的最后一位
@@ -73,7 +73,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             }
         }
 
-        if (this.exists(space, doc.id)) {
+        if (await this.exists(space, doc.id)) {
             docs = docs.filter(item => item.id !== doc.id)
         }
 
@@ -82,12 +82,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache("put", space, docs)
     }
 
-    exists(space: string, id: string): boolean {
+    async exists(space: string, id: string): Promise<boolean> {
         let docs = this.__get(space) as Doc[]
         return docs.some(item => item.id === id)
     }
 
-    remove(space: string, id: string): boolean {
+    async remove(space: string, id: string): Promise<boolean> {
         let docs = this.__get(space) as Doc[]
 
         docs = docs.filter(item => item.id !== id)
@@ -95,15 +95,15 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache('remove', space, docs)
     }
 
-    splice(space: string, id: string, index: number): boolean {
+    async splice(space: string, id: string, index: number): Promise<boolean> {
         const docs = this.__get(space) as Doc[]
 
-        const doc = this.get(space, id)
+        const doc = await this.get(space, id)
         if (!doc || !doc.parentId) {
             return false
         }
 
-        let child = super.findChild(docs, doc.parentId) as Doc[]
+        let child = await super.findChild(docs, doc.parentId) as Doc[]
         if (!child) {
             return false
         }
@@ -120,12 +120,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache('splice', space, docs)
     }
 
-    changeId(space: string, oldId: string, newId: string): boolean {
+    async changeId(space: string, oldId: string, newId: string): Promise<boolean> {
         if (oldId === newId) {
             return true;
         }
 
-        if (this.exists(space, newId)) {
+        if (await this.exists(space, newId)) {
             return false;
         }
 
@@ -134,7 +134,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         if (doc) {
             doc.id = newId
 
-            const child = super.findChild(docs, oldId)
+            const child = await super.findChild(docs, oldId)
             if (child) {
                 for (const item of child) {
                     item.parentId = newId
@@ -146,7 +146,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
-    changeParentId(space: string, id: string, parentId: string): boolean {
+    async changeParentId(space: string, id: string, parentId: string): Promise<boolean> {
         if (id === parentId) {
             return false;
         }
@@ -165,7 +165,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
-    changeTitle(space: string, id: string, newTitle: string): boolean {
+    async changeTitle(space: string, id: string, newTitle: string): Promise<boolean> {
         if (!newTitle || newTitle.length <= 0) {
             return false
         }
@@ -181,14 +181,14 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
-    getTotalDocCount(space: string): number {
+    async getTotalDocCount(space: string): Promise<number> {
         let docs = this.__get(space) as Doc[]
         docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')
 
         return docs.length
     }
 
-    getTotalWordCount(space: string): number {
+    async getTotalWordCount(space: string): Promise<number> {
         let docs = this.__get(space) as Doc[]
         docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')
 

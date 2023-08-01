@@ -6,47 +6,47 @@ export class UseRestDocsApi extends BaseUseDocsApi implements UseDocsApiFunction
         super();
     }
 
-    init(space: string): void {
-        return;
+    init(space: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    get(space: string, id?: string): Doc | undefined {
-        return undefined;
+    get(space: string, id?: string | undefined): Promise<Doc | undefined> {
+        throw new Error("Method not implemented.");
     }
 
-    put(space: string, doc: Doc): boolean {
-        return false;
+    put(space: string, doc: Doc): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    exists(space: string, id: string): boolean {
-        return false;
+    exists(space: string, id: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    remove(space: string, id: string): boolean {
-        return false;
+    remove(space: string, id: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    splice(space: string, id: string, index: number): boolean {
-        return false;
+    splice(space: string, id: string, index: number): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    changeId(space: string, oldId: string, newId: string): boolean {
-        return false;
+    changeId(space: string, oldId: string, newId: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    changeParentId(space: string, id: string, parentId: string): boolean {
-        return false;
+    changeParentId(space: string, id: string, parentId: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    changeTitle(space: string, id: string, newTitle: string): boolean {
-        return false
+    changeTitle(space: string, id: string, newTitle: string): Promise<boolean> {
+        throw new Error("Method not implemented.");
     }
 
-    getTotalDocCount(space: string): number {
-        return 0;
+    getTotalDocCount(space: string): Promise<number> {
+        throw new Error("Method not implemented.");
     }
-
-    getTotalWordCount(space: string): number {
-        return 0;
+    
+    getTotalWordCount(space: string): Promise<number> {
+        throw new Error("Method not implemented.");
     }
 }
