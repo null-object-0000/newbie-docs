@@ -32,6 +32,7 @@ import type { Doc } from "@/types/global";
 // @ts-ignore
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import ContentEditorHeader from "./ContentEditorHeader.vue";
+import { useDocsApi } from '@/api/docs';
 
 const props = defineProps({
     space: {
@@ -51,7 +52,7 @@ const props = defineProps({
         required: true,
     },
 });
-const emit = defineEmits(["onChange", "onPreview"]);
+const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 
 const { space, spaceData, doc } = toRefs(props);
 
@@ -76,7 +77,7 @@ const onChange = (event: Event, showSuccessTips?: boolean) => {
     emit('onChange', event, editorRef.value.getHtml(), showSuccessTips)
 }
 
-const onTitleChange = (event: Event) => {
+const onTitleChange = async (event: Event) => {
     // 判断是否为空，为空的话，不更新
     if (docTitle.value === '') {
         docTitle.value = doc.value.title
@@ -84,6 +85,7 @@ const onTitleChange = (event: Event) => {
     }
 
     doc.value.title = docTitle.value
+    emit('onChangeTitle', event, doc.value.slug, docTitle.value)
 }
 
 const onPreview = (event: Event) => {

@@ -1,8 +1,9 @@
 <template>
-  <div class="content-view">
+  <div class="content-view" v-if="config.dir">
     <div class="docs">
-      <CSidebar :space="space" :space-data="config.spaceData" :docs="config.spaceData[space].tree"
-        :active-path="route.path" :editor-type="config.currentDoc?.editor" @on-create="onCreate">
+      <CSidebar :space="space" :dir="config.dir" :active-path="route.path"
+        :editor-type="config.currentDoc?.editor" @on-create="docsService.onCreate" @on-remove="docsService.onRemove"
+        @on-change-title="docsService.onChangeTitle">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
@@ -11,11 +12,11 @@
             <template v-if="configStore.docEditMode">
               <CBlockEditor v-if="config.currentDoc.editor === 'block'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview">
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
               </CBlockEditor>
               <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview">
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
               </CWordEditor>
             </template>
             <template v-else>
@@ -35,7 +36,7 @@
             <COutline :doc="config.currentDoc" :edit-mode="configStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome :space="space" :space-data="config.spaceData" :docs="config.spaceData[space].tree" v-else></CHome>
+        <CHome :space="space" :title="config.spaceData[space].tree.title" :total-doc-count="config.totalDocCount" :total-word-count="config.totalWordCount" :docs="config.spaceData[space].tree" @on-change-title="docsService.onChangeTitle" v-else></CHome>
       </template>
     </div>
   </div>
@@ -67,8 +68,11 @@ const configStore = useConfigStore();
 const space = route.params.bookSlug as string;
 
 const config: ContentViewConfig = reactive({
+  dir: null,
   spaceData: {},
   currentDoc: null,
+  totalDocCount: 0,
+  totalWordCount: 0,
 });
 
 const docsApi = useDocsApi('localStorage', config.spaceData);
@@ -95,7 +99,7 @@ const getCurrentDoc = function (data?: Doc[] | null): Doc | undefined {
 };
 
 // 监听路由变化
-watch(route, () => {
+watch(route, async () => {
   if (route.path === "/" + space || route.path === "/" + space + "/") {
     router.push({ path: `/${space}/home` });
     return
@@ -106,7 +110,10 @@ watch(route, () => {
     return
   }
 
+  config.dir = await docsApi.dir(space);
   config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
+  config.totalDocCount = await docsApi.getTotalDocCount(space);
+  config.totalWordCount = await docsApi.getTotalWordCount(space);
   configStore.setHeader('/', config.spaceData[space].tree.title);
   if (config.currentDoc) {
     document.title = config.currentDoc.title + ' - ' + config.spaceData[space].tree.title
@@ -149,60 +156,85 @@ const onEditorChange = async function (event: Event, content: any, showSuccessTi
   }
 };
 
-const onCreate = async function (ev: Event, value: { parentSlug?: string, editor: string, content: any } | undefined) {
-  const slug = await docsApi.generateSlug(12)
-  let parentSlug = value?.parentSlug
-  if (parentSlug === undefined || parentSlug.length <= 0) {
-    parentSlug = config.currentDoc?.slug || "home";
-  }
-
-  parentSlug = parentSlug === 'home' ? 'root' : parentSlug
-
-  let level = await docsApi.getLevel(space, parentSlug)
-  if (level && level > 2) {
-    Message.error('暂时只支持两级目录')
-    return
-  }
-
-  let content;
-  if (value?.editor === 'word') {
-    content = value?.content || ''
-  } else if (value?.editor === 'link') {
-    content = value?.content || ''
-  } else {
-    content = value?.content || [
-      {
-        type: "header",
-        data: {
-          text: "",
-          level: 2,
-        },
-      },
-    ]
-  }
-
-  const doc: Doc = {
-    id: Math.ceil(Math.random() * 100000000000000),
-    slug,
-    parentSlug,
-    editor: value?.editor || "block",
-    path: `/${space}/${slug}`,
-    title: "无标题文档",
-    content,
-    child: [],
-    createTime: Date.now(),
-    sort: (await docsApi.getTotalDocCount(space)) + 1
-  };
-
-  await docsApi.put(space, doc);
-
-  router.push(doc.path)
-  configStore.docEditMode = true
-};
-
 const onPreview = function () {
   configStore.docEditMode = false;
 };
+
+const docsService = {
+  onCreate: async (event: Event, value: Doc | undefined) => {
+    if (value === undefined || value === null) {
+      return false
+    }
+
+    const slug = await docsApi.generateSlug(12)
+    let parentSlug = value?.parentSlug
+    if (parentSlug === undefined || parentSlug.length <= 0) {
+      parentSlug = config.currentDoc?.slug || "home";
+    }
+
+    parentSlug = parentSlug === 'home' ? 'root' : parentSlug
+
+    let level = await docsApi.getLevel(space, parentSlug)
+    if (level && level > 2) {
+      Message.error('暂时只支持两级目录')
+      return
+    }
+
+    let content;
+    if (value?.editor === 'word') {
+      content = value?.content || ''
+    } else if (value?.editor === 'link') {
+      content = value?.content || ''
+    } else {
+      content = value?.content || [
+        {
+          type: "header",
+          data: {
+            text: "",
+            level: 2,
+          },
+        },
+      ]
+    }
+
+    const doc: Doc = {
+      id: Math.ceil(Math.random() * 100000000000000),
+      slug,
+      parentSlug,
+      editor: value?.editor || "block",
+      path: `/${space}/${slug}`,
+      title: value?.title || "无标题文档",
+      content,
+      child: [],
+      createTime: Date.now(),
+      sort: (await docsApi.getTotalDocCount(space)) + 1
+    };
+
+    const result = await docsApi.put(space, doc);
+    if (result) {
+      router.push(doc.path)
+      configStore.docEditMode = true
+    }
+    return result
+  },
+  onRemove: async (event: Event, slug: string): Promise<boolean> => {
+    const result = await docsApi.remove(space, slug)
+    if (result) {
+      if (config.currentDoc?.slug === slug) {
+        router.push(`/${space}`)
+      }
+    }
+
+    return result
+  },
+  onChangeTitle: async (event: Event, slug: string, title: string): Promise<boolean> => {
+    if (title && title.length > 0) {
+      return await docsApi.changeTitle(space, slug, title)
+    } else {
+      return false
+    }
+  },
+}
 
 watch(() => config.currentDoc?.title, async () => {
   if (config.currentDoc?.slug) {

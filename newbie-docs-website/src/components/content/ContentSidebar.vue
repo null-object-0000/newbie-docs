@@ -5,7 +5,6 @@
       <span class="docs-sidebar__search-wrapper" :data-shortcut="shortcutText">
         <a-input ref="searchInputRef" v-model="keyword" @input="search" class="docs-sidebar__search" type="text"
           placeholder="搜索" />
-
         <a-dropdown trigger="hover" position="bl" @select="createDoc">
           <a-button class="docs-sidebar__create" type="outline">
             <template #icon>
@@ -19,13 +18,13 @@
           </template>
         </a-dropdown>
       </span>
-      <template v-for="(rootItem) of docs.child">
+      <template v-if="sidebarData.dir" v-for="(rootItem) of sidebarData.dir.child">
         <section class="docs-sidebar__section" :key="rootItem.slug"
           v-if="keywordIncludes(rootItem.title) || keywordIncludes(rootItem?.child?.map(i => i.title))"
           :class="rootItem.expand ? '' : 'docs-sidebar__section--animated docs-sidebar__section--collapsed'">
           <SideBarTitle :is-list="false" :edit-mode="renameDocSlug === rootItem.slug" :item="rootItem"
-            :active="rootItemIsActive(rootItem) && renameDocSlug !== rootItem.slug" :keyword="keyword" @on-create="onCreate"
-            @on-setting="onSetting" @on-renamed="onRenamed"></SideBarTitle>
+            :active="rootItemIsActive(rootItem) && renameDocSlug !== rootItem.slug" :keyword="keyword"
+            @on-create="onCreate" @on-setting="onSetting" @on-renamed="onRenamed"></SideBarTitle>
           <ul
             v-if="rootItem.child && rootItem.child.length > 0 && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
             class="docs-sidebar__section-list" :style="{ 'max-height': `${31 * rootItem.child.length}px` }">
@@ -57,19 +56,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, toRefs, type PropType } from "vue";
+import { reactive, ref, toRefs, watch, type PropType } from "vue";
 import type { Doc } from "@/types/global";
-import { useMagicKeys, whenever } from '@vueuse/core'
+import { useMagicKeys, whenever, useClipboard } from '@vueuse/core'
 import SideBarTitle from "./SidebarTitle.vue";
-import { useClipboard } from '@vueuse/core'
-import { Message } from "@arco-design/web-vue";
-import { useDocsApi } from "@/api/docs";
+import { Message, Modal } from "@arco-design/web-vue";
 import { useConfigStore } from "@/stores/config";
 import { useRouter } from "vue-router";
-import { Modal } from '@arco-design/web-vue';
+import { useDocsEventBus } from "@/events/docs";
 
 const router = useRouter();
 const configStore = useConfigStore();
+const docsEventBus = useDocsEventBus()
 
 const sidebarRef = ref(null)
 const source = ref('')
@@ -96,11 +94,7 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  spaceData: {
-    type: Object,
-    required: true,
-  },
-  docs: {
+  dir: {
     type: Object as PropType<Doc>,
     required: true,
   },
@@ -114,13 +108,22 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["onCreate"]);
+const emit = defineEmits(["onCreate", "onRemove", "onChangeTitle"]);
 
-const { docs, activePath } = toRefs(props);
+const { activePath } = toRefs(props);
 
-const { space, spaceData } = toRefs(props);
+const { space, dir } = toRefs(props);
 
-const docsApi = useDocsApi('localStorage', spaceData.value)
+const sidebarData = reactive({
+  dir: null,
+} as {
+  dir: Doc | null | undefined
+});
+
+docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {
+  sidebarData.dir = value.dir
+  console.log('onDirChange', event, value)
+})
 
 const sidebar = reactive({
   collapsed: false,
@@ -143,6 +146,7 @@ if (window.navigator.userAgent.indexOf('Mac') !== -1) {
 const keyword = ref('');
 const search = () => {
   // 基于 keyword 过滤展示的 docs
+  console.log('search.keyword', keyword.value)
 };
 
 const keywordIncludes = function (str?: string | string[]): boolean {
@@ -184,7 +188,7 @@ const createDoc = function (value: string | number | Record<string, any> | undef
   onCreate(ev, { parentSlug: 'root', editor: value as string });
 }
 
-const onCreate = function (ev: Event, value: { parentSlug?: string, editor: string, content?: any } | undefined) {
+const onCreate = function (ev: Event, value: { title?: string, parentSlug?: string, editor: string, content?: any } | undefined) {
   emit("onCreate", ev, value);
 };
 
@@ -197,14 +201,12 @@ const onSetting = async function (ev: Event, value: { slug: string, doc: Doc, ac
     router.push(value.doc.path)
     configStore.docEditMode = true
   } else if (value.action === 'copy') {
-    const newDoc = JSON.parse(JSON.stringify(value.doc))
-    newDoc.id = Math.ceil(Math.random() * 1000000000000000)
-    newDoc.slug = await docsApi.generateSlug(12)
-    newDoc.title = `${newDoc.title} - 副本`
-    newDoc.child = []
-    newDoc.path = `/${space.value}/${newDoc.slug}`
-    await docsApi.put(space.value, newDoc)
-    router.push(newDoc.path)
+    onCreate(ev, {
+      parentSlug: value.doc.parentSlug,
+      title: `${value.doc.title} - 副本`,
+      editor: value.doc.editor,
+      content: value.doc.content
+    });
   } else if (value.action === 'delete') {
     Modal.warning({
       title: `确认框`,
@@ -212,10 +214,7 @@ const onSetting = async function (ev: Event, value: { slug: string, doc: Doc, ac
       content: `确认删除 ${value.doc.title} 吗？`,
       hideCancel: false,
       onOk: async () => {
-        await docsApi.remove(space.value, value.doc.slug)
-        if (value.doc.path === activePath?.value) {
-          router.push(`/${space.value}`)
-        }
+        emit("onRemove", ev, value.slug);
       }
     })
   } else if (value.action === 'copyLink') {
@@ -228,7 +227,7 @@ const onSetting = async function (ev: Event, value: { slug: string, doc: Doc, ac
 
 const onRenamed = async function (ev: Event, value: { slug: string, doc: Doc, title: string }) {
   if (value.title && value.title.length > 0) {
-    await docsApi.changeTitle(space.value, value.slug, value.title)
+    emit("onChangeTitle", ev, value.slug, value.title);
   }
 
   renameDocSlug.value = ''
@@ -237,6 +236,10 @@ const onRenamed = async function (ev: Event, value: { slug: string, doc: Doc, ti
 const createLinkDoc = function (ev: Event) {
   onCreate(ev, { editor: 'link', content: linkModalData.form.url });
 }
+
+watch(() => dir, async () => {
+  sidebarData.dir = dir.value
+}, { immediate: true })
 </script>
 
 <style scoped>

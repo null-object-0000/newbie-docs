@@ -1,18 +1,47 @@
 <template>
-    <div class="docs-content-home" :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${randomCoverImg()}') center top / 100% no-repeat` }">
+    <div class="docs-content-home"
+        :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${randomCoverImg()}') center top / 100% no-repeat` }">
         <div class="docs-content-home__wrapper">
             <div class="docs-content-home__body">
                 <div class="docs-content-home__header">
-                    <docs-icon-book-type-default style="margin-right: 18px" /><span>{{ docs.title }}</span>
-
-                    <span class="docs-content-home__more-actions" style="line-height: 16px; padding: 0; float: right;">
-                        <svg width="1em" height="1em" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"
-                            style="width: 16px; min-width: 16px; height: 16px;">
-                            <path
-                                d="M227.008 128c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20ZM148 128c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20Zm-78.992 0c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20Z"
-                                fill="currentColor" fill-rule="nonzero"></path>
-                        </svg>
+                    <docs-icon-book-type-default style="margin-right: 18px" />
+                    <span v-if="editMode === false">
+                        {{ title }}
                     </span>
+                    <div v-else class="rename-title-input-wrapper">
+                        <a-input size="large" ref="renameInputRef" v-model="docTitle">
+                            <template #append>
+                                <a-button @click="submitRenameTitle">
+                                    <template #icon><icon-check></icon-check></template>
+                                </a-button>
+                            </template>
+                        </a-input>
+                    </div>
+
+
+                    <a-dropdown @select="onSpaceSetting" position="br" :popup-max-height="false">
+                        <a-button class="docs-content-home__more-actions"
+                            style="line-height: 16px; padding: 0; float: right;">
+                            <template #icon>
+                                <icon-more />
+                            </template>
+                        </a-button>
+
+                        <template #content>
+                            <a-doption value="rename">
+                                <template #icon><icon-loop /></template>
+                                重命名
+                            </a-doption>
+                            <a-doption value="edit" disabled>
+                                <template #icon><icon-edit /></template>
+                                编辑首页
+                            </a-doption>
+                            <a-doption value="delete" disabled>
+                                <template #icon><icon-delete /></template>
+                                删除
+                            </a-doption>
+                        </template>
+                    </a-dropdown>
 
                     <div class="docs-content-home__statistics">
                         <span class="docs-content-home__docCount">
@@ -43,44 +72,66 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, watch, type PropType } from "vue";
-import type { Doc } from "@/types/global";
-import { useDocsApi } from "@/api/docs";
+import { toRefs, nextTick, type PropType } from "vue";
 import { ref } from "vue";
+import { useConfigStore } from "@/stores/config";
+
+const configStore = useConfigStore()
 
 const props = defineProps({
     space: {
         type: String,
         required: true,
     },
-    spaceData: {
-        type: Object,
+    title: {
+        type: String,
         required: true,
     },
-    docs: {
-        type: Object as PropType<Doc>,
+    totalDocCount: {
+        type: Number,
+        required: true,
+    },
+    totalWordCount: {
+        type: Number,
         required: true,
     },
 });
 
-const { space, spaceData } = toRefs(props);
+const emit = defineEmits(["onChangeTitle"]);
 
-const docsApi = useDocsApi('localStorage', spaceData.value)
+const { space, title } = toRefs(props);
+let editMode = ref(false)
+let docTitle = ref('')
+const renameInputRef = ref<HTMLElement | null>(null)
 
-const totalDocCount = ref(0)
-const totalWordCount = ref(0)
-
-const randomCoverImg = () =>{
+const randomCoverImg = () => {
     const maxIndex = 5
     const randomIndex = Math.floor(Math.random() * maxIndex) + 1
     return `/img/cover_${randomIndex}.png`
 }
 
-watch(spaceData, async () => {
-    totalDocCount.value = await docsApi.getTotalDocCount(space.value)
-    totalWordCount.value = await docsApi.getTotalWordCount(space.value)
-}, { immediate: true })
+const onSpaceSetting = (value: string | number | Record<string, any> | undefined, ev: Event) => {
+    console.log('onSpaceSetting', value, ev)
+    if (value === 'rename') {
+        docTitle.value = title.value
+        editMode.value = true
+        nextTick(() => {
+            renameInputRef.value?.focus()
+        })
+    } else if (value === 'delete') {
+        console.log('delete')
+    }
+}
 
+const submitRenameTitle = (event: Event) => {
+    if (docTitle.value && docTitle.value.length > 0) {
+        emit('onChangeTitle', event, 'root', docTitle.value)
+        configStore.setHeader('/', docTitle.value);
+        document.title = '首页 - ' + docTitle.value
+    }
+    console.log('submitRenameTitle', docTitle.value)
+    editMode.value = false
+}
 </script>
 
 <style scoped>
@@ -195,5 +246,18 @@ watch(spaceData, async () => {
     line-height: 1.74;
 
     letter-spacing: initial;
+}
+
+.docs-content-home .rename-title-input-wrapper {
+    width: 70%;
+    display: inline-block;
+    position: relative;
+    top: -4px;
+}
+</style>
+
+<style>
+.rename-title-input-wrapper span.arco-input-append {
+    padding: 0 2px;
 }
 </style>

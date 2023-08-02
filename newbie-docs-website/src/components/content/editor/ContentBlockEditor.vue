@@ -44,7 +44,7 @@ import RawTool from '@editorjs/raw';
 // @ts-ignore
 import Table from "@editorjs/table";
 
-import { ref, toRefs, watch, reactive, type PropType } from "vue";
+import { ref, toRefs, watch, type PropType } from "vue";
 
 import type { Doc, CustomEditorConfig } from "@/types/global";
 
@@ -76,10 +76,8 @@ const props = defineProps({
 
 const { space, spaceData, editorConfig, doc } = toRefs(props);
 
-const emit = defineEmits(["onChange", "onPreview"]);
+const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 
-let parentId = ref(doc.value.parentId)
-let aboveId = ref(null)
 const docTitle = ref('')
 
 const defaultConfig = {
@@ -221,7 +219,7 @@ const onPreview = (event: Event) => {
     emit('onPreview', event)
 }
 
-const onTitleChange = (event: Event) => {
+const onTitleChange = async (event: Event) => {
     // 判断是否为空，为空的话，不更新
     if (docTitle.value === '') {
         docTitle.value = doc.value.title
@@ -229,6 +227,7 @@ const onTitleChange = (event: Event) => {
     }
 
     doc.value.title = docTitle.value
+    emit('onChangeTitle', event, doc.value.slug, docTitle.value)
 }
 
 config.data = {
@@ -242,8 +241,6 @@ editor = new EditorJS(config);
 
 watch(doc, () => {
     docTitle.value = doc.value.title
-    parentId.value = doc.value.parentId
-    aboveId.value = null
     if (editor && editor.render) {
         editor.render({
             blocks: (doc.value.content || []) as OutputBlockData[],

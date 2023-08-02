@@ -14,6 +14,41 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract getTotalDocCount(space: string): Promise<number>;
     abstract getTotalWordCount(space: string): Promise<number>;
 
+    isValidDoc(docs?: Doc | Doc[]): boolean {
+        if (!docs) {
+            return false
+        }
+
+        if (!Array.isArray(docs)) {
+            docs = [docs]
+        }
+
+        for (const doc of docs) {
+            const result = doc.id && doc.id > 0 && typeof doc.id === 'number'
+                && doc.slug && doc.slug.length > 0 && typeof doc.slug === 'string'
+                && doc.title && doc.title.length > 0 && typeof doc.title === 'string'
+                && doc.sort !== undefined && typeof doc.sort === 'number'
+                && doc.createTime !== undefined && typeof doc.createTime === 'number'
+
+            if (result !== true) {
+                console.log('doc is invalid', JSON.stringify(doc))
+                return false
+            }
+
+            if (!doc.child || doc.child.length <= 0) {
+                return true
+            }
+
+            for (const child of doc.child) {
+                if (!this.isValidDoc(child)) {
+                    return false
+                }
+            }
+        }
+
+        return true
+    }
+
     array2tree(docs?: Doc | Doc[]): Doc | undefined {
         if (!docs || !Array.isArray(docs)) {
             return docs

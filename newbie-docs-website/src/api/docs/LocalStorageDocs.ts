@@ -13,10 +13,11 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
     async init(space: string): Promise<void> {
         const cache = localStorage.getItem('docs_' + space);
-        if (cache) {
-            this.__updateCache('__get', space, JSON.parse(cache))
+        const cacheObj = cache && JSON.parse(cache)
+        if (super.isValidDoc(cacheObj)) {
+            this.__updateCache('init', space, cacheObj)
         } else {
-            this.__updateCache('__get', space, super.getDefaultDocs(space))
+            this.__updateCache('init', space, super.getDefaultDocs(space))
         }
 
         // 默认展开所有的 doc
@@ -24,7 +25,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         for (const item of docs) {
             item.expand = true;
         }
-        this.__updateCache('__get', space, docs)
+        this.__updateCache('init', space, docs)
     }
 
     __updateCache(from: string, space: string, docs: Doc[] | undefined): boolean {
@@ -57,12 +58,15 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return docs
     }
 
-    /**
-     * TODO 实现
-     */
     async dir(space: string): Promise<Doc | undefined> {
         const docs = this.__get(space)
-        return super.array2tree(docs)
+
+        const newDocs = JSON.parse(JSON.stringify(docs)).map((item: Doc) => {
+            delete item.content
+            return item
+        })
+
+        return super.array2tree(newDocs)
     }
 
     async get(space: string, slug?: string): Promise<Doc | undefined> {
