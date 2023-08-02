@@ -5,7 +5,7 @@
         :active-path="route.path" :editor-type="config.currentDoc?.editor" @on-create="onCreate">
       </CSidebar>
       <template v-if="config.currentDoc">
-        <div v-if="config.currentDoc.id !== 'home'" class="docs__content"
+        <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
           :class="configStore.docEditMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
             <template v-if="configStore.docEditMode">
@@ -64,7 +64,7 @@ const route = useRoute();
 const router = useRouter();
 const configStore = useConfigStore();
 
-const space = route.params.space as string;
+const space = route.params.bookSlug as string;
 
 const config: ContentViewConfig = reactive({
   spaceData: {},
@@ -131,6 +131,7 @@ let historyNotification = [] as NotificationReturn[]
 const onEditorChange = async function (event: Event, content: any, showSuccessTips?: boolean) {
   const doc = config.currentDoc as Doc;
   doc.content = content;
+  doc.updateTime = new Date().getTime()
   if (await docsApi.put(space, doc)) {
     if (showSuccessTips) {
       // 保留最近的 3 个通知
@@ -139,7 +140,6 @@ const onEditorChange = async function (event: Event, content: any, showSuccessTi
       }
 
       const notificationInstance = Notification.success({
-        // id: 'save-doc-success',
         title: '文档已保存'
       } as NotificationConfig)
       historyNotification.push(notificationInstance)
@@ -149,16 +149,16 @@ const onEditorChange = async function (event: Event, content: any, showSuccessTi
   }
 };
 
-const onCreate = async function (ev: Event, value: { parentId?: string, editor: string, content: any } | undefined) {
-  const id = await docsApi.generateId(12)
-  let parentId = value?.parentId
-  if (parentId === undefined || parentId.length <= 0) {
-    parentId = config.currentDoc?.id || "home";
+const onCreate = async function (ev: Event, value: { parentSlug?: string, editor: string, content: any } | undefined) {
+  const slug = await docsApi.generateSlug(12)
+  let parentSlug = value?.parentSlug
+  if (parentSlug === undefined || parentSlug.length <= 0) {
+    parentSlug = config.currentDoc?.slug || "home";
   }
 
-  parentId = parentId === 'home' ? 'root' : parentId
+  parentSlug = parentSlug === 'home' ? 'root' : parentSlug
 
-  let level = await docsApi.getLevel(space, parentId)
+  let level = await docsApi.getLevel(space, parentSlug)
   if (level && level > 2) {
     Message.error('暂时只支持两级目录')
     return
@@ -182,14 +182,16 @@ const onCreate = async function (ev: Event, value: { parentId?: string, editor: 
   }
 
   const doc: Doc = {
-    id,
-    parentId,
+    id: Math.ceil(Math.random() * 100000000000000),
+    slug,
+    parentSlug,
     editor: value?.editor || "block",
-    path: `/${space}/${id}`,
+    path: `/${space}/${slug}`,
     title: "无标题文档",
     content,
     child: [],
     createTime: Date.now(),
+    sort: (await docsApi.getTotalDocCount(space)) + 1
   };
 
   await docsApi.put(space, doc);
@@ -199,13 +201,12 @@ const onCreate = async function (ev: Event, value: { parentId?: string, editor: 
 };
 
 const onPreview = function () {
-  console.log('onPreview')
   configStore.docEditMode = false;
 };
 
 watch(() => config.currentDoc?.title, async () => {
-  if (config.currentDoc?.id) {
-    config.currentDoc = await docsApi.get(space, config.currentDoc?.id)
+  if (config.currentDoc?.slug) {
+    config.currentDoc = await docsApi.get(space, config.currentDoc?.slug)
   }
 })
 </script>

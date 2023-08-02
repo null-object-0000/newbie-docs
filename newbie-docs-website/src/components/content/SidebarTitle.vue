@@ -1,5 +1,5 @@
 <template>
-    <div ref="sidebarLinkRef" :class="[`${calcClassName()}-wrapper`, 'docs-sidebar-link']" :id="`docs-sidebar-${item.id}`"
+    <div ref="sidebarLinkRef" :class="[`${calcClassName()}-wrapper`, 'docs-sidebar-link']" :id="`docs-sidebar-${item.slug}`"
         @click="jump2(item.path)">
         <div :class="[calcClassName(), active ? `${calcClassName()}--active` : '']">
             <template v-if="isList !== true">
@@ -9,11 +9,11 @@
                     <docs-icon-arrow-down v-else />
                 </span>
                 <span v-else style="width: 30px;">
-                    <icon-home class="home-icon" v-if="item.id === 'home'" />
+                    <icon-home class="home-icon" v-if="item.slug === 'home'" />
                 </span>
             </template>
 
-            <span v-if="item.id === 'home' || editMode === false">
+            <span v-if="item.slug === 'home' || editMode === false">
                 {{ item.title }}
             </span>
             <a-input size="small" ref="renameInputRef" v-else v-model="docTitle">
@@ -22,7 +22,7 @@
                 </template>
             </a-input>
 
-            <template v-if="item.id !== 'home' && editMode === false">
+            <template v-if="item.slug !== 'home' && editMode === false">
                 <span class="tools-wrapper">
                     <a-dropdown trigger="click" position="bottom" @click="eventStopPropagation" @select="onSetting"
                         :popup-max-height="false">
@@ -33,7 +33,7 @@
                             <a-doption value="copyLink"><template #icon><icon-link /></template>复制链接</a-doption>
                             <a-doption value="openLink"><template #icon><icon-launch /></template>在新标签页打开</a-doption>
                             <a-doption value="copy"><template #icon><icon-copy /></template>复制</a-doption>
-                            <a-doption value="delete"><template #icon><icon-delete /></template>删除</a-doption>
+                            <a-doption value="delete" :style="{ color: '#DF2A3F' }"><template #icon><icon-delete /></template>删除</a-doption>
                         </template>
                     </a-dropdown>
                     <a-dropdown trigger="click" position="bottom" @click="eventStopPropagation" @select="onCreate">
@@ -127,14 +127,14 @@ const eventStopPropagation = (ev: Event) => {
 
 const onCreate = function (value: string | number | Record<string, any> | undefined, ev: Event) {
     emit("onCreate", ev, {
-        parentId: item.value.id,
+        parentSlug: item.value.slug,
         editor: value
     })
 }
 
 const onSetting = function (value: string | number | Record<string, any> | undefined, ev: Event) {
     emit('onSetting', ev, {
-        id: item.value.id,
+        slug: item.value.slug,
         doc: item.value,
         action: value
     })
@@ -149,7 +149,7 @@ const renameInputRef = ref<HTMLElement | null>(null)
 
 const submitRenameTitle = (ev: Event) => {
     emit('onRenamed', ev, {
-        id: item.value.id,
+        slug: item.value.slug,
         title: docTitle.value,
         doc: item.value
     })

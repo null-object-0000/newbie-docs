@@ -3,34 +3,35 @@
         <header class="writing-header">
             <div class="writing-header__inner-container">
                 <a-form style="flex: 0 1 85%;" :model="doc" layout="inline">
-                    <a-form-item field="id" label="Id">
-                        <a-input v-model="doc.id" :disabled="true" id="uri-input" class="uri-input" name="uri-input"
-                            placeholder="please enter your id..." />
+                    <a-form-item field="slug" label="Slug">
+                        <a-input v-model="doc.slug" :disabled="true" id="uri-input" class="uri-input" name="uri-input"
+                            placeholder="please enter your slug..." />
                     </a-form-item>
-                    <a-form-item field="parentId" label="父级">
-                        <a-select v-model="parentId" id="parent" name="parent" @change="parentChange"
+                    <a-form-item field="parentSlug" label="父级">
+                        <a-select v-model="parentSlug" id="parent" name="parent" @change="parentChange"
                             :trigger-props="{ autoFitPopupMinWidth: true }">
                             <a-option value="root">—</a-option>
                             <template v-for="rootItem of  docs.child ">
-                                <a-option v-if="rootItem.id !== 'home' && rootItem.id !== doc.id" :value="rootItem.id">
-                                    {{ rootItem.id }} - {{ rootItem.title }}
+                                <a-option v-if="rootItem.slug !== 'home' && rootItem.slug !== doc.slug"
+                                    :value="rootItem.slug">
+                                    {{ rootItem.slug }} - {{ rootItem.title }}
                                 </a-option>
                                 <!-- 暂时不支持子级 -->
                                 <!-- <template v-if="rootItem.child">
                                         <template v-for="item of  rootItem.child ">
-                                            <a-option :value="item.id">&nbsp;&nbsp;{{ item.title }}
+                                            <a-option :value="item.slug">&nbsp;&nbsp;{{ item.title }}
                                             </a-option>
                                         </template>
                                     </template> -->
                             </template>
                         </a-select>
                     </a-form-item>
-                    <a-form-item field="aboveId" label="置于">
-                        <a-select v-model="aboveId" id="above" name="above" @change="aboveChange"
+                    <a-form-item field="aboveSlug" label="置于">
+                        <a-select v-model="aboveSlug" id="above" name="above" @change="aboveChange"
                             :trigger-props="{ autoFitPopupMinWidth: true }">
                             <a-option>—</a-option>
-                            <template v-for="item of getChild(doc.parentId)">
-                                <a-option v-if="doc.parentId && item.id !== 'home' && item.id !== doc.id" :value="item.id">
+                            <template v-for="item of allDocChild">
+                                <a-option v-if="item.slug !== 'home' && item.slug !== doc.slug" :value="item.slug">
                                     &nbsp;&nbsp;{{ item.title }}
                                 </a-option>
                             </template>
@@ -45,14 +46,14 @@
                             <template #icon>
                                 <icon-save />
                             </template>
-                            <template #default>更新</template>
+                            <template #default>保存</template>
                         </a-button>
 
                         <a-button class="editor-tools-btn" @click="onPreview" type="primary">
                             <template #icon>
                                 <icon-eye />
                             </template>
-                            <template #default>预览</template>
+                            <template #default>查看</template>
                         </a-button>
                     </div>
                 </div>
@@ -93,8 +94,8 @@ const emit = defineEmits(["onChange", "onPreview"]);
 
 const docsApi = useDocsApi('localStorage', spaceData.value)
 
-let parentId = ref(doc.value.parentId)
-let aboveId = ref(null)
+let parentSlug = ref(doc.value.parentSlug)
+let aboveSlug = ref()
 
 const { ctrl_s } = useMagicKeys({
     passive: false,
@@ -118,39 +119,35 @@ const onPreview = (event: Event) => {
 }
 
 watch(doc, () => {
-    parentId.value = doc.value.parentId
-    aboveId.value = null
+    parentSlug.value = doc.value.parentSlug
+    aboveSlug.value = null
 }, { immediate: true });
 
 const parentChange = async () => {
     // 如果当前节点有子节点的话，不允许修改父级
     if (doc.value.child && doc.value.child.length > 0) {
-        parentId.value = doc.value.parentId
+        parentSlug.value = doc.value.parentSlug
         Message.error('当前节点有子节点，不允许修改父级')
         return
     }
 
-    if (parentId.value) {
-        const result = await docsApi.changeParentId(space.value, doc.value.id, parentId.value)
+    if (parentSlug.value) {
+        const result = await docsApi.changeParentSlug(space.value, doc.value.slug, parentSlug.value)
         if (!result) {
             Message.error('修改父级失败')
         }
     }
 }
 
-const getChild = async (parentId?: string) => {
-    if (parentId) {
-        return await docsApi.findChild(spaceData.value[space.value].array, parentId)
-    }
-}
+const allDocChild = ref<Doc[]>([])
 
 const aboveChange = async () => {
-    const child = await getChild(doc.value.parentId)
+    const child = allDocChild.value
     let currentIndex = child!.findIndex((item) => {
-        return item.id === doc.value.id
+        return item.slug === doc.value.slug
     })
     let aboveIndex = child!.findIndex((item) => {
-        return item.id === aboveId.value
+        return item.slug === aboveSlug.value
     })
 
     aboveIndex = aboveIndex === undefined ? -1 : aboveIndex
@@ -162,12 +159,18 @@ const aboveChange = async () => {
     // 判断当前节点是否在目标节点的上面
 
     if (aboveIndex >= 0) {
-        const result = await docsApi.splice(space.value, doc.value.id, aboveIndex)
+        const result = await docsApi.splice(space.value, doc.value.slug, aboveIndex)
         if (!result) {
             Message.error('置于上方失败')
         }
     }
 }
+
+watch(() => doc.value.parentSlug, async () => {
+    if (doc.value.parentSlug) {
+        allDocChild.value = await docsApi.findChild(spaceData.value[space.value].array, doc.value.parentSlug) || []
+    }
+}, { immediate: true })
 </script>
 
 <style scoped>

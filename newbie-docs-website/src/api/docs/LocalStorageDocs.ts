@@ -46,19 +46,27 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
-    __get(space: string, id?: string): Doc | Doc[] | undefined {
+    __get(space: string, slug?: string): Doc | Doc[] | undefined {
         let docs;
-        if (id === undefined) {
+        if (slug === undefined) {
             docs = this.spaceData[space].array
         } else {
-            docs = this.spaceData[space].array.find(item => item.id === id)
+            docs = this.spaceData[space].array.find(item => item.slug === slug)
         }
 
         return docs
     }
 
-    async get(space: string, id?: string): Promise<Doc | undefined> {
-        const docs = this.__get(space, id)
+    /**
+     * TODO 实现
+     */
+    async dir(space: string): Promise<Doc | undefined> {
+        const docs = this.__get(space)
+        return super.array2tree(docs)
+    }
+
+    async get(space: string, slug?: string): Promise<Doc | undefined> {
+        const docs = this.__get(space, slug)
         return super.array2tree(docs)
     }
 
@@ -67,14 +75,14 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         // 如果指定了 sort 就用指定的，否则默认插入到当前父级 child 中的最后一位
         if (!doc.sort || doc.sort < 0) {
-            const parent = docs.find(item => item.id === doc.parentId)
+            const parent = docs.find(item => item.slug === doc.parentSlug)
             if (parent) {
                 doc.sort = parent.child?.length || 0
             }
         }
 
-        if (await this.exists(space, doc.id)) {
-            docs = docs.filter(item => item.id !== doc.id)
+        if (await this.exists(space, doc.slug)) {
+            docs = docs.filter(item => item.slug !== doc.slug)
         }
 
         docs.push(doc)
@@ -82,33 +90,33 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache("put", space, docs)
     }
 
-    async exists(space: string, id: string): Promise<boolean> {
+    async exists(space: string, slug: string): Promise<boolean> {
         let docs = this.__get(space) as Doc[]
-        return docs.some(item => item.id === id)
+        return docs.some(item => item.slug === slug)
     }
 
-    async remove(space: string, id: string): Promise<boolean> {
+    async remove(space: string, slug: string): Promise<boolean> {
         let docs = this.__get(space) as Doc[]
 
-        docs = docs.filter(item => item.id !== id)
+        docs = docs.filter(item => item.slug !== slug)
 
         return this.__updateCache('remove', space, docs)
     }
 
-    async splice(space: string, id: string, index: number): Promise<boolean> {
+    async splice(space: string, slug: string, index: number): Promise<boolean> {
         const docs = this.__get(space) as Doc[]
 
-        const doc = await this.get(space, id)
-        if (!doc || !doc.parentId) {
+        const doc = await this.get(space, slug)
+        if (!doc || !doc.parentSlug) {
             return false
         }
 
-        let child = await super.findChild(docs, doc.parentId) as Doc[]
+        let child = await super.findChild(docs, doc.parentSlug) as Doc[]
         if (!child) {
             return false
         }
 
-        child = child.filter(item => item.id !== id)
+        child = child.filter(item => item.slug !== slug)
 
         child.splice(index, 0, doc)
 
@@ -120,58 +128,58 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache('splice', space, docs)
     }
 
-    async changeId(space: string, oldId: string, newId: string): Promise<boolean> {
-        if (oldId === newId) {
+    async changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean> {
+        if (oldSlug === newSlug) {
             return true;
         }
 
-        if (await this.exists(space, newId)) {
+        if (await this.exists(space, newSlug)) {
             return false;
         }
 
         let docs = this.__get(space) as Doc[]
-        const doc = docs.find(item => item.id === oldId)
+        const doc = docs.find(item => item.slug === oldSlug)
         if (doc) {
-            doc.id = newId
+            doc.slug = newSlug
 
-            const child = await super.findChild(docs, oldId)
+            const child = await super.findChild(docs, oldSlug)
             if (child) {
                 for (const item of child) {
-                    item.parentId = newId
+                    item.parentSlug = newSlug
                 }
             }
-            return this.__updateCache('changeId', space, docs)
+            return this.__updateCache('changeSlug', space, docs)
         } else {
             return false
         }
     }
 
-    async changeParentId(space: string, id: string, parentId: string): Promise<boolean> {
-        if (id === parentId) {
+    async changeParentSlug(space: string, slug: string, parentSlug: string): Promise<boolean> {
+        if (slug === parentSlug) {
             return false;
         }
 
-        if (!this.exists(space, id) || !this.exists(space, parentId)) {
+        if (!this.exists(space, slug) || !this.exists(space, parentSlug)) {
             return false;
         }
 
         let docs = this.__get(space) as Doc[]
-        const doc = docs.find(item => item.id === id)
+        const doc = docs.find(item => item.slug === slug)
         if (doc) {
-            doc.parentId = parentId
-            return this.__updateCache('changeParentId', space, docs)
+            doc.parentSlug = parentSlug
+            return this.__updateCache('changeParentSlug', space, docs)
         } else {
             return false
         }
     }
 
-    async changeTitle(space: string, id: string, newTitle: string): Promise<boolean> {
+    async changeTitle(space: string, slug: string, newTitle: string): Promise<boolean> {
         if (!newTitle || newTitle.length <= 0) {
             return false
         }
 
         let docs = this.__get(space) as Doc[]
-        const doc = docs.find(item => item.id === id)
+        const doc = docs.find(item => item.slug === slug)
         if (doc) {
             doc.title = newTitle
 
@@ -183,16 +191,14 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
     async getTotalDocCount(space: string): Promise<number> {
         let docs = this.__get(space) as Doc[]
-        docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')
+        docs = docs.filter(item => item.slug !== 'root' && item.slug !== 'home')
 
         return docs.length
     }
 
     async getTotalWordCount(space: string): Promise<number> {
         let docs = this.__get(space) as Doc[]
-        docs = docs.filter(item => item.id !== 'root' && item.id !== 'home')
-
-        console.log('docs', docs)
+        docs = docs.filter(item => item.slug !== 'root' && item.slug !== 'home')
 
         let wordCount = 0
         for (const item of docs) {

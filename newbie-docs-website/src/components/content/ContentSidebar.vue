@@ -20,18 +20,18 @@
         </a-dropdown>
       </span>
       <template v-for="(rootItem) of docs.child">
-        <section class="docs-sidebar__section" :key="rootItem.id"
+        <section class="docs-sidebar__section" :key="rootItem.slug"
           v-if="keywordIncludes(rootItem.title) || keywordIncludes(rootItem?.child?.map(i => i.title))"
           :class="rootItem.expand ? '' : 'docs-sidebar__section--animated docs-sidebar__section--collapsed'">
-          <SideBarTitle :is-list="false" :edit-mode="renameDocId === rootItem.id" :item="rootItem"
-            :active="rootItemIsActive(rootItem) && renameDocId !== rootItem.id" :keyword="keyword" @on-create="onCreate"
+          <SideBarTitle :is-list="false" :edit-mode="renameDocSlug === rootItem.slug" :item="rootItem"
+            :active="rootItemIsActive(rootItem) && renameDocSlug !== rootItem.slug" :keyword="keyword" @on-create="onCreate"
             @on-setting="onSetting" @on-renamed="onRenamed"></SideBarTitle>
           <ul
             v-if="rootItem.child && rootItem.child.length > 0 && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
             class="docs-sidebar__section-list" :style="{ 'max-height': `${31 * rootItem.child.length}px` }">
-            <template v-for="(item) of rootItem.child" :key="item.id">
+            <template v-for="(item) of rootItem.child" :key="item.slug">
               <li v-if="keywordIncludes(item.title)">
-                <SideBarTitle :is-list="true" :edit-mode="renameDocId === item.id" :item="item"
+                <SideBarTitle :is-list="true" :edit-mode="renameDocSlug === item.slug" :item="item"
                   :active="item.path === activePath" :keyword="keyword" @on-create="onCreate" @on-setting="onSetting"
                   @on-renamed="onRenamed"></SideBarTitle>
               </li>
@@ -181,27 +181,28 @@ const createDoc = function (value: string | number | Record<string, any> | undef
     return
   }
 
-  onCreate(ev, { parentId: 'root', editor: value as string });
+  onCreate(ev, { parentSlug: 'root', editor: value as string });
 }
 
-const onCreate = function (ev: Event, value: { parentId?: string, editor: string, content?: any } | undefined) {
+const onCreate = function (ev: Event, value: { parentSlug?: string, editor: string, content?: any } | undefined) {
   emit("onCreate", ev, value);
 };
 
-const renameDocId = ref('')
-const onSetting = async function (ev: Event, value: { id: string, doc: Doc, action: string | number | Record<string, any> | undefined }) {
+const renameDocSlug = ref('')
+const onSetting = async function (ev: Event, value: { slug: string, doc: Doc, action: string | number | Record<string, any> | undefined }) {
   const docLink = `${location.protocol}//${location.host}${value.doc.path}`
   if (value.action === 'rename') {
-    renameDocId.value = value.doc.id
+    renameDocSlug.value = value.doc.slug
   } else if (value.action === 'edit') {
     router.push(value.doc.path)
     configStore.docEditMode = true
   } else if (value.action === 'copy') {
     const newDoc = JSON.parse(JSON.stringify(value.doc))
-    newDoc.id = await docsApi.generateId(12)
+    newDoc.id = Math.ceil(Math.random() * 1000000000000000)
+    newDoc.slug = await docsApi.generateSlug(12)
     newDoc.title = `${newDoc.title} - 副本`
     newDoc.child = []
-    newDoc.path = `/${space.value}/${newDoc.id}`
+    newDoc.path = `/${space.value}/${newDoc.slug}`
     await docsApi.put(space.value, newDoc)
     router.push(newDoc.path)
   } else if (value.action === 'delete') {
@@ -211,7 +212,7 @@ const onSetting = async function (ev: Event, value: { id: string, doc: Doc, acti
       content: `确认删除 ${value.doc.title} 吗？`,
       hideCancel: false,
       onOk: async () => {
-        await docsApi.remove(space.value, value.doc.id)
+        await docsApi.remove(space.value, value.doc.slug)
         if (value.doc.path === activePath?.value) {
           router.push(`/${space.value}`)
         }
@@ -225,12 +226,12 @@ const onSetting = async function (ev: Event, value: { id: string, doc: Doc, acti
   }
 }
 
-const onRenamed = async function (ev: Event, value: { id: string, doc: Doc, title: string }) {
+const onRenamed = async function (ev: Event, value: { slug: string, doc: Doc, title: string }) {
   if (value.title && value.title.length > 0) {
-    await docsApi.changeTitle(space.value, value.id, value.title)
+    await docsApi.changeTitle(space.value, value.slug, value.title)
   }
 
-  renameDocId.value = ''
+  renameDocSlug.value = ''
 }
 
 const createLinkDoc = function (ev: Event) {

@@ -1,32 +1,31 @@
 <template>
     <header class="page__header">
-        <a-breadcrumb v-if="getParent([docs], doc.parentId)">
+        <a-breadcrumb v-if="getParent([docs], doc.parentSlug)">
             <template #separator>
                 <icon-right />
             </template>
 
-            <a-breadcrumb-item v-if="getParentParent([docs], doc.parentId)">
-                <router-link :to="getParentParent([docs], doc.parentId)?.path || ''">
-                    {{ getParentParent([docs], doc.parentId)?.title }}
+            <a-breadcrumb-item v-if="getParentParent([docs], doc.parentSlug)">
+                <router-link :to="getParentParent([docs], doc.parentSlug)?.path || ''">
+                    {{ getParentParent([docs], doc.parentSlug)?.title }}
                 </router-link>
             </a-breadcrumb-item>
             <a-breadcrumb-item>
-                <router-link :to="getParent([docs], doc.parentId)?.path || ''">
-                    {{ getParent([docs], doc.parentId)?.title }}
+                <router-link :to="getParent([docs], doc.parentSlug)?.path || ''">
+                    {{ getParent([docs], doc.parentSlug)?.title }}
                 </router-link>
             </a-breadcrumb-item>
             <a-breadcrumb-item>{{ doc.title }}</a-breadcrumb-item>
         </a-breadcrumb>
-        <time class="page__header-time">
-            {{ formatTime(doc.updateTime || doc.createTime) }}
-        </time>
-        <a-button type="primary" v-if="userStore.isLogin" @click="onEdit">
-            <template #icon>
-                <icon-edit />
-            </template>
-            <template #default>编辑</template>
-        </a-button>
     </header>
+
+    <a-button class="edit-btn" type="primary" v-if="userStore.isLogin" @click="onEdit">
+        <template #icon>
+            <icon-edit />
+        </template>
+        <template #default>编辑</template>
+    </a-button>
+
     <h1 class="page__title">
         {{ doc.title }}
     </h1>
@@ -58,24 +57,17 @@ const onEdit = (event: Event) => {
     emits('onEdit', event);
 };
 
-const formatTime = (time?: number) => {
-    if (time) {
-        const date = new Date(time);
-        return `最后编辑于 ${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-    }
-};
-
-const getParent = (data: Doc[], id?: string): Doc | undefined => {
-    if (id === undefined) {
+const getParent = (data: Doc[], slug?: string): Doc | undefined => {
+    if (slug === undefined) {
         return
     }
 
     for (const item of data) {
-        if (item.id === id) {
+        if (item.slug === slug) {
             return item;
         }
         if (item.child && item.child.length > 0) {
-            const parent = getParent(item.child, id);
+            const parent = getParent(item.child, slug);
             if (parent) {
                 return parent;
             }
@@ -83,17 +75,17 @@ const getParent = (data: Doc[], id?: string): Doc | undefined => {
     }
 }
 
-const getParentParent = (data: Doc[], id?: string): Doc | undefined => {
-    if (id === undefined) {
+const getParentParent = (data: Doc[], slug?: string): Doc | undefined => {
+    if (slug === undefined) {
         return
     }
 
     for (const item of data) {
-        if (item.id === id) {
-            return getParent([docs.value], item.parentId);
+        if (item.slug === slug) {
+            return getParent([docs.value], item.parentSlug);
         }
         if (item.child && item.child.length > 0) {
-            const parent = getParentParent(item.child, id);
+            const parent = getParentParent(item.child, slug);
             if (parent) {
                 return parent;
             }
@@ -103,6 +95,12 @@ const getParentParent = (data: Doc[], id?: string): Doc | undefined => {
 </script>
 
 <style>
+@media (max-width: 1050px) {
+    .edit-btn {
+        display: none;
+    }
+}
+
 @media (min-width: 1050px) {
     .page__header {
         position: fixed;
@@ -112,14 +110,16 @@ const getParentParent = (data: Doc[], id?: string): Doc | undefined => {
         min-width: 0;
         width: 100%;
     }
-}
 
-.page__header .page__header-time {
-    width: 180px;
+    .edit-btn {
+        position: fixed;
+        right: 16px;
+        top: 10px;
+        z-index: 10;
+    }
 }
 
 .page__header .arco-breadcrumb-item {
-    max-width: 145px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
