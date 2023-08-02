@@ -22,7 +22,7 @@ export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, Do
       if (typeof targetMethod === "function" && ["put", "remove", "splice", "changeSlug", "changeParentSlug", "changeTitle"].includes(propKey as string)) {
         return async function (...args: any[]) {
           try {
-            const result = await targetMethod.apply(this, args);
+            const result = await targetMethod.apply(docsApi, args);
             if (result) {
               const space = args[0];
               const docs = await docsApi.dir(space);

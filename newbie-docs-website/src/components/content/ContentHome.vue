@@ -89,11 +89,13 @@ const props = defineProps({
     },
     totalDocCount: {
         type: Number,
-        required: true,
+        default: 0,
+        required: false,
     },
     totalWordCount: {
         type: Number,
-        required: true,
+        default: 0,
+        required: false,
     },
 });
 
