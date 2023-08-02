@@ -1,9 +1,8 @@
 <template>
   <div class="content-view" v-if="config.dir">
     <div class="docs">
-      <CSidebar :space="space" :dir="config.dir" :active-path="route.path"
-        :editor-type="config.currentDoc?.editor" @on-create="docsService.onCreate" @on-remove="docsService.onRemove"
-        @on-change-title="docsService.onChangeTitle">
+      <CSidebar :space="space" :dir="config.dir" :active-path="route.path" :editor-type="config.currentDoc?.editor"
+        @on-create="docsService.onCreate" @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
@@ -12,23 +11,19 @@
             <template v-if="configStore.docEditMode">
               <CBlockEditor v-if="config.currentDoc.editor === 'block'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
+                @on-change-title="docsService.onChangeTitle">
               </CBlockEditor>
               <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
+                @on-change-title="docsService.onChangeTitle">
               </CWordEditor>
             </template>
             <template v-else>
-              <CBlockPreview v-if="config.currentDoc.editor === 'block'" :docs="config.spaceData[space].tree"
-                :doc="config.currentDoc" @onEdit="configStore.docEditMode = true">
-              </CBlockPreview>
-              <CLinkPreview v-else-if="config.currentDoc.editor === 'link'" :docs="config.spaceData[space].tree"
-                :doc="config.currentDoc" @onEdit="configStore.docEditMode = true">
-              </CLinkPreview>
-              <CWordPreview v-else :docs="config.spaceData[space].tree" :doc="config.currentDoc"
+              <CPreview :docs="config.spaceData[space].tree" :doc="config.currentDoc"
                 @onEdit="configStore.docEditMode = true">
-              </CWordPreview>
+              </CPreview>
             </template>
           </div>
 
@@ -36,7 +31,9 @@
             <COutline :doc="config.currentDoc" :edit-mode="configStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome :space="space" :title="config.spaceData[space].tree.title" :total-doc-count="config.totalDocCount" :total-word-count="config.totalWordCount" :docs="config.spaceData[space].tree" @on-change-title="docsService.onChangeTitle" v-else></CHome>
+        <CHome :space="space" :title="config.spaceData[space].tree.title" :total-doc-count="config.totalDocCount"
+          :total-word-count="config.totalWordCount" :docs="config.spaceData[space].tree"
+          @on-change-title="docsService.onChangeTitle" v-else></CHome>
       </template>
     </div>
   </div>
@@ -50,9 +47,7 @@ import CHome from "@/components/content/ContentHome.vue";
 import CSidebar from "@/components/content/ContentSidebar.vue";
 import CBlockEditor from "@/components/content/editor/ContentBlockEditor.vue";
 import CWordEditor from "@/components/content/editor/ContentWordEditor.vue";
-import CBlockPreview from "@/components/content/preview/ContentBlockPreview.vue";
-import CWordPreview from "@/components/content/preview/ContentWordPreview.vue";
-import CLinkPreview from "@/components/content/preview/ContentLinkPreview.vue";
+import CPreview from "@/components/content/preview/ContentPreview.vue";
 import COutline from "@/components/content/ContentOutline.vue";
 import { useRoute, useRouter } from "vue-router";
 import { nextTick, reactive, watch } from "vue";
