@@ -5,7 +5,7 @@ FROM node:20.4.0
 WORKDIR /app
 
 # 将整个项目复制到容器中
-COPY . .
+COPY ./newbie-docs-website .
 
 # 安装依赖
 RUN npm install npm -g

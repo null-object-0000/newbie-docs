@@ -3,9 +3,7 @@
 		"dev": "pnpm run website:dev",
 		"website:dev": "cd newbie-docs-website && pnpm run dev",
 		"build": "pnpm run website:build",
-		"website:build": "cd newbie-docs-website && pnpm run build",
-		"preview": "pnpm run website:preview",
-		"website:preview": "cd newbie-docs-website && pnpm run preview"
+		"website:build": "cd newbie-docs-website && pnpm run build"
 	},
 	"config": {
 		"commitizen": {
