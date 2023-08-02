@@ -5,6 +5,8 @@
         <section class="page__content">
             <div v-html="doc.content"></div>
         </section>
+
+        <ContentPreviewFooter :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewFooter>
     </article>
 </template>
 
@@ -12,6 +14,7 @@
 import { type PropType, toRefs } from 'vue';
 import type { Doc } from '@/types/global';
 import ContentPreviewHeader from './ContentPreviewHeader.vue';
+import ContentPreviewFooter from './ContentPreviewFooter.vue';
 
 const props = defineProps({
     docs: {

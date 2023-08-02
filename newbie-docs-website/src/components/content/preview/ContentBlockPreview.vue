@@ -1,6 +1,7 @@
 <template>
     <article class="page" data-module="page">
         <ContentPreviewHeader :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewHeader>
+
         <section class="page__content">
             <template v-for="block of doc.content">
                 <div class="page__content-block">
@@ -9,6 +10,8 @@
                 </div>
             </template>
         </section>
+
+        <ContentPreviewFooter :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewFooter>
     </article>
 </template>
 
@@ -16,6 +19,7 @@
 import { resolveComponent, type PropType, toRefs } from 'vue';
 import type { Doc } from '@/types/global';
 import ContentPreviewHeader from './ContentPreviewHeader.vue';
+import ContentPreviewFooter from './ContentPreviewFooter.vue';
 
 const props = defineProps({
     docs: {

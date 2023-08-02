@@ -5,6 +5,8 @@
         <section class="page__content">
             <iframe ref="iframe" v-if="doc && doc.content" :src="loadUrl(doc.content as string)"></iframe>
         </section>
+
+        <ContentPreviewFooter :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewFooter>
     </article>
 </template>
 
@@ -14,6 +16,7 @@ import type { Doc } from '@/types/global';
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import ContentPreviewHeader from './ContentPreviewHeader.vue';
+import ContentPreviewFooter from './ContentPreviewFooter.vue';
 
 const props = defineProps({
     docs: {
@@ -55,8 +58,6 @@ onMounted(() => {
         }
 
         contentWindow.onbeforeunload = (e: Event) => {
-            console.log('onbeforeunload', e)
-
             e.preventDefault()
             e.stopPropagation()
             e.stopImmediatePropagation()
