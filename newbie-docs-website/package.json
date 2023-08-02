@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check build-only",
-    "preview": "vite preview",
+    "preview": "vite preview --port 80",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
