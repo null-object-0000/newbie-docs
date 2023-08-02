@@ -1,9 +1,8 @@
 <template>
   <div class="content-view" v-if="config.dir">
     <div class="docs">
-      <CSidebar :space="space" :dir="config.dir" :active-path="route.path"
-        :editor-type="config.currentDoc?.editor" @on-create="docsService.onCreate" @on-remove="docsService.onRemove"
-        @on-change-title="docsService.onChangeTitle">
+      <CSidebar :space="space" :dir="config.dir" :active-path="route.path" :editor-type="config.currentDoc?.editor"
+        @on-create="docsService.onCreate" @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
@@ -12,11 +11,13 @@
             <template v-if="configStore.docEditMode">
               <CBlockEditor v-if="config.currentDoc.editor === 'block'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
+                @on-change-title="docsService.onChangeTitle">
               </CBlockEditor>
               <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :space="space" :space-data="config.spaceData"
                 :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
+                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
+                @on-change-title="docsService.onChangeTitle">
               </CWordEditor>
             </template>
             <template v-else>
@@ -36,7 +37,9 @@
             <COutline :doc="config.currentDoc" :edit-mode="configStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome :space="space" :title="config.spaceData[space].tree.title" :total-doc-count="config.totalDocCount" :total-word-count="config.totalWordCount" :docs="config.spaceData[space].tree" @on-change-title="docsService.onChangeTitle" v-else></CHome>
+        <CHome :space="space" :title="config.spaceData[space].tree.title" :total-doc-count="config.totalDocCount"
+          :total-word-count="config.totalWordCount" :docs="config.spaceData[space].tree"
+          @on-change-title="docsService.onChangeTitle" v-else></CHome>
       </template>
     </div>
   </div>
@@ -117,6 +120,12 @@ watch(route, async () => {
   configStore.setHeader('/', config.spaceData[space].tree.title);
   if (config.currentDoc) {
     document.title = config.currentDoc.title + ' - ' + config.spaceData[space].tree.title
+
+    // 展开父级目录
+    const parentSlug = config.currentDoc.parentSlug
+    if (parentSlug && parentSlug !== 'root' && parentSlug !== 'home') {
+      await docsApi.expand(space, parentSlug)
+    }
   } else {
     document.title = config.spaceData[space].tree.title
   }

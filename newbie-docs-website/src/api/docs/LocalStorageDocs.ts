@@ -99,6 +99,17 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return docs.some(item => item.slug === slug)
     }
 
+    async expand(space: string, slug: string): Promise<boolean> {
+        let docs = this.__get(space) as Doc[]
+        const doc = docs.find(item => item.slug === slug)
+        if (doc) {
+            doc.expand = true
+            return this.__updateCache('expand', space, docs)
+        } else {
+            return false
+        }
+    }
+
     async remove(space: string, slug: string): Promise<boolean> {
         let docs = this.__get(space) as Doc[]
 

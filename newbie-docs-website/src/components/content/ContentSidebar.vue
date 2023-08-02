@@ -287,4 +287,11 @@ watch(() => dir, async () => {
 .docs-sidebar__section {
   margin-top: 5px;
 }
+
+.docs-sidebar__content::-webkit-scrollbar {
+  width: 5px;
+}
+.docs-sidebar__content::-webkit-scrollbar-thumb {
+  background-color: #e7e9e8;
+}
 </style>

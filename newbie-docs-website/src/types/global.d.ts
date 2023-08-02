@@ -81,6 +81,8 @@ export interface UseDocsApiFunction {
   async get: (space: string, slug?: string) => Promise<Doc | undefined>;
   async exists: (space: string, slug: string) => Promise<boolean>;
 
+  async expand: (space: string, slug: string) => Promise<boolean>;
+
   async put: (space: string, doc: Doc) => Promise<boolean>;
   async remove: (space: string, slug: string) => Promise<boolean>;
   async splice: (space: string, slug: string, index: number) => Promise<boolean>;
