@@ -15,6 +15,8 @@
 - [ ] 支持知识库、文档的权限管理
 - [ ] 支持通过 Docker 部署
   - [x] newbie-docs-website
+  - [ ] newbie-docs-server-java
+  - [ ] newbie-docs-server-node
 - [ ] 基于 `YJS` 实现文档协同编辑
 
 ## 开发部署

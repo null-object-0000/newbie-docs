@@ -4,7 +4,6 @@
 
         <section class="page__content">
             <CBlockPreview v-if="doc.editor === 'block'" :doc="doc"></CBlockPreview>
-            <CLinkPreview v-else-if="doc.editor === 'link'" :doc="doc"></CLinkPreview>
             <CWordPreview v-else :doc="doc"></CWordPreview>
         </section>
 
@@ -19,7 +18,6 @@ import ContentPreviewHeader from './ContentPreviewHeader.vue';
 import ContentPreviewFooter from './ContentPreviewFooter.vue';
 import CBlockPreview from "@/components/content/preview/ContentBlockPreview.vue";
 import CWordPreview from "@/components/content/preview/ContentWordPreview.vue";
-import CLinkPreview from "@/components/content/preview/ContentLinkPreview.vue";
 
 const props = defineProps({
     docs: {

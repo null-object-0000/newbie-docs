@@ -74,46 +74,32 @@ const docsApi = useDocsApi('localStorage', config.spaceData);
 
 await docsApi.init(space);
 
-const getCurrentDoc = function (data?: Doc[] | null): Doc | undefined {
-  if (!data) {
-    return;
-  }
-
-  for (const item of data) {
-    if (item.path === route.path) {
-      return JSON.parse(JSON.stringify(item));
-    }
-
-    if (item.child && item.child.length > 0) {
-      const result = getCurrentDoc(item.child);
-      if (result) {
-        return result;
-      }
-    }
-  }
-};
-
 // 监听路由变化
 watch(route, async () => {
+  const slug = route.params.docSlug as string;
+  const doc = await docsApi.get(space, slug);
+
   if (route.path === "/" + space || route.path === "/" + space + "/") {
     router.push({ path: `/${space}/home` });
     return
   }
   // 判断当前路由是否存在，不存在就跳回首页
-  else if (!getCurrentDoc([config.spaceData[space].tree])) {
+  else if (doc?.slug !== slug) {
     router.push({ path: `/${space}/home` });
     return
   }
 
   config.dir = await docsApi.dir(space);
-  config.currentDoc = getCurrentDoc([config.spaceData[space].tree]);
+  config.currentDoc = doc;
   config.totalDocCount = await docsApi.getTotalDocCount(space);
   config.totalWordCount = await docsApi.getTotalWordCount(space);
-  configStore.setHeader('/', config.spaceData[space].tree.title);
+  // TODO: 等 booksApi 实现后切换到 booksApi
+  const booksTitle = config.spaceData[space].tree.title
+  configStore.setHeader('/', booksTitle);
   if (config.currentDoc) {
-    document.title = config.currentDoc.title + ' - ' + config.spaceData[space].tree.title
+    document.title = config.currentDoc.title + ' - ' + booksTitle
   } else {
-    document.title = config.spaceData[space].tree.title
+    document.title = booksTitle
   }
 }, { immediate: true });
 
