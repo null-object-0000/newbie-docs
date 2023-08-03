@@ -15,6 +15,7 @@
   - [ ] 基于 `Java` 实现的 RESTful API
   - [ ] 基于 `Node.js` 实现的 RESTful API
 - [ ] 支持知识库、文档的权限管理
+- [ ] 支持通过 Docker 部署
 - [ ] 基于 `YJS` 实现的协同编辑
 
 ## 开发部署
@@ -28,7 +29,7 @@ pnpm dev
 ```
 
 ``` bash
-# 提交代码
+# 代码提交
 npm install -g commitizen
 git add .
 git cz
