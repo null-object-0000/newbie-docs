@@ -1,7 +1,5 @@
 # newbie-docs
 
-## 功能特性
-
 ## 开发计划
 
 - [x] 基于 `Vue 3.0` 完成 [codex.docs](https://github.com/codex-team/codex.docs) 所有能力
@@ -17,7 +15,7 @@
 - [ ] 支持知识库、文档的权限管理
 - [ ] 支持通过 Docker 部署
   - [x] website 项目
-- [ ] 基于 `YJS` 实现的协同编辑
+- [ ] 基于 `YJS` 实现文档协同编辑
 
 ## 开发部署
 
@@ -27,13 +25,23 @@
 # 本地运行
 pnpm install
 pnpm dev
-```
 
-``` bash
 # 代码提交
 npm install -g commitizen
 git add .
 git cz
+
+# 本地构建
+pnpm build
+```
+
+### Docker 部署
+
+``` bash
+# 构建镜像
+docker build -t newbie-docs:latest .
+# 运行容器
+docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
 ```
 
 ## 技术栈
