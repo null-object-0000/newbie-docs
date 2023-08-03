@@ -25,7 +25,7 @@ const content = ref<OutputBlockData[]>([]);
 
 watch(() => doc.value.content, () => {
     content.value = doc.value.content as OutputBlockData[];
-});
+}, { immediate: true });
 
 const isComponentExists = (name: string, maybeSelfReference?: boolean) => {
     const component = resolveComponent(name, maybeSelfReference);
