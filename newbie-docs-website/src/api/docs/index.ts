@@ -1,7 +1,7 @@
 import { Doc, ApiStorageEnum, UseDocsApiFunction, DocData } from "@/types/global";
 import { useDocsEventBus } from "@/events/docs";
 import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
-import { UseRestDocsApi } from "./RestDocs";
+import { UseRESTfulDocsApi } from "./RESTfulDocs";
 
 export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, DocData>): UseDocsApiFunction {
   const docsEventBus = useDocsEventBus();
@@ -10,7 +10,7 @@ export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, Do
     case "localStorage":
       docsApi = new UseLocalStorageDocsApi(spaceData);
     // case "rest":
-    // docsApi = new UseRestDocsApi(spaceData);
+    // docsApi = new UseRESTfulDocsApi(spaceData);
     default:
       docsApi = new UseLocalStorageDocsApi(spaceData);
   }

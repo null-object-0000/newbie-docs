@@ -1,3 +1,4 @@
+# 构建
 FROM node:20.4.0 as build
 
 WORKDIR /app
@@ -8,7 +9,7 @@ RUN npm install npm pnpm -g && \
     pnpm install && \
     pnpm build
 
-# nginx
+# 部署
 FROM nginx:1.25.1-alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
