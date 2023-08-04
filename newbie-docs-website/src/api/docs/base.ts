@@ -54,12 +54,16 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
             return docs
         }
 
+
+        docs = JSON.parse(JSON.stringify(docs)) as Doc[]
+
         const rootDoc = docs.find(doc => doc.slug === 'root')
         if (!rootDoc) {
             return
         }
 
         const processChild = (doc: Doc) => {
+            docs = docs as Doc[]
             doc.child = docs.filter(item => item.parentSlug === doc.slug).sort((a, b) => a.sort! - b.sort!)
 
             for (const child of doc.child) {
@@ -76,6 +80,8 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         if (!docs) {
             return
         }
+
+        docs = JSON.parse(JSON.stringify(docs)) as Doc
 
         const result: Doc[] = []
 

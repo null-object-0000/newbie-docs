@@ -1,7 +1,9 @@
 {
 	"scripts": {
 		"dev": "pnpm run website:dev",
-		"website:dev": "cd newbie-docs-website && pnpm run dev"
+		"website:dev": "cd newbie-docs-website && pnpm run dev",
+		"build": "pnpm run website:build",
+		"website:build": "cd newbie-docs-website && pnpm run build"
 	},
 	"config": {
 		"commitizen": {

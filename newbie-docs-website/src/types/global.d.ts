@@ -96,4 +96,7 @@ export interface UseDocsApiFunction {
   async getLevel: (space: string, doc: Doc | string) => Promise<number | undefined>;
   async getTotalDocCount: (space: string) => Promise<number>;
   async getTotalWordCount: (space: string) => Promise<number>;
+
+  array2tree: (docs?: Doc | Doc[]) => Doc | undefined;
+  tree2array: (doc?: Doc) => Doc[] | undefined;
 }
