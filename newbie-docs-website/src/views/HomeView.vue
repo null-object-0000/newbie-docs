@@ -1,12 +1,7 @@
 <template>
-    <div :style="{
-        boxSizing: 'border-box',
-        width: '100%',
-        padding: '40px',
-        backgroundColor: 'var(--color-fill-2)',
-    }">
+    <div class="home-view">
         <a-row :gutter="40" justify="center">
-            <a-col flex="360px" v-for="i of 25" :style="{ marginBottom: '20px' }">
+            <a-col flex="360px" v-for="i of 2" :style="{ marginBottom: '20px' }">
                 <a style="color: unset; text-decoration: unset;" href="/alle">
                     <a-card :style="{ width: '360px' }">
                         <template #actions>
@@ -64,6 +59,13 @@ configStore.setHeader('/', 'Newbie Docs');
 </script>
 
 <style scoped>
+.home-view {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 40px;
+    background-color: var(--color-fill-2);
+}
+
 .icon-hover {
     display: flex;
     align-items: center;

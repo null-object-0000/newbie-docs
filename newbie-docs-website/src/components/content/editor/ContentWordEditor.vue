@@ -32,7 +32,6 @@ import type { Doc } from "@/types/global";
 // @ts-ignore
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import ContentEditorHeader from "./ContentEditorHeader.vue";
-import { useDocsApi } from '@/api/docs';
 
 const props = defineProps({
     space: {

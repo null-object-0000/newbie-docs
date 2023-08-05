@@ -18,54 +18,90 @@
           </template>
         </a-dropdown>
       </span>
-      <template v-if="sidebarData.dir" v-for="(rootItem) of sidebarData.dir.child">
-        <section class="docs-sidebar__section" :key="rootItem.slug"
-          v-if="keywordIncludes(rootItem.title) || keywordIncludes(rootItem?.child?.map(i => i.title))"
-          :class="rootItem.expand ? '' : 'docs-sidebar__section--animated docs-sidebar__section--collapsed'">
-          <SideBarTitle :is-list="false" :edit-mode="renameDocSlug === rootItem.slug" :item="rootItem"
-            :active="rootItemIsActive(rootItem) && renameDocSlug !== rootItem.slug" :keyword="keyword"
-            @on-create="onCreate" @on-setting="onSetting" @on-renamed="onRenamed"></SideBarTitle>
-          <ul
-            v-if="rootItem.child && rootItem.child.length > 0 && rootItem.expand && keywordIncludes(rootItem.child.map(i => i.title))"
-            class="docs-sidebar__section-list" :style="{ 'max-height': `${31 * rootItem.child.length}px` }">
-            <template v-for="(item) of rootItem.child" :key="item.slug">
-              <li v-if="keywordIncludes(item.title)">
-                <SideBarTitle :is-list="true" :edit-mode="renameDocSlug === item.slug" :item="item"
-                  :active="item.path === activePath" :keyword="keyword" @on-create="onCreate" @on-setting="onSetting"
-                  @on-renamed="onRenamed"></SideBarTitle>
-              </li>
+
+      <a-tree draggable block-node class="docs-sidebar__tree" v-if="sidebarData.dir" :data="sidebarData.dir"
+        v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
+        @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)">
+        <template #title="node">
+          <span class="docs-sidebar__tree-node"
+            :class="[sidebarData.renameDocSlug === node.key ? 'docs-sidebar__tree-node-editor-mode' : '']"
+            @mouseover="sidebarData.hoverNode = node.key">
+            <span v-if="node.key === `/${space}/home` || sidebarData.renameDocSlug !== node.key"
+              class="docs-sidebar__tree-node-title">
+              <!-- {{ node.title }} -->
+
+              <template v-if="index = getMatchIndex(node?.title), index < 0">{{ node?.title }}</template>
+              <span v-else>
+                <span>{{ node?.title?.substr(0, index) }}</span>
+                <span style="color: var(--color-primary-light-4); font-weight: 700;">
+                  {{ node?.title?.substr(index, keyword.length) }}
+                </span>
+                <span>{{ node?.title?.substr(index + keyword.length) }}</span>
+              </span>
+
+            </span>
+            <a-input size="small" ref="renameInputRef" v-model="sidebarData.docTitle" style="height: 26px;"
+              @blur="ev => onRenamed(ev, node)" v-else>
+              <template #append>
+                <icon-check @click="ev => onRenamed(ev, node)"></icon-check>
+              </template>
+            </a-input>
+
+            <template v-if="node.key !== `/${space}/home` && sidebarData.renameDocSlug !== node.key">
+              <a-dropdown trigger="click" @select="(value, ev) => onSetting(node, value, ev)" :popup-max-height="false"
+                @popup-visible-change="visible => visible ? null : sidebarData.hoverNode = null">
+                <icon-more-vertical class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
+                  :style="{ visibility: sidebarData.hoverNode === node.key ? 'visible' : 'hidden' }" />
+                <template #content>
+                  <a-doption value="rename"><template #icon><icon-loop /></template>重命名</a-doption>
+                  <a-doption value="edit"><template #icon><icon-edit /></template>编辑文档</a-doption>
+                  <a-doption value="copyLink"><template #icon><icon-link /></template>复制链接</a-doption>
+                  <a-doption value="openLink"><template #icon><icon-launch /></template>在新标签页打开</a-doption>
+                  <a-doption value="copy"><template #icon><icon-copy /></template>复制</a-doption>
+                  <a-doption value="delete" :style="{ color: '#DF2A3F' }"><template
+                      #icon><icon-delete /></template>删除</a-doption>
+                </template>
+              </a-dropdown>
+              <a-dropdown trigger="click" @select="(value, ev) => onCreate(node, value, ev)"
+                @popup-visible-change="visible => visible ? null : sidebarData.hoverNode = null">
+                <icon-plus class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
+                  :style="{ visibility: sidebarData.hoverNode === node.key ? 'visible' : 'hidden' }" />
+                <template #content>
+                  <a-doption value="block"><template #icon><icon-code-block /></template>Block</a-doption>
+                  <a-doption value="word"><template #icon><icon-file /></template>Word</a-doption>
+                  <a-doption disabled value="link"><template #icon><icon-link /></template>Link</a-doption>
+                </template>
+              </a-dropdown>
             </template>
-          </ul>
-        </section>
-      </template>
+          </span>
+        </template>
+        <template #extra="node">
+          <icon-home style="position: absolute;" v-if="node.key === `/${space}/home`" />
+        </template>
+        <template #drag-icon="node">
+
+        </template>
+      </a-tree>
     </aside>
 
     <div v-if="editorType !== 'word'" class="docs-sidebar__slider" @click="sidebar.collapsed = !sidebar.collapsed">
       <docs-icon-arrow-left />
     </div>
   </div>
-
-  <a-modal v-model:visible="linkModalData.visible" title="链接" @ok="createLinkDoc">
-    <a-form :model="linkModalData.form" auto-label-width>
-      <a-form-item field="url" label="Url"
-        :rules="[{ required: true, message: '请输入 url' }, { type: 'url', message: '请输入完整有效的 url' }]">
-        <a-input v-model="linkModalData.form.url" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, toRefs, watch, type PropType } from "vue";
+import { reactive, ref, toRefs, watch, nextTick, type PropType } from "vue";
 import type { Doc } from "@/types/global";
 import { useMagicKeys, whenever, useClipboard } from '@vueuse/core'
-import SideBarTitle from "./SidebarTitle.vue";
-import { Message, Modal } from "@arco-design/web-vue";
+import { Message, Modal, type TreeNodeData } from "@arco-design/web-vue";
 import { useConfigStore } from "@/stores/config";
-import { useRouter } from "vue-router";
 import { useDocsEventBus } from "@/events/docs";
+import { useRoute, useRouter } from "vue-router";
 
+const route = useRoute();
 const router = useRouter();
+
 const configStore = useConfigStore();
 const docsEventBus = useDocsEventBus()
 
@@ -98,30 +134,66 @@ const props = defineProps({
     type: Object as PropType<Doc>,
     required: true,
   },
-  activePath: {
-    type: String,
-    required: false
-  },
   editorType: {
     type: String,
     required: false
   }
 });
 
-const emit = defineEmits(["onCreate", "onRemove", "onChangeTitle"]);
-
-const { activePath } = toRefs(props);
+const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle"]);
 
 const { space, dir } = toRefs(props);
 
+const renameInputRef = ref<HTMLElement | null>(null)
 const sidebarData = reactive({
-  dir: null,
+  rawDir: [],
+  fullDir: [],
+  dir: [],
+  selectedKeys: [],
+  editMode: false,
+  hoverNode: null,
+  renameDocSlug: '',
+  docTitle: ''
 } as {
-  dir: Doc | null | undefined
+  rawDir: Doc[],
+  fullDir: TreeNodeData[],
+  dir: TreeNodeData[],
+  selectedKeys: Array<string | number>,
+  editMode: boolean,
+  hoverNode: string | null,
+  renameDocSlug: string,
+  docTitle: string
 });
 
+const formatDirData = (dir: Doc[]): TreeNodeData[] => {
+  return dir.map(item => {
+    const node = {} as TreeNodeData
+
+    if (item.child && item.child.length > 0) {
+      node.children = formatDirData(item.child)
+    }
+
+    node.key = `/${space.value}/${item.slug}`
+    node.title = item.title
+    if (node.key === `/${space.value}/home`) {
+      node.draggable = false
+    }
+
+    return node
+  })
+}
+
+const updateDirData = (dir?: Doc) => {
+  sidebarData.rawDir = dir?.child || []
+  sidebarData.dir = formatDirData(sidebarData.rawDir)
+  sidebarData.fullDir = JSON.parse(JSON.stringify(sidebarData.dir))
+
+  search()
+}
+
 docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {
-  sidebarData.dir = value.dir
+  updateDirData()
+  updateDirData(value.dir)
   console.log('onDirChange', event, value)
 })
 
@@ -147,36 +219,63 @@ const keyword = ref('');
 const search = () => {
   // 基于 keyword 过滤展示的 docs
   console.log('search.keyword', keyword.value)
+
+  const loop = (data: TreeNodeData[]) => {
+    const result = [] as TreeNodeData[];
+    data.forEach(item => {
+      if (item.key === `/${space.value}/home`) {
+        result.push({ ...item });
+        return;
+      }
+
+
+      if (item.title && item.title.toLowerCase().indexOf(keyword.value.toLowerCase()) > -1) {
+        item.children = item.children ? loop(item.children) : [];
+        result.push({ ...item });
+      } else if (item.children) {
+        const filterData = loop(item.children);
+        if (filterData.length) {
+          result.push({
+            ...item,
+            children: filterData
+          })
+        }
+      }
+    })
+    return result;
+  }
+
+  sidebarData.dir = loop(JSON.parse(JSON.stringify(sidebarData.fullDir)));
 };
 
-const keywordIncludes = function (str?: string | string[]): boolean {
-  if (str === undefined) {
-    return false
-  }
-
-  if (keyword.value.length <= 0) {
-    return true
-  }
-
-  if (Array.isArray(str)) {
-    return str.some(i => keywordIncludes(i));
-  } else {
-    return str.toLowerCase().indexOf(keyword.value.toLowerCase()) !== -1;
-  }
+function getMatchIndex(title: string) {
+  if (!keyword.value) return -1;
+  return title.toLowerCase().indexOf(keyword.value.toLowerCase());
 }
 
-const rootItemIsActive = function (rootItem: Doc): boolean {
-  // 判断是否被折叠
-  if (rootItem.expand || !rootItem.child) {
-    return rootItem.path === activePath?.value;
+const findDocWithPath = (path: string): Doc | undefined => {
+  const loop = (data: Doc[]): Doc | undefined => {
+    let result = undefined
+
+    for (const item of data) {
+      if (item.path === path) {
+        result = item
+        break
+      }
+
+      if (item.child) {
+        const findResult = loop(item.child)
+        if (findResult) {
+          result = findResult
+          break
+        }
+      }
+    }
+
+    return result
   }
 
-  if (rootItem.path === activePath?.value) {
-    return true
-  } else {
-    // 判断子集是否有被激活的
-    return rootItem.child.some(i => i.path === activePath?.value);
-  }
+  return loop(sidebarData.rawDir)
 }
 
 const createDoc = function (value: string | number | Record<string, any> | undefined, ev: Event) {
@@ -185,60 +284,114 @@ const createDoc = function (value: string | number | Record<string, any> | undef
     return
   }
 
-  onCreate(ev, { parentSlug: 'root', editor: value as string });
+  emit("onCreate", ev, { parentSlug: 'root', editor: value as string })
 }
 
-const onCreate = function (ev: Event, value: { title?: string, parentSlug?: string, editor: string, content?: any } | undefined) {
-  emit("onCreate", ev, value);
-};
+const onCreate = function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
+  if (node.key && typeof node.key === 'string' && node.key.indexOf('/') !== -1) {
+    const doc = findDocWithPath(node.key as string) as Doc
+    console.log('onCreate', node, doc)
+    emit("onCreate", ev, {
+      parentSlug: doc.slug,
+      editor: value
+    })
+  } else {
+    emit("onCreate", ev, {
+      editor: value
+    })
+  }
+}
 
-const renameDocSlug = ref('')
-const onSetting = async function (ev: Event, value: { slug: string, doc: Doc, action: string | number | Record<string, any> | undefined }) {
-  const docLink = `${location.protocol}//${location.host}${value.doc.path}`
-  if (value.action === 'rename') {
-    renameDocSlug.value = value.doc.slug
-  } else if (value.action === 'edit') {
-    router.push(value.doc.path)
+const onSetting = async function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
+  const doc = findDocWithPath(node.key as string) as Doc
+  const options = {
+    slug: doc.slug,
+    doc: doc,
+    action: value
+  } as { slug: string, doc: Doc, action: string | number | Record<string, any> | undefined }
+  const docLink = `${location.protocol}//${location.host}${doc.path}`
+  if (options.action === 'rename') {
+    sidebarData.renameDocSlug = node.key as string
+    sidebarData.docTitle = doc.title
+
+    nextTick(() => {
+      renameInputRef.value?.focus()
+    })
+  } else if (options.action === 'edit') {
+    router.push(doc.path)
     configStore.docEditMode = true
-  } else if (value.action === 'copy') {
-    onCreate(ev, {
-      parentSlug: value.doc.parentSlug,
-      title: `${value.doc.title} - 副本`,
-      editor: value.doc.editor,
-      content: value.doc.content
-    });
-  } else if (value.action === 'delete') {
+  } else if (options.action === 'copy') {
+    emit("onCopy", ev, {
+      slug: doc.slug
+    })
+  } else if (options.action === 'delete') {
     Modal.warning({
       title: `确认框`,
       simple: true,
-      content: `确认删除 ${value.doc.title} 吗？`,
+      content: `确认删除 ${doc.title} 吗？`,
       hideCancel: false,
       onOk: async () => {
-        emit("onRemove", ev, value.slug);
+        emit("onRemove", ev, options.slug);
       }
     })
-  } else if (value.action === 'copyLink') {
+  } else if (options.action === 'copyLink') {
     clipboard.copy(docLink)
     Message.success('链接复制成功')
-  } else if (value.action === 'openLink') {
+  } else if (options.action === 'openLink') {
     window.open(docLink)
   }
 }
 
-const onRenamed = async function (ev: Event, value: { slug: string, doc: Doc, title: string }) {
-  if (value.title && value.title.length > 0) {
-    emit("onChangeTitle", ev, value.slug, value.title);
+const onRenamed = async function (ev: Event, node: TreeNodeData) {
+  if (sidebarData.docTitle && sidebarData.docTitle.length > 0) {
+    const doc = findDocWithPath(node.key as string) as Doc
+
+    console.log('onRenamed', {
+      slug: doc.slug,
+      title: sidebarData.docTitle,
+      doc: doc
+    })
+
+    emit("onChangeTitle", ev, {
+      slug: doc.slug,
+      title: sidebarData.docTitle,
+      doc: doc
+    });
   }
 
-  renameDocSlug.value = ''
+  sidebarData.renameDocSlug = ''
+  sidebarData.docTitle = ''
 }
 
-const createLinkDoc = function (ev: Event) {
-  onCreate(ev, { editor: 'link', content: linkModalData.form.url });
+const checkIsAllowDrop = (options: { dropNode: TreeNodeData; dropPosition: -1 | 0 | 1; }): boolean => {
+  const { dropNode, dropPosition } = options
+
+  if (dropNode.key === `/${space.value}/home`) {
+    return false
+  }
+
+  return true
 }
 
-watch(() => dir, async () => {
-  sidebarData.dir = dir.value
+const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {
+  if (typeof path === 'string' && path) {
+    configStore.docEditMode = docEditMode
+    router.push(path)
+  }
+}
+
+const eventStopPropagation = (ev: Event) => {
+  ev.stopPropagation()
+  ev.preventDefault()
+  ev.stopImmediatePropagation()
+}
+
+watch(() => dir.value.child, async () => {
+  updateDirData(dir.value)
+}, { immediate: true })
+
+watch(() => route.path, async () => {
+  sidebarData.selectedKeys = [route.path]
 }, { immediate: true })
 </script>
 
@@ -291,7 +444,65 @@ watch(() => dir, async () => {
 .docs-sidebar__content::-webkit-scrollbar {
   width: 5px;
 }
+
 .docs-sidebar__content::-webkit-scrollbar-thumb {
   background-color: #e7e9e8;
+}
+</style>
+
+<style>
+.docs-sidebar__tree .arco-tree-node {
+  margin-top: 1px;
+  padding: 0 8px;
+}
+
+.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected,
+.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-title,
+.docs-sidebar__tree .arco-tree-node:hover {
+  color: var(--color-text-1);
+  background-color: var(--color-fill-2);
+}
+
+.docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block,
+.docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block span.arco-tree-node-title-text {
+  width: 100%;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  padding: 0;
+}
+
+.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-title-text,
+.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-icon {
+  color: var(--color-text-1);
+  font-weight: 700;
+}
+
+.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  padding: 5px 0;
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node.docs-sidebar__tree-node-editor-mode {
+  padding: 0
+}
+
+.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node .docs-sidebar__tree-node-title {
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node .docs-sidebar__tree-node-tools {
+  flex: 0 0 30px;
+  margin-top: 5px;
 }
 </style>

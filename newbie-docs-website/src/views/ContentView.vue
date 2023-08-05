@@ -1,8 +1,9 @@
 <template>
   <div class="content-view" v-if="config.dir">
     <div class="docs">
-      <CSidebar :space="space" :dir="config.dir" :active-path="route.path" :editor-type="config.currentDoc?.editor"
-        @on-create="docsService.onCreate" @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle">
+      <CSidebar :space="space" :dir="config.dir" :editor-type="config.currentDoc?.editor"
+        @on-create="docsService.onCreate" @on-copy="docsService.onCopy" @on-remove="docsService.onRemove"
+        @on-change-title="docsService.onChangeTitle">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
@@ -98,12 +99,6 @@ watch(route, async () => {
   configStore.setHeader('/', booksTitle);
   if (config.currentDoc) {
     document.title = config.currentDoc.title + ' - ' + booksTitle
-
-    // 展开父级目录
-    const parentSlug = config.currentDoc.parentSlug
-    if (parentSlug && parentSlug !== 'root' && parentSlug !== 'home') {
-      await docsApi.expand(space, parentSlug)
-    }
   } else {
     document.title = booksTitle
   }
@@ -204,6 +199,21 @@ const docsService = {
     }
     return result
   },
+  onCopy: async (event: Event, value: { slug: string }) => {
+    if (!value?.slug) {
+      return
+    }
+
+    const doc = await docsApi.get(space, value.slug) as Doc
+    if (doc) {
+      docsService.onCreate(event, {
+        parentSlug: doc.parentSlug,
+        title: `${doc.title} - 副本`,
+        editor: doc.editor,
+        content: doc.content
+      } as Doc)
+    }
+  },
   onRemove: async (event: Event, slug: string): Promise<boolean> => {
     const result = await docsApi.remove(space, slug)
     if (result) {
@@ -214,9 +224,9 @@ const docsService = {
 
     return result
   },
-  onChangeTitle: async (event: Event, slug: string, title: string): Promise<boolean> => {
-    if (title && title.length > 0) {
-      return await docsApi.changeTitle(space, slug, title)
+  onChangeTitle: async (event: Event, value: { slug: string, title: string }): Promise<boolean> => {
+    if (value.title && value.title.length > 0) {
+      return await docsApi.changeTitle(space, value.slug, value.title)
     } else {
       return false
     }

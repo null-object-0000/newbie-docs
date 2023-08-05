@@ -24,10 +24,6 @@ export interface Doc {
   path: string;
   title: string;
   child?: Doc[];
-  /**
-   * 是否已展开
-   */
-  expand?: boolean;
   content?: OutputBlockData[] | string;
   createTime: number;
   updateTime?: number;
@@ -80,8 +76,6 @@ export interface UseDocsApiFunction {
    */
   async get: (space: string, slug?: string) => Promise<Doc | undefined>;
   async exists: (space: string, slug: string) => Promise<boolean>;
-
-  async expand: (space: string, slug: string) => Promise<boolean>;
 
   async put: (space: string, doc: Doc) => Promise<boolean>;
   async remove: (space: string, slug: string) => Promise<boolean>;
