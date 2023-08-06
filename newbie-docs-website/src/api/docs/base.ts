@@ -11,6 +11,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean>;
     abstract changeParentSlug(space: string, slug: string, parentSlug: string): Promise<boolean>;
     abstract changeTitle(space: string, slug: string, newTitle: string): Promise<boolean>;
+    abstract findIndex(space: string, slug: string): Promise<number | undefined>;
     abstract getTotalDocCount(space: string): Promise<number>;
     abstract getTotalWordCount(space: string): Promise<number>;
 

@@ -9,8 +9,8 @@
 
                 <div class="content">
                     <div class="editor-container">
-                        <ContentEditorHeader :space="space" :space-data="spaceData" :docs="docs" :doc="doc"
-                            @on-change="event => onChange(event, true)" @on-preview="onPreview"></ContentEditorHeader>
+                        <ContentEditorHeader :doc="doc" @on-change="event => onChange(event, true)" @on-preview="onPreview">
+                        </ContentEditorHeader>
 
                         <div class="title-container">
                             <input v-model="docTitle" @change="onTitleChange" placeholder="请输入标题">
@@ -34,26 +34,14 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import ContentEditorHeader from "./ContentEditorHeader.vue";
 
 const props = defineProps({
-    space: {
-        type: String,
-        required: true,
-    },
-    spaceData: {
-        type: Object,
-        required: true,
-    },
     doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-    docs: {
         type: Object as PropType<Doc>,
         required: true,
     },
 });
 const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 
-const { space, spaceData, doc } = toRefs(props);
+const { doc } = toRefs(props);
 
 // 编辑器实例，必须用 shallowRef
 const editorRef = shallowRef()

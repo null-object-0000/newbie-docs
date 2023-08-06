@@ -3,20 +3,19 @@
     <div class="docs">
       <CSidebar :space="space" :dir="config.dir" :editor-type="config.currentDoc?.editor"
         @on-create="docsService.onCreate" @on-copy="docsService.onCopy" @on-remove="docsService.onRemove"
-        @on-change-title="docsService.onChangeTitle">
+        @on-change-title="docsService.onChangeTitle" @on-change-parent-slug="docsService.onChangeParentSlug"
+        @on-change-sort="docsService.onChangeSort">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
           :class="configStore.docEditMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
             <template v-if="configStore.docEditMode">
-              <CBlockEditor v-if="config.currentDoc.editor === 'block'" :space="space" :space-data="config.spaceData"
-                :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
+              <CBlockEditor v-if="config.currentDoc.editor === 'block'" :editor-config="{ headerPlaceholder: '请输入标题' }"
                 :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
                 @on-change-title="docsService.onChangeTitle">
               </CBlockEditor>
-              <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :space="space" :space-data="config.spaceData"
-                :docs="config.spaceData[space].tree" :editor-config="{ headerPlaceholder: '请输入标题' }"
+              <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :editor-config="{ headerPlaceholder: '请输入标题' }"
                 :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
                 @on-change-title="docsService.onChangeTitle">
               </CWordEditor>
@@ -156,12 +155,6 @@ const docsService = {
 
     parentSlug = parentSlug === 'home' ? 'root' : parentSlug
 
-    let level = await docsApi.getLevel(space, parentSlug)
-    if (level && level > 2) {
-      Message.error('暂时只支持两级目录')
-      return
-    }
-
     let content;
     if (value?.editor === 'word') {
       content = value?.content || ''
@@ -231,7 +224,45 @@ const docsService = {
       return false
     }
   },
+  onChangeParentSlug: async (event: Event, value: { slug: string, parentSlug: string }): Promise<boolean> => {
+    if (value.parentSlug && value.parentSlug.length > 0) {
+      return await docsApi.changeParentSlug(space, value.slug, value.parentSlug)
+    } else {
+      return false
+    }
+  },
+  /**
+   * 
+   * @param event 
+   * @param value { _ 当前 slug: string, 目标 targetSlug: string, -1 为上方，1 为下方 position: number }
+   */
+  onChangeSort: async (event: Event, value: { parentSlug: string, slug: string, targetSlug: string, position: number }): Promise<boolean> => {
+    let currentIndex = await docsApi.findIndex(space, value.slug) as number
+    let aboveIndex = await docsApi.findIndex(space, value.targetSlug) as number
+
+    if (currentIndex === undefined || aboveIndex === undefined) {
+      return false
+    }
+
+    if (currentIndex < aboveIndex) {
+      if (value.position === -1) {
+        aboveIndex = aboveIndex - 1
+      }
+    } else {
+      if (value.position === 1) {
+        aboveIndex = aboveIndex + 1
+      }
+    }
+
+    const result = await docsApi.splice(space, value.slug, aboveIndex)
+    if (!result) {
+      Message.error(`置于${value.position > 0 ? '下方' : '上方'}失败`)
+    }
+
+    return result
+  }
 }
+
 
 watch(() => config.currentDoc?.title, async () => {
   if (config.currentDoc?.slug) {

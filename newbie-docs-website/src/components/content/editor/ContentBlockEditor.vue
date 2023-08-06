@@ -1,7 +1,7 @@
 <template>
     <section data-module="writing">
-        <ContentEditorHeader :space="space" :space-data="spaceData" :docs="docs" :doc="doc"
-            @on-change="event => onChange(event, true)" @on-preview="onPreview"></ContentEditorHeader>
+        <ContentEditorHeader :doc="doc" @on-change="event => onChange(event, true)" @on-preview="onPreview">
+        </ContentEditorHeader>
         <div class="writing-editor">
             <div class="title-container">
                 <input v-model="docTitle" @change="onTitleChange" placeholder="请输入标题">
@@ -51,14 +51,6 @@ import type { Doc, CustomEditorConfig } from "@/types/global";
 import ContentEditorHeader from "./ContentEditorHeader.vue";
 
 const props = defineProps({
-    space: {
-        type: String,
-        required: true,
-    },
-    spaceData: {
-        type: Object,
-        required: true,
-    },
     editorConfig: {
         type: Object as PropType<CustomEditorConfig>,
         default: () => { },
@@ -68,13 +60,9 @@ const props = defineProps({
         type: Object as PropType<Doc>,
         required: true,
     },
-    docs: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
 });
 
-const { space, spaceData, editorConfig, doc } = toRefs(props);
+const { editorConfig, doc } = toRefs(props);
 
 const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 

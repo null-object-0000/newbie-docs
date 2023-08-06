@@ -7,7 +7,7 @@
             <CWordPreview v-else :doc="doc"></CWordPreview>
         </section>
 
-        <ContentPreviewFooter :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewFooter>
+        <ContentPreviewFooter :doc="doc" @on-edit="onEdit"></ContentPreviewFooter>
     </article>
 </template>
 

@@ -21,7 +21,7 @@
 
       <a-tree draggable block-node class="docs-sidebar__tree" v-if="sidebarData.dir" :data="sidebarData.dir"
         v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
-        @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)">
+        @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)" @drop="drop">
         <template #title="node">
           <span class="docs-sidebar__tree-node"
             :class="[sidebarData.renameDocSlug === node.key ? 'docs-sidebar__tree-node-editor-mode' : '']"
@@ -76,9 +76,6 @@
         </template>
         <template #extra="node">
           <icon-home style="position: absolute;" v-if="node.key === `/${space}/home`" />
-        </template>
-        <template #drag-icon="node">
-
         </template>
       </a-tree>
     </aside>
@@ -139,7 +136,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle"]);
+const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "onChangeParentSlug", "onChangeSort"]);
 
 const { space, dir } = toRefs(props);
 
@@ -193,7 +190,6 @@ const updateDirData = (dir?: Doc) => {
 docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {
   updateDirData()
   updateDirData(value.dir)
-  console.log('onDirChange', event, value)
 })
 
 const sidebar = reactive({
@@ -217,8 +213,6 @@ if (window.navigator.userAgent.indexOf('Mac') !== -1) {
 const keyword = ref('');
 const search = () => {
   // 基于 keyword 过滤展示的 docs
-  console.log('search.keyword', keyword.value)
-
   const loop = (data: TreeNodeData[]) => {
     const result = [] as TreeNodeData[];
     data.forEach(item => {
@@ -289,7 +283,6 @@ const createDoc = function (value: string | number | Record<string, any> | undef
 const onCreate = function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
   if (node.key && typeof node.key === 'string' && node.key.indexOf('/') !== -1) {
     const doc = findDocWithPath(node.key as string) as Doc
-    console.log('onCreate', node, doc)
     emit("onCreate", ev, {
       parentSlug: doc.slug,
       editor: value
@@ -345,12 +338,6 @@ const onRenamed = async function (ev: Event, node: TreeNodeData) {
   if (sidebarData.docTitle && sidebarData.docTitle.length > 0) {
     const doc = findDocWithPath(node.key as string) as Doc
 
-    console.log('onRenamed', {
-      slug: doc.slug,
-      title: sidebarData.docTitle,
-      doc: doc
-    })
-
     emit("onChangeTitle", ev, {
       slug: doc.slug,
       title: sidebarData.docTitle,
@@ -370,6 +357,41 @@ const checkIsAllowDrop = (options: { dropNode: TreeNodeData; dropPosition: -1 | 
   }
 
   return true
+}
+
+const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: TreeNodeData; dropPosition: number; }) => {
+  // 拖拽节点
+  const dragDoc = findDocWithPath(data.dragNode.key as string) as Doc
+  // 目标节点
+  const dropDoc = findDocWithPath(data.dropNode.key as string) as Doc
+
+  if (data.dropPosition === 0) {
+    emit("onChangeParentSlug", data.e, {
+      slug: dragDoc.slug,
+      parentSlug: dropDoc.slug,
+    });
+  } else {
+    if (dragDoc.parentSlug !== dropDoc.parentSlug) {
+      emit("onChangeParentSlug", data.e, {
+        slug: dragDoc.slug,
+        parentSlug: dropDoc.parentSlug,
+      });
+    }
+
+    await nextTick(() => {
+      // -1 为上方，1 为下方
+      emit("onChangeSort", data.e, {
+        slug: dragDoc.slug,
+        parentSlug: dropDoc.parentSlug,
+        targetSlug: dropDoc.slug,
+        position: data.dropPosition
+      });
+    })
+  }
+
+  nextTick(() => {
+    // TODO: 展开目标节点
+  })
 }
 
 const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {
@@ -394,24 +416,24 @@ watch(() => route.path, async () => {
 }, { immediate: true })
 </script>
 
-<style scoped>
-.docs-sidebar__search-wrapper:after {
+<style>
+.docs-sidebar .docs-sidebar__search-wrapper:after {
   margin-left: -105px;
   margin-top: 10px;
 }
 
-.docs-sidebar__search-wrapper {
+.docs-sidebar .docs-sidebar__search-wrapper {
   display: flex;
   margin-bottom: 15px;
 }
 
-.docs-sidebar__search {
+.docs-sidebar .docs-sidebar__search {
   display: flex;
   width: calc(100% - 32px);
   height: 34px;
 }
 
-.docs-sidebar__create {
+.docs-sidebar .docs-sidebar__create {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -425,61 +447,61 @@ watch(() => route.path, async () => {
   border: 1px solid var(--color-border-2);
 }
 
-.docs-sidebar__create svg {
+.docs-sidebar .docs-sidebar__create svg {
   color: var(--color-text-2);
   width: 16px;
   min-width: 16px;
   height: 16px;
 }
 
-.docs-sidebar-link {
+.docs-sidebar .docs-sidebar-link {
   cursor: pointer;
 }
 
-.docs-sidebar__section {
+.docs-sidebar .docs-sidebar__section {
   margin-top: 5px;
 }
 
-.docs-sidebar__content::-webkit-scrollbar {
+.docs-sidebar .docs-sidebar__content::-webkit-scrollbar {
   width: 5px;
 }
 
-.docs-sidebar__content::-webkit-scrollbar-thumb {
+.docs-sidebar .docs-sidebar__content::-webkit-scrollbar-thumb {
   background-color: var(--color-text-4);
 }
-</style>
 
-<style>
-.docs-sidebar__tree .arco-tree-node {
+
+.docs-sidebar .docs-sidebar__tree .arco-tree-node {
   margin-top: 1px;
   padding: 0 8px;
 }
 
-.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected,
-.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-title,
-.docs-sidebar__tree .arco-tree-node:hover {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node.arco-tree-node-selected,
+.docs-sidebar .docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-title,
+.docs-sidebar .docs-sidebar__tree .arco-tree-node:hover {
   color: var(--color-text-1);
   background-color: var(--color-fill-2);
 }
 
-.docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block,
-.docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block span.arco-tree-node-title-text {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block,
+.docs-sidebar .docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block span.arco-tree-node-title-text {
   width: 100%;
-  overflow: hidden;
+  padding: 0;
+  /* FIXME: 开启后 tree 的拖拽辅助线就没了，会有有空再看 */
+  /* overflow-x: hidden; */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  padding: 0;
 }
 
-.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-title-text,
-.docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-icon {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-title-text,
+.docs-sidebar .docs-sidebar__tree .arco-tree-node.arco-tree-node-selected span.arco-tree-node-icon {
   color: var(--color-text-1);
   font-weight: 700;
 }
 
-.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node {
   display: flex;
   justify-content: flex-start;
   align-items: flex-start;
@@ -489,19 +511,24 @@ watch(() => route.path, async () => {
   padding-left: 4px;
 }
 
-.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node.docs-sidebar__tree-node-editor-mode {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node.docs-sidebar__tree-node-editor-mode {
   padding: 0
 }
 
-.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node .docs-sidebar__tree-node-title {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node .docs-sidebar__tree-node-title {
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1 1 auto;
 }
 
-.docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node .docs-sidebar__tree-node-tools {
+.docs-sidebar .docs-sidebar__tree .arco-tree-node .docs-sidebar__tree-node .docs-sidebar__tree-node-tools {
   flex: 0 0 30px;
   margin-top: 5px;
+}
+
+.docs-sidebar .arco-tree-node-drag-icon {
+  display: none;
+  flex: 0 0 0;
 }
 </style>

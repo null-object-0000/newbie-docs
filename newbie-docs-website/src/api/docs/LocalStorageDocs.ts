@@ -118,6 +118,8 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         child = child.filter(item => item.slug !== slug)
 
+        child = child.sort((a, b) => a.sort - b.sort)
+
         child.splice(index, 0, doc)
 
         for (let sort = 0; sort < child.length; sort++) {
@@ -187,6 +189,19 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         } else {
             return false
         }
+    }
+
+    async findIndex(space: string, slug: string): Promise<number | undefined> {
+        let docs = this.__get(space) as Doc[]
+        let current = await this.get(space, slug) as Doc
+        let child = current && current.parentSlug ? await super.findChild(docs, current.parentSlug) as Doc[] : undefined
+
+        if (!current || !child) {
+            return
+        }
+
+        child = child.sort((a, b) => a.sort - b.sort)
+        return child.findIndex((item) => item.slug === slug)
     }
 
     async getTotalDocCount(space: string): Promise<number> {

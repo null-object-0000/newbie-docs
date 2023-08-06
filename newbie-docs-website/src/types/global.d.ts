@@ -79,11 +79,20 @@ export interface UseDocsApiFunction {
 
   async put: (space: string, doc: Doc) => Promise<boolean>;
   async remove: (space: string, slug: string) => Promise<boolean>;
+  /**
+   * 在指定空间中将指定 slug 的 doc 移动到指定位置并整理排序
+   * @param space 空间名
+   * @param slug doc slug
+   * @param index 目标位置
+   * @returns 
+   */
   async splice: (space: string, slug: string, index: number) => Promise<boolean>;
 
   async changeSlug: (space: string, oldSlug: string, newSlug: string) => Promise<boolean>;
   async changeParentSlug: (space: string, slug: string, parentSlug: string) => Promise<boolean>;
   async changeTitle: (space: string, slug: string, newTitle: string) => Promise<boolean>;
+
+  async findIndex(space: string, slug: string): Promise<number | undefined>;
 
   async findChild(data: Doc | Doc[] | undefined, parentSlug: string): Promise<Doc[] | undefined>;
 

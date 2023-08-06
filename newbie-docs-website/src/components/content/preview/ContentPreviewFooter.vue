@@ -12,17 +12,13 @@ import type { Doc } from '@/types/global';
 import { useUserStore } from '@/stores/user';
 
 const props = defineProps({
-    docs: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
     doc: {
         type: Object as PropType<Doc>,
         required: true,
     },
 });
 
-const { docs, doc } = toRefs(props);
+const { doc } = toRefs(props);
 
 const formatTime = (time?: number) => {
     // 不足两位就补0
