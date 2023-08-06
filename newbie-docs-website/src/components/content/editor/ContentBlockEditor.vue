@@ -257,6 +257,18 @@ watch(doc, () => {
 .writing-editor #editorjs .tc-toolbox__toggler svg {
     fill: currentColor;
 }
+
+#editorjs .ce-inline-toolbar,
+#editorjs .ce-conversion-toolbar,
+#editorjs .ce-conversion-tool__icon {
+    background-color: var(--color-bg-1);
+    border-color: var(--color-border-1);
+}
+
+#editorjs .ce-toolbar__plus,
+#editorjs .ce-toolbar__settings-btn {
+    color: var(--color-text-1)
+}
 </style>
 
 <style scoped>
@@ -272,12 +284,12 @@ watch(doc, () => {
     width: 100%;
     line-height: 1;
 
-    background: #fff;
-    color: black;
+    background: var(--color-bg-1);
+    color: var(--color-text-1);
 }
 
 .writing-editor .title-container input::-webkit-input-placeholder {
-    color: #bfbfbf;
+    color: var(--color-text-4);
 }
 </style>
   

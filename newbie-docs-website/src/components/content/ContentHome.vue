@@ -139,22 +139,24 @@ const submitRenameTitle = (event: Event) => {
 <style scoped>
 .docs-content-home {
     width: 100%;
-    /* min-height: calc(100vh - 60px - var(--layout-height-header)); */
     will-change: padding-left;
 }
 
 .docs-content-home__wrapper {
     padding: 64px 32px 0 32px;
-    /* min-height: 100vh; */
     position: relative;
 }
 
 .docs-content-home__body {
-    background: hsla(0, 0%, 100%, .9);
+    background: hsla(0, 0%, 100%, 0.9);
     border-radius: 12px;
     padding: 32px;
     min-height: calc(100vh - 64px - 32px - 2 * var(--layout-height-header));
     margin: 0 auto;
+}
+
+body[arco-theme='dark'] .docs-content-home__body {
+    background: hsla(0, 0%, 0%, 0.9);
 }
 
 @media (min-width: 1300px) {
@@ -177,15 +179,15 @@ const submitRenameTitle = (event: Event) => {
 
 .docs-content-home__header {
     font-size: 28px;
-    color: #262626;
+    color: var(--color-text-1);
     font-weight: 700;
     margin-left: 18px;
 }
 
 .docs-content-home__more-actions {
-    border: 1px solid #E7E9E8;
+    border: 1px solid var(--color-border-1);
     border-radius: 6px;
-    color: #262626;
+    color: var(--color-text-1);
     text-align: center;
     padding: 7px;
     min-width: 32px;
@@ -197,7 +199,7 @@ const submitRenameTitle = (event: Event) => {
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
-    background: #FFFFFF;
+    background: var(--color-bg-1);
 
     width: 32px;
 
@@ -211,7 +213,7 @@ const submitRenameTitle = (event: Event) => {
 .docs-content-home__docCount,
 .docs-content-home__wordCount {
     font-size: 14px;
-    color: #8A8F8D;
+    color: var(--color-text-3);
     text-align: center;
 }
 

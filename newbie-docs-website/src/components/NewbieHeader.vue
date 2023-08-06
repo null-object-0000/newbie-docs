@@ -19,8 +19,8 @@ const { header } = toRefs(configStore);
 
 <style scoped>
 .docs-header {
-  background: #fff;
-  border-bottom: 1px solid #e8e8eb;
+  background: var(--color-bg-1);
+  border-bottom: 1px solid var(--color-border-2);
   box-sizing: border-box;
   display: flex;
   flex-shrink: 0;

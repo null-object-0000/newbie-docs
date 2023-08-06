@@ -56,8 +56,9 @@
                   <a-doption value="copyLink"><template #icon><icon-link /></template>复制链接</a-doption>
                   <a-doption value="openLink"><template #icon><icon-launch /></template>在新标签页打开</a-doption>
                   <a-doption value="copy"><template #icon><icon-copy /></template>复制</a-doption>
-                  <a-doption value="delete" :style="{ color: '#DF2A3F' }"><template
-                      #icon><icon-delete /></template>删除</a-doption>
+                  <a-doption value="delete" :style="{ color: 'rgb(var(--danger-6))' }">
+                    <template #icon><icon-delete /></template>删除
+                  </a-doption>
                 </template>
               </a-dropdown>
               <a-dropdown trigger="click" @select="(value, ev) => onCreate(node, value, ev)"
@@ -420,12 +421,12 @@ watch(() => route.path, async () => {
   margin: 0 0 0 12px;
   cursor: pointer;
   transition: background .35s ease-in-out;
-  background-color: #FFFFFF;
-  border: 1px solid #E7E9E8;
+  background-color: var(--color-bg-1);
+  border: 1px solid var(--color-border-2);
 }
 
 .docs-sidebar__create svg {
-  color: #585A5A;
+  color: var(--color-text-2);
   width: 16px;
   min-width: 16px;
   height: 16px;
@@ -444,7 +445,7 @@ watch(() => route.path, async () => {
 }
 
 .docs-sidebar__content::-webkit-scrollbar-thumb {
-  background-color: #e7e9e8;
+  background-color: var(--color-text-4);
 }
 </style>
 

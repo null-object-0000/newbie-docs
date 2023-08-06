@@ -241,6 +241,10 @@ watch(() => config.currentDoc?.title, async () => {
 </script>
 
 <style scoped>
+.content-view {
+  background: var(--color-bg-1);
+}
+
 .docs__content.docs_content_word_editor {
   margin-left: 0;
   margin-right: 0;

@@ -102,7 +102,7 @@ watch(doc, () => {
 <style scoped>
 .word-editor-view .editor-toolbar {
     width: 1350px;
-    background-color: #FCFCFC;
+    background-color: var(--color-bg-1);
     margin: 0 auto;
     position: fixed;
     z-index: 1;
@@ -111,7 +111,7 @@ watch(doc, () => {
 .word-editor-view .content {
     margin-top: 80px;
     height: calc(100% - 40px);
-    background-color: rgb(245, 245, 245);
+    background-color: var(--color-fill-2);
     overflow-y: auto;
     position: relative;
 }
@@ -119,15 +119,15 @@ watch(doc, () => {
 .word-editor-view .editor-container {
     width: 850px;
     margin: 30px auto 150px auto;
-    background-color: #fff;
+    background-color: var(--color-bg-1);
     padding: 20px 50px 50px 50px;
-    border: 1px solid #e8e8e8;
+    border: 1px solid var(--color-border-2);
     box-shadow: 0 2px 10px rgb(0 0 0 / 12%);
 }
 
 .word-editor-view .title-container {
     padding: 20px 0;
-    border-bottom: 1px solid #e8e8e8;
+    border-bottom: 1px solid var(--color-border-2);
 }
 
 .word-editor-view .title-container input {
@@ -138,12 +138,12 @@ watch(doc, () => {
     width: 100%;
     line-height: 1;
 
-    background: #fff;
-    color: black;
+    background: var(--color-bg-1);
+    color: var(--color-text-1);
 }
 
 .word-editor-view .title-container input::-webkit-input-placeholder {
-    color: #bfbfbf;
+    color: var(--color-text-4);
 }
 
 .word-editor-view .editor-text-area {

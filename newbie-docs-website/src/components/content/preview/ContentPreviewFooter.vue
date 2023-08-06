@@ -47,7 +47,7 @@ const formatTime = (time?: number) => {
 }
 
 .page__footer .update-time {
-    color: #8a8f8d;
+    color: var(--color-text-3);
     font-size: 12px;
 }
 
