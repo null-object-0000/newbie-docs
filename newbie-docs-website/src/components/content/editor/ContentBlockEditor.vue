@@ -1,5 +1,5 @@
 <template>
-    <section data-module="writing">
+    <section data-module="writing" class="content-block-ediotr">
         <ContentEditorHeader :doc="doc" @on-change="event => onChange(event, true)" @on-preview="onPreview">
         </ContentEditorHeader>
         <div class="writing-editor">
@@ -278,6 +278,15 @@ watch(doc, () => {
 
 .writing-editor .title-container input::-webkit-input-placeholder {
     color: var(--color-text-4);
+}
+</style>
+
+<style>
+.content-block-ediotr .editor-tools {
+    position: fixed;
+    right: 16px;
+    top: -5px;
+    z-index: 9999;
 }
 </style>
   

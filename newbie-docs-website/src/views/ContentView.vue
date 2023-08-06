@@ -55,6 +55,7 @@ import { useBooksApi } from "@/api/books";
 import { useDocsApi } from "@/api/docs";
 import { useUserStore } from '@/stores/user';
 import { useConfigStore } from "@/stores/config";
+import { usePermissionsApi } from "@/api/permissions";
 
 const route = useRoute();
 const router = useRouter();
@@ -74,6 +75,7 @@ const config: ContentViewConfig = reactive({
 
 const booksApi = useBooksApi('localStorage');
 const docsApi = useDocsApi('localStorage', config.spaceData);
+const premissionsApi = usePermissionsApi('localStorage');
 
 if ((await booksApi.exists(bookSlug)) === false) {
   router.push({ path: `/` });
@@ -214,6 +216,17 @@ const docsService = {
 
     const result = await docsApi.put(bookSlug, doc);
     if (result) {
+      // TODO: 默认给自己加一个管理员权限，后期应该是逻辑放在后端
+      await premissionsApi.put({
+        id: Math.ceil(Math.random() * 100000000000000),
+        authType: "adminer",
+        dataType: 'doc',
+        dataId: doc.id,
+        dataFlag: doc.bookSlug + '/' + doc.slug,
+        owner: userStore.name + userStore.id,
+        ownerType: 'user'
+      })
+
       router.push(doc.path)
       configStore.docEditMode = true
     }

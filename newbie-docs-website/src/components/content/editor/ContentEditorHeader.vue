@@ -109,13 +109,6 @@ form.arco-form.arco-form-layout-inline .arco-form-item {
     height: 34px;
 }
 
-.editor-tools {
-    position: fixed;
-    right: 16px;
-    top: -5px;
-    z-index: 9999;
-}
-
 .flex_wrap {
     width: 184px;
 }

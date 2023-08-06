@@ -61,10 +61,12 @@ import { useBooksApi } from '@/api/books';
 import { Book } from '@/types/global'
 import { FormInstance } from '@arco-design/web-vue/es/form';
 import { onBeforeMount } from "vue";
+import { usePermissionsApi } from "@/api/permissions";
 
 const userStore = useUserStore();
 const configStore = useConfigStore();
 const booksApi = useBooksApi('localStorage')
+const premissionsApi = usePermissionsApi('localStorage')
 
 configStore.setHeader('/', 'Newbie Docs');
 
@@ -92,7 +94,7 @@ const addBook = async () => {
             return false
         }
 
-        const result = await booksApi.put({
+        const book = {
             id: Math.ceil(Math.random() * 1000000000),
             slug: editBookModal.form.slug,
             title: editBookModal.form.title,
@@ -100,9 +102,21 @@ const addBook = async () => {
             description: editBookModal.form.description,
             creaotr: userStore.name + userStore.id,
             createTime: new Date().getTime()
-        })
+        } as Book
+        const result = await booksApi.put(book)
 
         if (result) {
+            // TODO: 默认给自己加一个管理员权限，后期应该是逻辑放在后端
+            await premissionsApi.put({
+                id: Math.ceil(Math.random() * 100000000000000),
+                authType: "adminer",
+                dataType: 'book',
+                dataId: book.id,
+                dataFlag: book.slug,
+                owner: userStore.name + userStore.id,
+                ownerType: 'user'
+            })
+
             dir.value = await booksApi.dir() as Book[]
             editBookModal.visible = false
         }

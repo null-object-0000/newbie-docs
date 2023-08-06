@@ -12,7 +12,6 @@
             <a-breadcrumb-item>{{ doc.title }}</a-breadcrumb-item>
         </a-breadcrumb>
     </header>
-
     <a-button class="edit-btn" type="primary"
         v-if="permission && (permission.authType === 'adminer' || permission.authType === 'editor')" @click="onEdit">
         <template #icon>

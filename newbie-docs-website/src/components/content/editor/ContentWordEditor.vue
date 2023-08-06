@@ -1,5 +1,5 @@
 <template>
-    <section data-module="writing">
+    <section data-module="writing" class="content-word-ediotr">
         <div class="writing-editor">
             <div class="word-editor-view" style="border-bottom: 1px solid #e8e8e8;">
                 <div style="border-bottom: 1px solid #e8e8e8;">
@@ -141,5 +141,14 @@ watch(doc, () => {
 
 .word-editor-view .editor-text-area {
     font-size: 15px;
+}
+</style>
+
+<style>
+.content-word-ediotr .editor-tools {
+    position: fixed;
+    right: 16px;
+    top: -12px;
+    z-index: 9999;
 }
 </style>
