@@ -13,7 +13,8 @@
         </a-breadcrumb>
     </header>
 
-    <a-button class="edit-btn" type="primary" v-if="userStore.isLogin" @click="onEdit">
+    <a-button class="edit-btn" type="primary"
+        v-if="permission && (permission.authType === 'adminer' || permission.authType === 'editor')" @click="onEdit">
         <template #icon>
             <icon-edit />
         </template>
@@ -25,8 +26,11 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue';
-import type { Doc } from '@/types/global';
+import type { Doc, Permission } from '@/types/global';
 import { useUserStore } from '@/stores/user';
+import { usePermissionsApi } from '@/api/permissions';
+import { watch } from 'vue';
+import { ref } from 'vue';
 
 const propsDef = defineProps({
     docs: {
@@ -40,10 +44,12 @@ const propsDef = defineProps({
 });
 
 const { docs, doc } = toRefs(propsDef);
+const permission = ref<Permission>();
 
 const emitsDef = defineEmits(['onEdit']);
 
 const userStore = useUserStore();
+const permissionsApi = usePermissionsApi('localStorage');
 
 const onEdit = (event: Event) => {
     emitsDef('onEdit', event);
@@ -76,6 +82,15 @@ const getParents = (data: Doc[], slug?: string): Doc[] => {
     }
     return parents;
 };
+
+watch(doc, async () => {
+    permission.value = await permissionsApi.get({
+        dataType: 'doc',
+        dataFlag: doc.value.bookSlug + '/' + doc.value.slug,
+        ownerType: 'user',
+        owner: userStore.name + userStore.id,
+    });
+}, { immediate: true },);
 </script>
 
 <style>

@@ -1,4 +1,14 @@
-import { Book, Doc } from "@/types/global";
+import { Book, Doc, Permission } from "@/types/global";
+
+export interface UsePermissionsApiFunction {
+    async get: (params: { authType?: string, dataType: string, ownerType: string, owner: string, dataId?: number, dataFlag?: string }) => Promise<Permission | undefined>;
+    async list: (params: { authType?: string, dataType: string, dataId?: number, dataFlag?: string }) => Promise<Permission[] | undefined>;
+
+    async put: (permission: Permission) => Promise<boolean>;
+    async remove: (id: number) => Promise<boolean>;
+
+    async changeAuthType: (id: number, newAuthType: string) => Promise<boolean>;
+}
 
 export interface UseBooksApiFunction {
     async dir: () => Promise<Book[] | undefined>;
@@ -7,6 +17,8 @@ export interface UseBooksApiFunction {
 
     async put: (book: Book) => Promise<boolean>;
     async remove: (slug: string) => Promise<boolean>;
+
+    async changeTitle: (slug: string, newTitle: string) => Promise<boolean>;
 }
 
 export interface UseDocsApiFunction {

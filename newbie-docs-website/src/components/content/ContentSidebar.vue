@@ -19,8 +19,8 @@
         </a-dropdown>
       </span>
 
-      <a-tree draggable block-node class="docs-sidebar__tree" v-if="sidebarData.dir" :data="sidebarData.dir"
-        v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
+      <a-tree draggable block-node default-expand-selected class="docs-sidebar__tree" v-if="sidebarData.dir"
+        :data="sidebarData.dir" v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
         @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)" @drop="drop">
         <template #title="node">
           <span class="docs-sidebar__tree-node"
@@ -53,6 +53,7 @@
                 <template #content>
                   <a-doption value="rename"><template #icon><icon-loop /></template>重命名</a-doption>
                   <a-doption value="edit"><template #icon><icon-edit /></template>编辑文档</a-doption>
+                  <a-doption value="permission"><template #icon><icon-lock /></template>权限管理</a-doption>
                   <a-doption value="copyLink"><template #icon><icon-link /></template>复制链接</a-doption>
                   <a-doption value="openLink"><template #icon><icon-launch /></template>在新标签页打开</a-doption>
                   <a-doption value="copy"><template #icon><icon-copy /></template>复制</a-doption>
@@ -80,10 +81,14 @@
       </a-tree>
     </aside>
 
-    <div v-if="editorType !== 'word'" class="docs-sidebar__slider" @click="sidebar.collapsed = !sidebar.collapsed">
+    <!-- <div class="docs-sidebar__slider" @click="sidebar.collapsed = !sidebar.collapsed">
       <docs-icon-arrow-left />
-    </div>
+    </div> -->
   </div>
+
+  <PermissionModal v-if="permissionModal.visible" data-type="doc" v-model:visible="permissionModal.visible"
+    :doc="sidebarData.settingDoc" width="750px">
+  </PermissionModal>
 </template>
 
 <script setup lang="ts">
@@ -94,6 +99,7 @@ import { Message, Modal, type TreeNodeData } from "@arco-design/web-vue";
 import { useConfigStore } from "@/stores/config";
 import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
+import PermissionModal from "@/components/PermissionModal.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -130,10 +136,6 @@ const props = defineProps({
     type: Object as PropType<Doc>,
     required: true,
   },
-  editorType: {
-    type: String,
-    required: false
-  }
 });
 
 const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "onChangeParentSlug", "onChangeSort"]);
@@ -149,7 +151,8 @@ const sidebarData = reactive({
   editMode: false,
   hoverNode: null,
   renameDocSlug: '',
-  docTitle: ''
+  docTitle: '',
+  settingDoc: undefined
 } as {
   rawDir: Doc[],
   fullDir: TreeNodeData[],
@@ -158,8 +161,13 @@ const sidebarData = reactive({
   editMode: boolean,
   hoverNode: string | null,
   renameDocSlug: string,
-  docTitle: string
+  docTitle: string,
+  settingDoc: Doc | undefined,
 });
+
+const permissionModal = reactive({
+  visible: false,
+})
 
 const formatDirData = (dir: Doc[]): TreeNodeData[] => {
   return dir.map(item => {
@@ -320,7 +328,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
     Modal.warning({
       title: `确认框`,
       simple: true,
-      content: `确认删除 ${doc.title} 吗？`,
+      content: `确认删除 “${doc.title}” 文档吗？`,
       hideCancel: false,
       onOk: async () => {
         emit("onRemove", ev, options.slug);
@@ -331,6 +339,10 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
     Message.success('链接复制成功')
   } else if (options.action === 'openLink') {
     window.open(docLink)
+  } else if (options.action === 'permission') {
+    console.log('permission', doc)
+    sidebarData.settingDoc = doc
+    permissionModal.visible = true
   }
 }
 
@@ -388,10 +400,6 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
       });
     })
   }
-
-  nextTick(() => {
-    // TODO: 展开目标节点
-  })
 }
 
 const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {

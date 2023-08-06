@@ -1,12 +1,12 @@
 <template>
-    <div class="docs-content-home"
-        :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${randomCoverImg()}') center top / 100% no-repeat` }">
+    <div v-if="book && book.id" class="docs-content-home"
+        :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${coverImg(book.id)}') center top / 100% no-repeat` }">
         <div class="docs-content-home__wrapper">
             <div class="docs-content-home__body">
                 <div class="docs-content-home__header">
                     <docs-icon-book-type-default style="margin-right: 18px" />
                     <span v-if="editMode === false">
-                        {{ title }}
+                        {{ book.title }}
                     </span>
                     <div v-else class="rename-title-input-wrapper">
                         <a-input size="large" ref="renameInputRef" v-model="docTitle">
@@ -36,7 +36,11 @@
                                 <template #icon><icon-edit /></template>
                                 编辑首页
                             </a-doption>
-                            <a-doption value="delete" disabled>
+                            <a-doption value="permission">
+                                <template #icon><icon-lock /></template>
+                                权限管理
+                            </a-doption>
+                            <a-doption value="delete" :style="{ color: 'rgb(var(--danger-6))' }">
                                 <template #icon><icon-delete /></template>
                                 删除
                             </a-doption>
@@ -69,21 +73,28 @@
             </div>
         </div>
     </div>
+
+    <PermissionModal v-if="permissionModal.visible" data-type="book" v-model:visible="permissionModal.visible" :book="book"
+        width="750px">
+    </PermissionModal>
 </template>
 
 <script setup lang="ts">
-import { toRefs, nextTick, type PropType } from "vue";
-import { ref } from "vue";
+import { toRefs, nextTick } from "vue";
+import { ref, reactive } from "vue";
 import { useConfigStore } from "@/stores/config";
+import { useBooksApi } from "@/api/books";
+import { computedAsync } from "@vueuse/core";
+import { Book } from "@/types/global";
+import PermissionModal from "@/components/PermissionModal.vue";
+import { Message, Modal } from "@arco-design/web-vue";
+import { useRouter } from "vue-router";
 
+const router = useRouter()
 const configStore = useConfigStore()
 
 const props = defineProps({
     space: {
-        type: String,
-        required: true,
-    },
-    title: {
         type: String,
         required: true,
     },
@@ -99,39 +110,67 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(["onChangeTitle"]);
+const booksApi = useBooksApi('localStorage')
 
-const { space, title } = toRefs(props);
+const book = computedAsync(async () => {
+    return await booksApi.get(props.space) as Book
+}, {} as Book)
+
+const permissionModal = reactive({
+    visible: false,
+})
+
+const { space } = toRefs(props);
 let editMode = ref(false)
 let docTitle = ref('')
 const renameInputRef = ref<HTMLElement | null>(null)
 
-const randomCoverImg = () => {
+const coverImg = (id: number) => {
     const maxIndex = 5
-    const randomIndex = Math.floor(Math.random() * maxIndex) + 1
-    return `/img/cover_${randomIndex}.png`
+    const index = id % maxIndex + 1
+    return `/img/cover_${index}.png`
 }
 
-const onSpaceSetting = (value: string | number | Record<string, any> | undefined, ev: Event) => {
+const onSpaceSetting = async (value: string | number | Record<string, any> | undefined, ev: Event) => {
     console.log('onSpaceSetting', value, ev)
     if (value === 'rename') {
-        docTitle.value = title.value
+        docTitle.value = book.value.title
         editMode.value = true
         nextTick(() => {
             renameInputRef.value?.focus()
         })
     } else if (value === 'delete') {
-        console.log('delete')
+        Modal.warning({
+            title: `确认框`,
+            simple: true,
+            content: `确认删除 “${book.value.title}” 知识库吗？`,
+            hideCancel: false,
+            onOk: async () => {
+                console.log('delete', book.value.id)
+                const result = await booksApi.remove(book.value.slug)
+                if (result) {
+                    Message.success('删除成功')
+                    router.push('/')
+                } else {
+                    Message.error('删除失败')
+                }
+            }
+        })
+    } else if (value === 'permission') {
+        permissionModal.visible = true
     }
 }
 
-const submitRenameTitle = (event: Event) => {
+const submitRenameTitle = async (event: Event) => {
     if (docTitle.value && docTitle.value.length > 0) {
-        emit('onChangeTitle', event, 'root', docTitle.value)
+        const result = await booksApi.changeTitle(space.value, docTitle.value)
+        if (result) {
+            book.value.title = docTitle.value
+        }
+
         configStore.setHeader('/', docTitle.value);
         document.title = '首页 - ' + docTitle.value
     }
-    console.log('submitRenameTitle', docTitle.value)
     editMode.value = false
 }
 </script>
