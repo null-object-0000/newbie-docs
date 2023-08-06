@@ -229,8 +229,8 @@ template {
 
 @media (min-width: 1300px) {
   :root {
-    /* --layout-sidebar-width: 344px; */
-    --layout-sidebar-width: 294px;
+    --layout-sidebar-width: 344px;
+    /* --layout-sidebar-width: 294px; */
   }
 }
 

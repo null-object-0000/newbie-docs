@@ -27,6 +27,8 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
 
         for (const doc of docs) {
             const result = doc.id && doc.id > 0 && typeof doc.id === 'number'
+                && doc.bookId && doc.bookId > 0 && typeof doc.bookId === 'number'
+                && doc.bookSlug && doc.bookSlug.length > 0 && typeof doc.bookSlug === 'string'
                 && doc.slug && doc.slug.length > 0 && typeof doc.slug === 'string'
                 && doc.title && doc.title.length > 0 && typeof doc.title === 'string'
                 && doc.sort !== undefined && typeof doc.sort === 'number'
@@ -111,6 +113,9 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         const rootSlug = 'root'
 
         const tree = {
+            bookId: book.id,
+            bookSlug: book.slug,
+
             id: rootId,
             slug: rootSlug,
             editor: 'block',
@@ -121,6 +126,9 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
             createTime: new Date().getTime(),
             child: [
                 {
+                    bookId: book.id,
+                    bookSlug: book.slug,
+
                     id: Math.ceil(Math.random() * 1000000000),
                     slug: 'home',
                     parentId: rootId,

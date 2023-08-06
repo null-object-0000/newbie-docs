@@ -17,6 +17,9 @@ export interface Book {
 }
 
 export interface Doc {
+  bookId: number;
+  bookSlug: string;
+
   id: number;
   /**
    * 唯一标识
@@ -51,8 +54,11 @@ export interface Permission {
   dataType: string;
   dataId: number;
   dataFlag: string;
-  userId: number;
-  userDepartment: string;
+  owner: string;
+  /**
+   * user、department
+   */
+  ownerType: string;
 }
 
 export interface DocData {
@@ -63,6 +69,7 @@ export interface DocData {
 export interface ContentViewConfig {
   spaceData: Record<string, DocData>;
   dir?: Doc | null;
+  currentBook?: Book | null;
   currentDoc?: Doc | null;
   totalDocCount?: number;
   totalWordCount?: number;

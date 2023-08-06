@@ -1,10 +1,9 @@
 <template>
   <div class="content-view" v-if="config.dir">
     <div class="docs">
-      <CSidebar :space="bookSlug" :dir="config.dir" :editor-type="config.currentDoc?.editor"
-        @on-create="docsService.onCreate" @on-copy="docsService.onCopy" @on-remove="docsService.onRemove"
-        @on-change-title="docsService.onChangeTitle" @on-change-parent-slug="docsService.onChangeParentSlug"
-        @on-change-sort="docsService.onChangeSort">
+      <CSidebar :space="bookSlug" :dir="config.dir" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
+        @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle"
+        @on-change-parent-slug="docsService.onChangeParentSlug" @on-change-sort="docsService.onChangeSort">
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
@@ -31,9 +30,8 @@
             <COutline :doc="config.currentDoc" :edit-mode="configStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome :space="bookSlug" :title="config.spaceData[bookSlug].tree.title" :total-doc-count="config.totalDocCount"
-          :total-word-count="config.totalWordCount" :docs="config.spaceData[bookSlug].tree"
-          @on-change-title="docsService.onChangeTitle" v-else></CHome>
+        <CHome v-else :space="bookSlug" :total-doc-count="config.totalDocCount" :total-word-count="config.totalWordCount">
+        </CHome>
       </template>
     </div>
   </div>
@@ -68,6 +66,7 @@ const bookSlug = route.params.bookSlug as string;
 const config: ContentViewConfig = reactive({
   dir: null,
   spaceData: {},
+  currentBook: null,
   currentDoc: null,
   totalDocCount: 0,
   totalWordCount: 0,
@@ -76,11 +75,23 @@ const config: ContentViewConfig = reactive({
 const booksApi = useBooksApi('localStorage');
 const docsApi = useDocsApi('localStorage', config.spaceData);
 
-await docsApi.init(bookSlug);
+if ((await booksApi.exists(bookSlug)) === false) {
+  router.push({ path: `/` });
+} else {
+  await docsApi.init(bookSlug);
+}
 
 // 监听路由变化
 watch(route, async () => {
+  const bookSlug = route.params.bookSlug as string;
   const slug = route.params.docSlug as string;
+  const book = await booksApi.get(bookSlug) as Book
+
+  if (book === undefined || book === null) {
+    router.push({ path: `/` });
+    return
+  }
+
   const doc = await docsApi.get(bookSlug, slug);
 
   if (route.path === "/" + bookSlug || route.path === "/" + bookSlug + "/") {
@@ -94,6 +105,7 @@ watch(route, async () => {
   }
 
   config.dir = await docsApi.dir(bookSlug);
+  config.currentBook = book;
   config.currentDoc = doc;
 
   if (doc.slug === 'home') {
@@ -101,12 +113,11 @@ watch(route, async () => {
     config.totalWordCount = await docsApi.getTotalWordCount(bookSlug);
   }
 
-  const books = await booksApi.get(bookSlug) as Book
-  configStore.setHeader('/', books.title);
+  configStore.setHeader('/', book.title);
   if (config.currentDoc) {
-    document.title = config.currentDoc.title + ' - ' + books.title
+    document.title = config.currentDoc.title + ' - ' + book.title
   } else {
-    document.title = books.title
+    document.title = book.title
   }
 }, { immediate: true });
 
@@ -135,7 +146,10 @@ const onEditorChange = async function (event: Event, content: any, showSuccessTi
       }
 
       const notificationInstance = Notification.success({
-        title: '文档已保存'
+        title: '文档已保存',
+        style: {
+          top: '50px',
+        },
       } as NotificationConfig)
       historyNotification.push(notificationInstance)
     }
@@ -179,7 +193,12 @@ const docsService = {
       ]
     }
 
+    const book = await booksApi.get(bookSlug) as Book
+
     const doc: Doc = {
+      bookId: book.id,
+      bookSlug: book.slug,
+
       id: Math.ceil(Math.random() * 100000000000000),
       slug,
       parentSlug,

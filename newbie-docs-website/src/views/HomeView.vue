@@ -60,7 +60,7 @@ import { ref, reactive } from 'vue';
 import { useBooksApi } from '@/api/books';
 import { Book } from '@/types/global'
 import { FormInstance } from '@arco-design/web-vue/es/form';
-import { computedAsync } from '@vueuse/core'
+import { onBeforeMount } from "vue";
 
 const userStore = useUserStore();
 const configStore = useConfigStore();
@@ -68,9 +68,11 @@ const booksApi = useBooksApi('localStorage')
 
 configStore.setHeader('/', 'Newbie Docs');
 
-const dir = computedAsync(async () => {
-    return await booksApi.dir() as Book[]
-}, [] as Book[])
+const dir = ref<Book[]>([])
+
+onBeforeMount(async () => {
+    dir.value = await booksApi.dir() as Book[]
+})
 
 const editBookFormRef = ref<FormInstance>();
 const editBookModal = reactive({
@@ -101,9 +103,8 @@ const addBook = async () => {
         })
 
         if (result) {
+            dir.value = await booksApi.dir() as Book[]
             editBookModal.visible = false
-            // 刷新页面
-            window.location.reload()
         }
 
         return result
@@ -137,6 +138,6 @@ const addBook = async () => {
     position: fixed;
     right: 16px;
     top: 10px;
-    z-index: 10;
+    z-index: 9999;
 }
 </style>

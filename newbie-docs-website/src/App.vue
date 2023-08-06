@@ -15,3 +15,10 @@ import { RouterView } from "vue-router";
 import NewbieHeader from "@/components/NewbieHeader.vue";
 
 </script>
+
+<style>
+#app {
+  height: 100vh;
+  background-color: var(--color-fill-2);
+}
+</style>

@@ -8,28 +8,28 @@
                             placeholder="please enter your slug..." />
                     </a-form-item>
                 </a-form>
-
-                <div class="editor-tools" style="flex: 0 1 15%;">
-                    <label>&nbsp;&nbsp;&nbsp;</label>
-                    <div class="flex_wrap">
-                        <a-button class="editor-tools-btn" @click="onChange" type="secondary">
-                            <template #icon>
-                                <icon-save />
-                            </template>
-                            <template #default>保存</template>
-                        </a-button>
-
-                        <a-button class="editor-tools-btn" @click="onPreview" type="primary">
-                            <template #icon>
-                                <icon-eye />
-                            </template>
-                            <template #default>查看</template>
-                        </a-button>
-                    </div>
-                </div>
             </div>
         </header>
     </section>
+
+    <div class="editor-tools" style="flex: 0 1 15%;">
+        <label>&nbsp;&nbsp;&nbsp;</label>
+        <div class="flex_wrap">
+            <a-button class="editor-tools-btn" @click="onPreview" type="primary">
+                <template #icon>
+                    <icon-eye />
+                </template>
+                <template #default>查看</template>
+            </a-button>
+
+            <a-button class="editor-tools-btn" @click="onChange" type="secondary">
+                <template #icon>
+                    <icon-save />
+                </template>
+                <template #default>保存</template>
+            </a-button>
+        </div>
+    </div>
 </template>
   
 <script setup lang="ts">
@@ -107,6 +107,13 @@ form.arco-form.arco-form-layout-inline .arco-form-item {
     padding: 0;
     margin-right: 8px;
     height: 34px;
+}
+
+.editor-tools {
+    position: fixed;
+    right: 16px;
+    top: -5px;
+    z-index: 9999;
 }
 
 .flex_wrap {

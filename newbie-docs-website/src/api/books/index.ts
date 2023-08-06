@@ -8,7 +8,7 @@ export function useBooksApi(storage: ApiStorageEnum): UseBooksApiFunction {
         case "localStorage":
             booksApi = new UseLocalStorageBooksApi();
         // case "rest":
-        // docsApi = new UseRESTfulBooksApi(spaceData);
+        // booksApi = new UseRESTfulBooksApi(spaceData);
         default:
             booksApi = new UseLocalStorageBooksApi();
     }

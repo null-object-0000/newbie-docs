@@ -64,4 +64,20 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
         return this.__updateCache('remove', books)
     }
 
+    async changeTitle(slug: string, newTitle: string): Promise<boolean> {
+        if (!newTitle || newTitle.length <= 0) {
+            return false
+        }
+
+        let books = this.__get() as Book[]
+        const doc = books.find(item => item.slug === slug)
+        if (doc) {
+            doc.title = newTitle
+
+            return this.__updateCache('changeTitle', books)
+        } else {
+            return false
+        }
+    }
+
 }
