@@ -1,6 +1,6 @@
 <template>
     <a-modal v-if="dataType && (book || doc)" v-model:visible="modalVisible"
-        :modal-style="{ 'min-height': '300px', 'max-height': '75vh', 'overflow-y': 'scroll' }" :closable="false"
+        :modal-style="{ 'min-height': '300px', 'max-height': '75vh', 'overflow-y': 'auto' }" :closable="false"
         :footer="false" :width="width">
         <template #title>
             <a-button style="position: absolute; right: 20px;" type="text" @click="add"
