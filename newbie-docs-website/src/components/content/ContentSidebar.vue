@@ -28,15 +28,13 @@
             @mouseover="sidebarData.hoverNode = node.key">
             <span v-if="node.key === `/${space}/home` || sidebarData.renameDocSlug !== node.key"
               class="docs-sidebar__tree-node-title">
-              <!-- {{ node.title }} -->
-
-              <template v-if="index = getMatchIndex(node?.title), index < 0">{{ node?.title }}</template>
+              <template v-if="getMatchIndex(node?.title) < 0">{{ node?.title }}</template>
               <span v-else>
-                <span>{{ node?.title?.substr(0, index) }}</span>
+                <span>{{ node?.title?.substr(0, getMatchIndex(node?.title)) }}</span>
                 <span style="color: var(--color-primary-light-4); font-weight: 700;">
-                  {{ node?.title?.substr(index, keyword.length) }}
+                  {{ node?.title?.substr(getMatchIndex(node?.title), keyword.length) }}
                 </span>
-                <span>{{ node?.title?.substr(index + keyword.length) }}</span>
+                <span>{{ node?.title?.substr(getMatchIndex(node?.title) + keyword.length) }}</span>
               </span>
 
             </span>
