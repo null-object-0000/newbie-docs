@@ -1,4 +1,5 @@
-import { Doc, UseDocsApiFunction, DocData } from "@/types/global";
+import { Doc, DocData } from "@/types/global";
+import { UseDocsApiFunction } from "@/types/api";
 import { BaseUseDocsApi } from "./base";
 
 /**

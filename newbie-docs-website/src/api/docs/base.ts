@@ -1,4 +1,5 @@
-import { Doc, UseDocsApiFunction } from "@/types/global";
+import { Book, Doc } from "@/types/global";
+import { UseDocsApiFunction } from "@/types/api";
 
 export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract init(space: string): Promise<void>;
@@ -105,7 +106,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         return result
     }
 
-    getDefaultDocs(space: string): Doc[] {
+    getDefaultDocs(book: Book): Doc[] {
         const rootId = Math.ceil(Math.random() * 1000000000)
         const rootSlug = 'root'
 
@@ -113,10 +114,10 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
             id: rootId,
             slug: rootSlug,
             editor: 'block',
-            // TODO: 这里的 title 应该是从后端获取的，暂时写死
-            title: "万象开放平台 - 营销产品部",
-            path: "/" + space,
+            title: book.title,
+            path: "/" + book.slug,
             sort: 0,
+            creator: 'system',
             createTime: new Date().getTime(),
             child: [
                 {
@@ -126,8 +127,9 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
                     parentSlug: rootSlug,
                     editor: 'block',
                     title: "首页",
-                    path: `/${space}/home`,
+                    path: `/${book.slug}/home`,
                     sort: 0,
+                    creator: 'system',
                     createTime: new Date().getTime(),
                     child: []
                 }

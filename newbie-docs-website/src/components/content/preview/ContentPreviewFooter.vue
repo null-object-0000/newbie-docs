@@ -1,5 +1,8 @@
 <template>
     <footer class="page__footer">
+        <span class="updater" v-if="doc.updater || doc.creator">
+            <icon-user />{{ doc.updater || doc.creator }}
+        </span>
         <span class="update-time" v-if="doc.updateTime || doc.createTime">
             <icon-clock-circle />最后编辑于 {{ formatTime(doc.updateTime || doc.createTime) }}
         </span>
@@ -9,7 +12,6 @@
 <script setup lang="ts">
 import { type PropType, toRefs } from 'vue';
 import type { Doc } from '@/types/global';
-import { useUserStore } from '@/stores/user';
 
 const props = defineProps({
     doc: {
@@ -42,11 +44,14 @@ const formatTime = (time?: number) => {
     padding-top: 62px;
 }
 
+.page__footer .updater,
 .page__footer .update-time {
     color: var(--color-text-3);
     font-size: 12px;
+    padding-right: 10px;
 }
 
+.page__footer .updater svg,
 .page__footer .update-time svg {
     margin-right: 10px;
 }

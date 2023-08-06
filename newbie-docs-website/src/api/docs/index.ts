@@ -1,4 +1,5 @@
-import { Doc, ApiStorageEnum, UseDocsApiFunction, DocData } from "@/types/global";
+import { Doc, ApiStorageEnum, DocData } from "@/types/global";
+import { UseDocsApiFunction } from "@/types/api";
 import { useDocsEventBus } from "@/events/docs";
 import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { UseRESTfulDocsApi } from "./RESTfulDocs";

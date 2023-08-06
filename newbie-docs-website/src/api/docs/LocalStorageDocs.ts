@@ -1,6 +1,8 @@
 import type { OutputBlockData } from "@editorjs/editorjs";
-import { Doc, UseDocsApiFunction, DocData } from "@/types/global";
+import { Book, Doc, DocData } from "@/types/global";
+import { UseDocsApiFunction } from "@/types/api";
 import { BaseUseDocsApi } from "./base";
+import { useBooksApi } from "../books";
 
 export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApiFunction {
     spaceData: Record<string, DocData>
@@ -12,12 +14,14 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async init(space: string): Promise<void> {
-        const cache = localStorage.getItem('docs_' + space);
+        const cache = localStorage.getItem('newbie_docs_' + space);
         const cacheObj = cache && JSON.parse(cache)
         if (super.isValidDoc(cacheObj)) {
             this.__updateCache('init', space, cacheObj)
         } else {
-            this.__updateCache('init', space, super.getDefaultDocs(space))
+            const booksApi = useBooksApi('localStorage')
+            const book = await booksApi.get(space) as Book
+            this.__updateCache('init', space, super.getDefaultDocs(book))
         }
 
         const docs = this.spaceData[space].array
@@ -36,7 +40,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
                 tree: super.array2tree(docs) as Doc,
                 array: docs
             }
-            localStorage.setItem('docs_' + space, JSON.stringify(docs))
+            localStorage.setItem('newbie_docs_' + space, JSON.stringify(docs))
             return true
         } else {
             return false
