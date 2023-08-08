@@ -26,6 +26,7 @@
             </template>
             <template #authType="{ record }">
                 <a-select :options="authTypes" v-model="record.authType"
+                    :disabled="modalData.tableData.filter(item => item.id && item.id > 0).length <= 1"
                     @change="changeAuthType(record.id, record.authType)" />
             </template>
             <template #actions="{ record }">
@@ -34,7 +35,8 @@
                     <a-button size="small" @click="cancel(record)">取消</a-button>
                 </template>
                 <a-popconfirm v-else content="确定要删除吗？" @ok="remove(record)">
-                    <a-button size="small" status="danger">删除</a-button>
+                    <a-button size="small" status="danger"
+                        :disabled="modalData.tableData.filter(item => item.id && item.id > 0).length <= 1">删除</a-button>
                 </a-popconfirm>
             </template>
         </a-table>
@@ -142,6 +144,7 @@ const modalData = reactive({
     tableData: []
 }) as {
     tableData: {
+        id?: number,
         ownerType: number,
         owner: string,
         authType: number,
