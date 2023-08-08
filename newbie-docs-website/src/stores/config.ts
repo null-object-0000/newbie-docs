@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { reactive, ref } from "vue";
 
-export const useConfigStore = defineStore('config', () => {
+export const useConfigsStore = defineStore('configs', () => {
     const docEditMode = ref(false);
     const header = reactive({
         path: '/',

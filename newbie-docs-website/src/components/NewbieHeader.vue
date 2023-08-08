@@ -10,11 +10,11 @@
 <script setup lang="ts">
 import DocsIconBookTypeDefault from "@/components/icons/IconBookTypeDefault.vue";
 import { toRefs } from "vue";
-import { useConfigStore } from "@/stores/config";
+import { useConfigsStore } from "@/stores/config";
 
-const configStore = useConfigStore();
+const configsStore = useConfigsStore();
 
-const { header } = toRefs(configStore);
+const { header } = toRefs(configsStore);
 </script>
 
 <style scoped>

@@ -5,19 +5,23 @@
         <template #title>
             <a-button style="position: absolute; right: 20px;" type="text" @click="add"
                 :disabled="modalData.tableData.some(item => item.editMode)">添加</a-button>
-            <template v-if="dataType === 'book' && book">
+            <template v-if="dataType === 1 && book">
                 “{{ book.title }}” 知识库权限管理
             </template>
-            <template v-else-if="dataType === 'doc' && doc">
+            <template v-else-if="dataType === 2 && doc">
                 “{{ doc.title }}” 文档权限管理
             </template>
         </template>
         <a-table :columns="columns" :data="modalData.tableData" :pagination="{ pageSize: 8, showTotal: true }">
             <template #ownerType="{ record }">
-                <a-select :disabled="!record.editMode" :options="ownerTypes" v-model="record.ownerType" />
+                <a-select v-if="record.editMode" :disabled="!record.editMode" :options="ownerTypes"
+                    v-model="record.ownerType" />
+                <template v-else v-for="item of ownerTypes">
+                    <span v-if="item.value === record.ownerType">{{ item.label }}</span>
+                </template>
             </template>
             <template #owner="{ record }">
-                <a-input v-if="record.editMode" v-model="record.owner" />
+                <a-input v-if="record.editMode" v-model="record.owner" :error="record.owner.length <= 0" />
                 <span v-else>{{ record.owner }}</span>
             </template>
             <template #authType="{ record }">
@@ -25,9 +29,12 @@
                     @change="changeAuthType(record.id, record.authType)" />
             </template>
             <template #actions="{ record }">
-                <a-button v-if="record.editMode" type="text" @click="save(record)">确定</a-button>
+                <template v-if="record.editMode">
+                    <a-button size="small" type="primary" @click="save(record)" style="margin-right: 10px;">确定</a-button>
+                    <a-button size="small" @click="cancel(record)">取消</a-button>
+                </template>
                 <a-popconfirm v-else content="确定要删除吗？" @ok="remove(record)">
-                    <a-button type="text" status="danger">删除</a-button>
+                    <a-button size="small" status="danger">删除</a-button>
                 </a-popconfirm>
             </template>
         </a-table>
@@ -43,8 +50,11 @@ import { usePermissionsApi } from '@/api/permissions';
 const permissionsApi = usePermissionsApi('localStorage')
 
 const props = defineProps({
+    /**
+     * 1 book、2 doc
+     */
     dataType: {
-        type: String as PropType<'book' | 'doc'>,
+        type: Number,
         required: true,
     },
     book: {
@@ -83,28 +93,28 @@ const modalVisible = computed({
 const ownerTypes = [
     {
         label: '用户',
-        value: 'user'
+        value: 1
     },
     {
         label: '部门',
-        value: 'department'
+        value: 2
     }
 ]
 
 const authTypes = [{
     label: '可管理',
-    value: 'adminer'
+    value: 1
 }, {
     label: '可编辑',
-    value: 'editor'
+    value: 2
 }, {
     label: '可阅读',
-    value: 'reader'
+    value: 3
 }]
 
 const columns = [
     {
-        title: '拥有者类型',
+        title: '类型',
         dataIndex: 'ownerType',
         slotName: 'ownerType',
         width: 150
@@ -124,7 +134,7 @@ const columns = [
         title: '操作',
         slotName: 'actions',
         fixed: 'right',
-        width: 150
+        width: 175
     },
 ] as TableColumnData[]
 
@@ -132,37 +142,36 @@ const modalData = reactive({
     tableData: []
 }) as {
     tableData: {
-        ownerType: 'user' | 'department',
+        ownerType: number,
         owner: string,
-        authType: 'adminer' | 'editor' | 'reader',
+        authType: number,
         editMode: boolean
     }[]
 }
 
 const loadTableData = async () => {
-    console.log('loadTableData', dataType.value, book.value, doc.value)
-
     let permissions = [] as Permission[]
-    if (dataType.value === 'book') {
+    // 1 book、2 doc
+    if (dataType.value === 1) {
         permissions = await permissionsApi.list({
             dataType: dataType.value,
             dataId: book.value.id,
-            dataFlag: book.value.slug,
+            dataSlug: book.value.slug,
         }) as Permission[]
-    } else if (dataType.value === 'doc') {
+    } else if (dataType.value === 2) {
         permissions = await permissionsApi.list({
             dataType: dataType.value,
             dataId: doc.value.id,
-            dataFlag: doc.value.bookSlug + '/' + doc.value.slug,
+            dataSlug: doc.value.bookSlug + '/' + doc.value.slug,
         }) as Permission[]
     }
 
     return permissions.map(item => {
         return {
             id: item.id,
-            ownerType: item.ownerType as 'user' | 'department',
+            ownerType: item.ownerType,
             owner: item.owner,
-            authType: item.authType as 'adminer' | 'editor' | 'reader',
+            authType: item.authType,
             editMode: false
         }
     })
@@ -173,18 +182,19 @@ onBeforeMount(async () => {
 })
 
 const add = (ev: Event) => {
-    console.log('add', ev)
-    modalData.tableData.push({ ownerType: 'user', owner: '', authType: 'reader', editMode: true })
+    modalData.tableData.push({ ownerType: 1, owner: '', authType: 3, editMode: true })
 }
 
 const save = async (record: TableData) => {
-    console.log('save', record)
+    if (record.owner === undefined || record.owner === '') {
+        Message.error('拥有者不能为空')
+        return
+    }
 
     const result = await permissionsApi.put({
-        id: Math.ceil(Math.random() * 1000000000),
         dataType: dataType.value,
-        dataId: dataType.value === 'book' ? book.value.id : doc.value.id,
-        dataFlag: dataType.value === 'book' ? book.value.slug : doc.value.bookSlug + '/' + doc.value.slug,
+        dataId: (dataType.value === 1 ? book.value.id : doc.value.id) as number,
+        dataSlug: dataType.value === 1 ? book.value.slug : doc.value.bookSlug + '/' + doc.value.slug,
         ownerType: record.ownerType,
         owner: record.owner,
         authType: record.authType,
@@ -199,9 +209,13 @@ const save = async (record: TableData) => {
     }
 }
 
-const remove = async (record: TableData) => {
-    console.log('remove', record)
+const cancel = async (record: TableData) => {
+    // 剔除当前编辑的数据
+    modalData.tableData = modalData.tableData.filter(item => item !== record)
+    record.editMode = false
+}
 
+const remove = async (record: TableData) => {
     const result = await permissionsApi.remove(record.id)
     if (result) {
         modalData.tableData = await loadTableData()
@@ -211,7 +225,7 @@ const remove = async (record: TableData) => {
     }
 }
 
-const changeAuthType = async (id: number, authType: 'adminer' | 'editor' | 'reader') => {
+const changeAuthType = async (id: number, authType: number) => {
     const result = await permissionsApi.changeAuthType(id, authType)
     if (result) {
         modalData.tableData = await loadTableData()

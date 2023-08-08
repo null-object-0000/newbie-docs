@@ -3,6 +3,7 @@ import { Book, Doc, DocData } from "@/types/global";
 import { UseDocsApiFunction } from "@/types/api";
 import { BaseUseDocsApi } from "./base";
 import { useBooksApi } from "../books";
+import { usePermissionsApi } from "@/api/permissions";
 
 export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApiFunction {
     spaceData: Record<string, DocData>
@@ -33,7 +34,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             docs = Array.isArray(docs) ? docs : super.tree2array(docs) as Doc[]
 
             for (const item of docs) {
-                delete item.child
+                delete item.children
             }
 
             this.spaceData[space] = {
@@ -48,14 +49,16 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     __get(space: string, slug?: string): Doc | Doc[] | undefined {
-        let docs;
-        if (slug === undefined) {
-            docs = this.spaceData[space].array
-        } else {
-            docs = this.spaceData[space].array.find(item => item.slug === slug)
-        }
+        if (this.spaceData[space]) {
+            let docs;
+            if (slug === undefined) {
+                docs = this.spaceData[space].array
+            } else {
+                docs = this.spaceData[space].array.find(item => item.slug === slug)
+            }
 
-        return docs
+            return docs
+        }
     }
 
     async dir(space: string): Promise<Doc | undefined> {
@@ -81,8 +84,22 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         if (!doc.sort || doc.sort < 0) {
             const parent = docs.find(item => item.slug === doc.parentSlug)
             if (parent) {
-                doc.sort = parent.child?.length || 0
+                doc.sort = parent.children?.length || 0
             }
+        }
+
+        if (!doc.id || doc.id <= 0) {
+            doc.id = Math.ceil(Math.random() * 1000000000)
+
+            // 默认给自己加一个管理员权限
+            await usePermissionsApi('localStorage').put({
+                authType: 1,
+                dataType: 2,
+                dataId: doc.id as number,
+                dataSlug: doc.bookSlug + '/' + doc.slug,
+                owner: doc.creator,
+                ownerType: 1
+            })
         }
 
         if (await this.exists(space, doc.slug)) {
@@ -221,8 +238,8 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         let wordCount = 0
         for (const item of docs) {
-            if (item.editor === 'block') {
-                const content = item.content as OutputBlockData[]
+            if (item.editor === 2) {
+                const content = (item.content ? JSON.parse(item.content) : []) as OutputBlockData[]
                 wordCount += content.reduce((prev, current) => {
                     if (current.type === 'list') {
                         const lengths = current.data.items.map((item: { content: string; }) => item.content.length)
@@ -235,7 +252,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
                     }
                     return prev
                 }, 0)
-            } else if (item.editor === 'word') {
+            } else if (item.editor === 1) {
                 // 去除掉html标签，只保留文字
                 const content = item.content as string
                 const reg = /<[^>]+>/g

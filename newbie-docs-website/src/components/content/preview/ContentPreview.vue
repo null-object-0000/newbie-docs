@@ -3,7 +3,7 @@
         <ContentPreviewHeader :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewHeader>
 
         <section class="page__content">
-            <CBlockPreview v-if="doc.editor === 'block'" :doc="doc"></CBlockPreview>
+            <CBlockPreview v-if="doc.editor === 2" :doc="doc"></CBlockPreview>
             <CWordPreview v-else :doc="doc"></CWordPreview>
         </section>
 

@@ -1,5 +1,6 @@
 import { Book } from "@/types/global";
 import { UseBooksApiFunction } from "@/types/api";
+import { usePermissionsApi } from "@/api/permissions";
 
 export class UseLocalStorageBooksApi implements UseBooksApiFunction {
     __get(slug?: string): Book | Book[] | undefined {
@@ -49,6 +50,19 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
             return false
         }
 
+        if (!book.id || book.id <= 0) {
+            book.id = Math.ceil(Math.random() * 1000000000)
+
+            // 默认给自己加一个管理员权限
+            await usePermissionsApi('localStorage').put({
+                authType: 1,
+                dataType: 1,
+                dataId: book.id as number,
+                dataSlug: book.slug,
+                owner: book.creator,
+                ownerType: 1
+            })
+        }
 
         if (books) {
             books.push(book)

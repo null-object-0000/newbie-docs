@@ -74,7 +74,7 @@
         </div>
     </div>
 
-    <PermissionModal v-if="permissionModal.visible" data-type="book" v-model:visible="permissionModal.visible" :book="book"
+    <PermissionModal v-if="permissionModal.visible" :data-type="1" v-model:visible="permissionModal.visible" :book="book"
         width="750px">
     </PermissionModal>
 </template>
@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { toRefs, nextTick } from "vue";
 import { ref, reactive } from "vue";
-import { useConfigStore } from "@/stores/config";
+import { useConfigsStore } from "@/stores/config";
 import { useBooksApi } from "@/api/books";
 import { computedAsync } from "@vueuse/core";
 import { Book } from "@/types/global";
@@ -91,7 +91,7 @@ import { Message, Modal } from "@arco-design/web-vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter()
-const configStore = useConfigStore()
+const configsStore = useConfigsStore()
 
 const props = defineProps({
     space: {
@@ -132,7 +132,6 @@ const coverImg = (id: number) => {
 }
 
 const onSpaceSetting = async (value: string | number | Record<string, any> | undefined, ev: Event) => {
-    console.log('onSpaceSetting', value, ev)
     if (value === 'rename') {
         docTitle.value = book.value.title
         editMode.value = true
@@ -146,7 +145,6 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
             content: `确认删除 “${book.value.title}” 知识库吗？`,
             hideCancel: false,
             onOk: async () => {
-                console.log('delete', book.value.id)
                 const result = await booksApi.remove(book.value.slug)
                 if (result) {
                     Message.success('删除成功')
@@ -168,7 +166,7 @@ const submitRenameTitle = async (event: Event) => {
             book.value.title = docTitle.value
         }
 
-        configStore.setHeader('/', docTitle.value);
+        configsStore.setHeader('/', docTitle.value);
         document.title = '首页 - ' + docTitle.value
     }
     editMode.value = false
@@ -212,7 +210,7 @@ body[arco-theme='dark'] .docs-content-home__body {
 
 @media (min-width: 1920px) {
     .docs-content-home__body {
-        max-width: 1024px;
+        max-width: 1020px;
     }
 }
 

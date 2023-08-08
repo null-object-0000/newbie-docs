@@ -35,15 +35,15 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
                 && doc.createTime !== undefined && typeof doc.createTime === 'number'
 
             if (result !== true) {
-                console.log('doc is invalid', JSON.stringify(doc))
+                console.warn('doc is invalid', JSON.stringify(doc))
                 return false
             }
 
-            if (!doc.child || doc.child.length <= 0) {
+            if (!doc.children || doc.children.length <= 0) {
                 return true
             }
 
-            for (const child of doc.child) {
+            for (const child of doc.children) {
                 if (!this.isValidDoc(child)) {
                     return false
                 }
@@ -68,9 +68,9 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
 
         const processChild = (doc: Doc) => {
             docs = docs as Doc[]
-            doc.child = docs.filter(item => item.parentSlug === doc.slug).sort((a, b) => a.sort! - b.sort!)
+            doc.children = docs.filter(item => item.parentSlug === doc.slug).sort((a, b) => a.sort! - b.sort!)
 
-            for (const child of doc.child) {
+            for (const child of doc.children) {
                 processChild(child)
             }
         }
@@ -92,8 +92,8 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         const processChild = (doc: Doc) => {
             result.push(doc)
 
-            if (doc.child) {
-                for (const child of doc.child) {
+            if (doc.children) {
+                for (const child of doc.children) {
                     processChild(child)
                 }
             }
@@ -102,7 +102,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         processChild(docs)
 
         for (const doc of result) {
-            delete doc.child
+            delete doc.children
         }
 
         return result
@@ -118,13 +118,13 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
 
             id: rootId,
             slug: rootSlug,
-            editor: 'block',
+            editor: 2,
             title: book.title,
             path: "/" + book.slug,
             sort: 0,
             creator: 'system',
             createTime: new Date().getTime(),
-            child: [
+            children: [
                 {
                     bookId: book.id,
                     bookSlug: book.slug,
@@ -133,13 +133,13 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
                     slug: 'home',
                     parentId: rootId,
                     parentSlug: rootSlug,
-                    editor: 'block',
+                    editor: 2,
                     title: "首页",
                     path: `/${book.slug}/home`,
                     sort: 0,
                     creator: 'system',
                     createTime: new Date().getTime(),
-                    child: []
+                    children: []
                 }
             ]
         } as Doc
@@ -157,8 +157,8 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
             return docs
         }
 
-        if (docs.child) {
-            for (const doc of docs.child) {
+        if (docs.children) {
+            for (const doc of docs.children) {
                 const findDoc = this.findDocBy(doc, key, value)
                 if (findDoc) {
                     return findDoc

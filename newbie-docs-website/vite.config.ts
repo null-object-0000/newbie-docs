@@ -20,10 +20,10 @@ export const proxyConfig = defineConfig({
   server: {
     host: '0.0.0.0',
     proxy: {
-      '/pandora': {
-        target: 'http://tcwireless.t.17usoft.com/',
+      '/server': {
+        target: 'http://localhost:8188/',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/pandora/, '/pandora'),
+        rewrite: (path) => path.replace(/^\/server/, '/server'),
       }
     },
   }

@@ -1,13 +1,13 @@
 import { Book, Doc, Permission } from "@/types/global";
 
 export interface UsePermissionsApiFunction {
-    async get: (params: { authType?: string, dataType: string, ownerType: string, owner: string, dataId?: number, dataFlag?: string }) => Promise<Permission | undefined>;
-    async list: (params: { authType?: string, dataType: string, dataId?: number, dataFlag?: string }) => Promise<Permission[] | undefined>;
+    async get: (params: { authType?: number, dataType: number, ownerType: number, owner: string, dataId?: number, dataSlug?: string }) => Promise<Permission | undefined>;
+    async list: (params: { authType?: number, dataType: number, dataId?: number, dataSlug?: string }) => Promise<Permission[] | undefined>;
 
     async put: (permission: Permission) => Promise<boolean>;
     async remove: (id: number) => Promise<boolean>;
 
-    async changeAuthType: (id: number, newAuthType: string) => Promise<boolean>;
+    async changeAuthType: (id: number, newAuthType: number) => Promise<boolean>;
 }
 
 export interface UseBooksApiFunction {

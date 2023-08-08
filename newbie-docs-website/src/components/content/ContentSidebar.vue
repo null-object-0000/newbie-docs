@@ -12,13 +12,13 @@
             </template>
           </a-button>
           <template #content>
-            <a-doption value="block"><template #icon><icon-code-block /></template>Block</a-doption>
-            <a-doption value="word"><template #icon><icon-file /></template>Word</a-doption>
-            <a-doption disabled value="link"><template #icon><icon-link /></template>Link</a-doption>
+            <a-doption :value="2"><template #icon><icon-code-block /></template>Block</a-doption>
+            <a-doption :value="1"><template #icon><icon-file /></template>Word</a-doption>
+            <a-doption disabled :value="3"><template #icon><icon-link /></template>Link</a-doption>
           </template>
         </a-dropdown>
       </span>
-
+      
       <a-tree draggable block-node default-expand-selected class="docs-sidebar__tree" v-if="sidebarData.dir"
         :data="sidebarData.dir" v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
         @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)" @drop="drop">
@@ -67,9 +67,9 @@
                 <icon-plus class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
                   :style="{ visibility: sidebarData.hoverNode === node.key ? 'visible' : 'hidden' }" />
                 <template #content>
-                  <a-doption value="block"><template #icon><icon-code-block /></template>Block</a-doption>
-                  <a-doption value="word"><template #icon><icon-file /></template>Word</a-doption>
-                  <a-doption disabled value="link"><template #icon><icon-link /></template>Link</a-doption>
+                  <a-doption :value="2"><template #icon><icon-code-block /></template>Block</a-doption>
+                  <a-doption :value="1"><template #icon><icon-file /></template>Word</a-doption>
+                  <a-doption disabled :value="3"><template #icon><icon-link /></template>Link</a-doption>
                 </template>
               </a-dropdown>
             </template>
@@ -86,7 +86,7 @@
     </div> -->
   </div>
 
-  <PermissionModal v-if="permissionModal.visible" data-type="doc" v-model:visible="permissionModal.visible"
+  <PermissionModal v-if="permissionModal.visible" :data-type="2" v-model:visible="permissionModal.visible"
     :doc="sidebarData.settingDoc" width="750px">
   </PermissionModal>
 </template>
@@ -96,7 +96,7 @@ import { reactive, ref, toRefs, watch, nextTick, type PropType } from "vue";
 import type { Doc } from "@/types/global";
 import { useMagicKeys, whenever, useClipboard } from '@vueuse/core'
 import { Message, Modal, type TreeNodeData } from "@arco-design/web-vue";
-import { useConfigStore } from "@/stores/config";
+import { useConfigsStore } from "@/stores/config";
 import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
 import PermissionModal from "@/components/PermissionModal.vue";
@@ -104,7 +104,7 @@ import PermissionModal from "@/components/PermissionModal.vue";
 const route = useRoute();
 const router = useRouter();
 
-const configStore = useConfigStore();
+const configsStore = useConfigsStore();
 const docsEventBus = useDocsEventBus()
 
 const sidebarRef = ref(null)
@@ -173,8 +173,8 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
   return dir.map(item => {
     const node = {} as TreeNodeData
 
-    if (item.child && item.child.length > 0) {
-      node.children = formatDirData(item.child)
+    if (item.children && item.children.length > 0) {
+      node.children = formatDirData(item.children)
     }
 
     node.key = `/${space.value}/${item.slug}`
@@ -188,7 +188,7 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
 }
 
 const updateDirData = (dir?: Doc) => {
-  sidebarData.rawDir = dir?.child || []
+  sidebarData.rawDir = dir?.children || []
   sidebarData.dir = formatDirData(sidebarData.rawDir)
   sidebarData.fullDir = JSON.parse(JSON.stringify(sidebarData.dir))
 
@@ -264,8 +264,8 @@ const findDocWithPath = (path: string): Doc | undefined => {
         break
       }
 
-      if (item.child) {
-        const findResult = loop(item.child)
+      if (item.children) {
+        const findResult = loop(item.children)
         if (findResult) {
           result = findResult
           break
@@ -319,7 +319,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
     })
   } else if (options.action === 'edit') {
     router.push(doc.path)
-    configStore.docEditMode = true
+    configsStore.docEditMode = true
   } else if (options.action === 'copy') {
     emit("onCopy", ev, {
       slug: doc.slug
@@ -340,7 +340,6 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
   } else if (options.action === 'openLink') {
     window.open(docLink)
   } else if (options.action === 'permission') {
-    console.log('permission', doc)
     sidebarData.settingDoc = doc
     permissionModal.visible = true
   }
@@ -404,7 +403,7 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
 
 const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {
   if (typeof path === 'string' && path) {
-    configStore.docEditMode = docEditMode
+    configsStore.docEditMode = docEditMode
     router.push(path)
   }
 }
@@ -415,7 +414,7 @@ const eventStopPropagation = (ev: Event) => {
   ev.stopImmediatePropagation()
 }
 
-watch(() => dir.value.child, async () => {
+watch(() => dir.value.children, async () => {
   updateDirData(dir.value)
 }, { immediate: true })
 

@@ -1,7 +1,7 @@
 import type { OutputBlockData, EditorConfig } from "@editorjs/editorjs";
 
 export interface Book {
-  id: number;
+  id?: number;
   /**
    * 唯一标识
    */
@@ -9,7 +9,7 @@ export interface Book {
   title: string;
   cover?: string;
   description?: string;
-  creaotr: string;
+  creator: string;
   createTime: number;
   updater?: string;
   updateTime?: number;
@@ -20,7 +20,7 @@ export interface Doc {
   bookId: number;
   bookSlug: string;
 
-  id: number;
+  id?: number;
   /**
    * 唯一标识
    */
@@ -29,36 +29,36 @@ export interface Doc {
   parentSlug?: string;
   path: string;
   title: string;
-  child?: Doc[];
-  content?: OutputBlockData[] | string;
+  children?: Doc[];
+  content?: string;
   creator: string;
   createTime: number;
   updater?: string;
   updateTime?: number;
   sort: number;
   /**
-   * 编辑器类型（word、block、link）
+   * 编辑器类型（1 word、2 block、3 link）
    */
-  editor: string;
+  editor: number;
 }
 
 export interface Permission {
-  id: number;
+  id?: number;
   /**
-   * editor、viewer
+   * 1 adminer、2 editor、3 viewer
    */
-  authType: string;
+  authType: number;
   /**
-   * book、doc
+   * 1 book、2 doc
    */
-  dataType: string;
+  dataType: number;
   dataId: number;
-  dataFlag: string;
+  dataSlug: string;
   owner: string;
   /**
-   * user、department
+   * 1 user、2 department
    */
-  ownerType: string;
+  ownerType: number;
 }
 
 export interface DocData {
@@ -79,4 +79,4 @@ export interface CustomEditorConfig extends EditorConfig {
   headerPlaceholder?: string;
 }
 
-type ApiStorageEnum = "localStorage" | "rest";
+type ApiStorageEnum = "localStorage" | "restful";

@@ -77,13 +77,13 @@ watch(doc, () => {
 </script>
 
 <style scoped>
-@media (max-width: 1050px) {
+@media (max-width: 1020px) {
     .content-editor-header {
         display: none;
     }
 }
 
-@media (min-width: 1050px) {
+@media (min-width: 1020px) {
     .content-editor-header {
         position: fixed;
         top: 12px;

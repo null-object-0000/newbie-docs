@@ -13,7 +13,14 @@
 <script setup lang="ts">
 import { RouterView } from "vue-router";
 import NewbieHeader from "@/components/NewbieHeader.vue";
+import { onBeforeMount } from "vue";
+import { useUsersStore } from "./stores/user";
 
+const usersStore = useUsersStore();
+
+onBeforeMount(async () => {
+  await usersStore.refreshCurrentLoginUser();
+})
 </script>
 
 <style>

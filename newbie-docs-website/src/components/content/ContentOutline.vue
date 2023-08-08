@@ -3,7 +3,7 @@
         <header class="table-of-content__header">大纲</header>
         <section class="table-of-content__list">
             <li class="table-of-content__list-item" :class="tag.classes" v-for="tag of config.tags">
-                <a :href="configStore.docEditMode ? undefined : tag.linkTarget">{{ tag.innerText }}</a>
+                <a :href="configsStore.docEditMode ? undefined : tag.linkTarget">{{ tag.innerText }}</a>
             </li>
         </section>
     </section>
@@ -12,9 +12,9 @@
 <script setup lang="ts">
 import { Doc } from '@/types/global';
 import { nextTick, reactive, watch, type PropType, toRefs } from 'vue';
-import { useConfigStore } from '@/stores/config';
+import { useConfigsStore } from '@/stores/config';
 
-const configStore = useConfigStore();
+const configsStore = useConfigsStore();
 
 interface Tag {
     linkTarget: string;

@@ -27,13 +27,19 @@ const checkDirIsChanged = (lastDir: Doc[], currentDir: Doc[]) => {
 export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, DocData>): UseDocsApiFunction {
   const docsEventBus = useDocsEventBus();
   let docsApi = {} as UseDocsApiFunction;
+
+  const configStorage = import.meta.env.VITE_API_STORAGE as ApiStorageEnum
+  if (configStorage) {
+    storage = configStorage
+  }
+
   switch (storage) {
     case "localStorage":
       docsApi = new UseLocalStorageDocsApi(spaceData);
-    // case "rest":
-    // docsApi = new UseRESTfulDocsApi(spaceData);
-    default:
-      docsApi = new UseLocalStorageDocsApi(spaceData);
+      break;
+    case "restful":
+      docsApi = new UseRESTfulDocsApi(spaceData);
+      break;
   }
 
   // 代理 put、remove、splice、changeSlug、changeParentSlug、changeTitle 方法，每次调用成功后触发 dir 变更事件

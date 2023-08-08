@@ -7,27 +7,27 @@
       </CSidebar>
       <template v-if="config.currentDoc">
         <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
-          :class="configStore.docEditMode && config.currentDoc.editor === 'word' ? 'docs_content_word_editor' : ''">
+          :class="configsStore.docEditMode && config.currentDoc.editor === 1 ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
-            <template v-if="configStore.docEditMode">
-              <CBlockEditor v-if="config.currentDoc.editor === 'block'" :editor-config="{ headerPlaceholder: '请输入标题' }"
+            <template v-if="configsStore.docEditMode">
+              <CBlockEditor v-if="config.currentDoc.editor === 2" :editor-config="{ headerPlaceholder: '请输入标题' }"
                 :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
                 @on-change-title="docsService.onChangeTitle">
               </CBlockEditor>
-              <CWordEditor v-else-if="config.currentDoc.editor === 'word'" :editor-config="{ headerPlaceholder: '请输入标题' }"
+              <CWordEditor v-else-if="config.currentDoc.editor === 1" :editor-config="{ headerPlaceholder: '请输入标题' }"
                 :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
                 @on-change-title="docsService.onChangeTitle">
               </CWordEditor>
             </template>
             <template v-else>
               <CPreview :docs="config.spaceData[bookSlug].tree" :doc="config.currentDoc"
-                @onEdit="configStore.docEditMode = true">
+                @onEdit="configsStore.docEditMode = true">
               </CPreview>
             </template>
           </div>
 
-          <aside v-if="!configStore.docEditMode || config.currentDoc.editor !== 'word'" class="docs__aside-right">
-            <COutline :doc="config.currentDoc" :edit-mode="configStore.docEditMode"></COutline>
+          <aside v-if="!configsStore.docEditMode || config.currentDoc.editor !== 1" class="docs__aside-right">
+            <COutline :doc="config.currentDoc" :edit-mode="configsStore.docEditMode"></COutline>
           </aside>
         </div>
         <CHome v-else :space="bookSlug" :total-doc-count="config.totalDocCount" :total-word-count="config.totalWordCount">
@@ -53,14 +53,14 @@ import { Message, Notification, type NotificationConfig, type NotificationReturn
 import type { Doc, ContentViewConfig, Book } from "@/types/global";
 import { useBooksApi } from "@/api/books";
 import { useDocsApi } from "@/api/docs";
-import { useUserStore } from '@/stores/user';
-import { useConfigStore } from "@/stores/config";
-import { usePermissionsApi } from "@/api/permissions";
+import { useUsersStore } from '@/stores/user';
+import { useConfigsStore } from "@/stores/config";
+import { OutputBlockData } from "@editorjs/editorjs";
 
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
-const configStore = useConfigStore();
+const { loginUser } = useUsersStore();
+const configsStore = useConfigsStore();
 
 const bookSlug = route.params.bookSlug as string;
 
@@ -75,19 +75,18 @@ const config: ContentViewConfig = reactive({
 
 const booksApi = useBooksApi('localStorage');
 const docsApi = useDocsApi('localStorage', config.spaceData);
-const premissionsApi = usePermissionsApi('localStorage');
-
-if ((await booksApi.exists(bookSlug)) === false) {
-  router.push({ path: `/` });
-} else {
-  await docsApi.init(bookSlug);
-}
 
 // 监听路由变化
 watch(route, async () => {
   const bookSlug = route.params.bookSlug as string;
   const slug = route.params.docSlug as string;
   const book = await booksApi.get(bookSlug) as Book
+
+  if (book === null) {
+    router.push({ path: `/` });
+  } else {
+    await docsApi.init(bookSlug);
+  }
 
   if (book === undefined || book === null) {
     router.push({ path: `/` });
@@ -115,7 +114,7 @@ watch(route, async () => {
     config.totalWordCount = await docsApi.getTotalWordCount(bookSlug);
   }
 
-  configStore.setHeader('/', book.title);
+  configsStore.setHeader('/', book.title);
   if (config.currentDoc) {
     document.title = config.currentDoc.title + ' - ' + book.title
   } else {
@@ -136,7 +135,7 @@ watch(route, () => {
 }, { immediate: true })
 
 let historyNotification = [] as NotificationReturn[]
-const onEditorChange = async function (event: Event, content: any, showSuccessTips?: boolean) {
+const onEditorChange = async function (event: Event, content: string, showSuccessTips?: boolean) {
   const doc = config.currentDoc as Doc;
   doc.content = content;
   doc.updateTime = new Date().getTime()
@@ -161,7 +160,7 @@ const onEditorChange = async function (event: Event, content: any, showSuccessTi
 };
 
 const onPreview = function () {
-  configStore.docEditMode = false;
+  configsStore.docEditMode = false;
 };
 
 const docsService = {
@@ -179,12 +178,12 @@ const docsService = {
     parentSlug = parentSlug === 'home' ? 'root' : parentSlug
 
     let content;
-    if (value?.editor === 'word') {
+    if (value?.editor === 1) {
       content = value?.content || ''
-    } else if (value?.editor === 'link') {
+    } else if (value?.editor === 3) {
       content = value?.content || ''
     } else {
-      content = value?.content || [
+      content = value?.content || JSON.stringify([
         {
           type: "header",
           data: {
@@ -192,43 +191,31 @@ const docsService = {
             level: 2,
           },
         },
-      ]
+      ] as OutputBlockData[])
     }
 
     const book = await booksApi.get(bookSlug) as Book
 
     const doc: Doc = {
-      bookId: book.id,
+      bookId: book.id as number,
       bookSlug: book.slug,
 
-      id: Math.ceil(Math.random() * 100000000000000),
       slug,
       parentSlug,
-      editor: value?.editor || "block",
+      editor: value?.editor || 2,
       path: `/${bookSlug}/${slug}`,
       title: value?.title || "无标题文档",
       content,
-      child: [],
-      creator: userStore.name + userStore.id,
+      children: [],
+      creator: loginUser.username + loginUser.id,
       createTime: Date.now(),
       sort: (await docsApi.getTotalDocCount(bookSlug)) + 1
     };
 
     const result = await docsApi.put(bookSlug, doc);
     if (result) {
-      // TODO: 默认给自己加一个管理员权限，后期应该是逻辑放在后端
-      await premissionsApi.put({
-        id: Math.ceil(Math.random() * 100000000000000),
-        authType: "adminer",
-        dataType: 'doc',
-        dataId: doc.id,
-        dataFlag: doc.bookSlug + '/' + doc.slug,
-        owner: userStore.name + userStore.id,
-        ownerType: 'user'
-      })
-
       router.push(doc.path)
-      configStore.docEditMode = true
+      configsStore.docEditMode = true
     }
     return result
   },

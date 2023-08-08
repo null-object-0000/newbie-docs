@@ -24,7 +24,7 @@ const { doc } = toRefs(props);
 const content = ref<OutputBlockData[]>([]);
 
 watch(() => doc.value.content, () => {
-    content.value = doc.value.content as OutputBlockData[];
+    content.value = (doc.value.content ? JSON.parse(doc.value.content) : []) as OutputBlockData[];
 }, { immediate: true });
 
 const isComponentExists = (name: string, maybeSelfReference?: boolean) => {

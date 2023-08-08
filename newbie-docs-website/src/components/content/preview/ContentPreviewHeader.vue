@@ -12,8 +12,8 @@
             <a-breadcrumb-item>{{ doc.title }}</a-breadcrumb-item>
         </a-breadcrumb>
     </header>
-    <a-button class="edit-btn" type="primary"
-        v-if="permission && (permission.authType === 'adminer' || permission.authType === 'editor')" @click="onEdit">
+    <a-button class="edit-btn" type="primary" v-if="permission && (permission.authType === 1 || permission.authType === 2)"
+        @click="onEdit">
         <template #icon>
             <icon-edit />
         </template>
@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { toRefs } from 'vue';
 import type { Doc, Permission } from '@/types/global';
-import { useUserStore } from '@/stores/user';
+import { useUsersStore } from '@/stores/user';
 import { usePermissionsApi } from '@/api/permissions';
 import { watch } from 'vue';
 import { ref } from 'vue';
@@ -47,7 +47,7 @@ const permission = ref<Permission>();
 
 const emitsDef = defineEmits(['onEdit']);
 
-const userStore = useUserStore();
+const { loginUser } = useUsersStore();
 const permissionsApi = usePermissionsApi('localStorage');
 
 const onEdit = (event: Event) => {
@@ -63,8 +63,8 @@ const getParent = (data: Doc[], slug?: string): Doc | undefined => {
         if (item.slug === slug) {
             return item;
         }
-        if (item.child && item.child.length > 0) {
-            const parent = getParent(item.child, slug);
+        if (item.children && item.children.length > 0) {
+            const parent = getParent(item.children, slug);
             if (parent) {
                 return parent;
             }
@@ -84,22 +84,22 @@ const getParents = (data: Doc[], slug?: string): Doc[] => {
 
 watch(doc, async () => {
     permission.value = await permissionsApi.get({
-        dataType: 'doc',
-        dataFlag: doc.value.bookSlug + '/' + doc.value.slug,
-        ownerType: 'user',
-        owner: userStore.name + userStore.id,
+        dataType: 2,
+        dataSlug: doc.value.bookSlug + '/' + doc.value.slug,
+        ownerType: 1,
+        owner: loginUser.username + loginUser.id,
     });
 }, { immediate: true },);
 </script>
 
 <style>
-@media (max-width: 1050px) {
+@media (max-width: 1020px) {
     .edit-btn {
         display: none;
     }
 }
 
-@media (min-width: 1050px) {
+@media (min-width: 1020px) {
     .page__header {
         position: fixed;
         top: 12px;

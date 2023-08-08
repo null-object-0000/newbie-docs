@@ -1,6 +1,6 @@
 <template>
     <div class="home-view">
-        <a-row :gutter="40" justify="center">
+        <a-row v-if="dir && dir.length > 0" :gutter="40" justify="center">
             <a-col flex="360px" v-for="book of dir" :style="{ marginBottom: '20px' }">
                 <router-link style="color: unset; text-decoration: unset;" :to="'/' + book.slug + '/home'">
                     <a-card :style="{ width: '360px', height: '280px' }">
@@ -22,9 +22,11 @@
                 </router-link>
             </a-col>
         </a-row>
+
+        <a-empty style="margin-top: 25vh;" v-else description="快去新建知识库吧~" />
     </div>
 
-    <a-button class="add-btn" type="primary" v-if="userStore.isLogin" @click="editBookModal.visible = true">
+    <a-button class="add-btn" type="primary" v-if="loginUser.isLogin" @click="editBookModal.visible = true">
         <template #icon>
             <icon-plus />
         </template>
@@ -54,21 +56,21 @@
 </template>
 
 <script setup lang="ts">
-import { useConfigStore } from "@/stores/config";
-import { useUserStore } from '@/stores/user';
+import { useConfigsStore } from "@/stores/config";
+import { useUsersStore } from '@/stores/user';
 import { ref, reactive } from 'vue';
 import { useBooksApi } from '@/api/books';
 import { Book } from '@/types/global'
 import { FormInstance } from '@arco-design/web-vue/es/form';
 import { onBeforeMount } from "vue";
 import { usePermissionsApi } from "@/api/permissions";
+import { Message } from "@arco-design/web-vue";
 
-const userStore = useUserStore();
-const configStore = useConfigStore();
+const { loginUser } = useUsersStore();
+const configsStore = useConfigsStore();
 const booksApi = useBooksApi('localStorage')
-const premissionsApi = usePermissionsApi('localStorage')
 
-configStore.setHeader('/', 'Newbie Docs');
+configsStore.setHeader('/', 'Newbie Docs');
 
 const dir = ref<Book[]>([])
 
@@ -88,40 +90,35 @@ const editBookModal = reactive({
 })
 
 const addBook = async () => {
-    if (editBookFormRef.value) {
-        const errors = await editBookFormRef.value.validate()
-        if (errors !== undefined) {
-            return false
+    try {
+        if (editBookFormRef.value) {
+            const errors = await editBookFormRef.value.validate()
+            if (errors !== undefined) {
+                return false
+            }
+
+            const book = {
+                slug: editBookModal.form.slug,
+                title: editBookModal.form.title,
+                cover: editBookModal.form.cover,
+                description: editBookModal.form.description,
+                creator: loginUser.username + loginUser.id,
+                createTime: new Date().getTime()
+            } as Book
+            const result = await booksApi.put(book)
+
+            if (result) {
+                dir.value = await booksApi.dir() as Book[]
+                editBookModal.visible = false
+            } else {
+                Message.error('新建知识库失败')
+            }
+
+            return result
         }
-
-        const book = {
-            id: Math.ceil(Math.random() * 1000000000),
-            slug: editBookModal.form.slug,
-            title: editBookModal.form.title,
-            cover: editBookModal.form.cover,
-            description: editBookModal.form.description,
-            creaotr: userStore.name + userStore.id,
-            createTime: new Date().getTime()
-        } as Book
-        const result = await booksApi.put(book)
-
-        if (result) {
-            // TODO: 默认给自己加一个管理员权限，后期应该是逻辑放在后端
-            await premissionsApi.put({
-                id: Math.ceil(Math.random() * 100000000000000),
-                authType: "adminer",
-                dataType: 'book',
-                dataId: book.id,
-                dataFlag: book.slug,
-                owner: userStore.name + userStore.id,
-                ownerType: 'user'
-            })
-
-            dir.value = await booksApi.dir() as Book[]
-            editBookModal.visible = false
-        }
-
-        return result
+    } catch (error) {
+        Message.error('新建知识库失败')
+        return false
     }
 };
 </script>

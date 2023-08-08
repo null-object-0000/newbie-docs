@@ -16,9 +16,9 @@ export class UseLocalStoragePermissionsApi implements UsePermissionsApiFunction 
         }
     }
 
-    async get(params: { ownerType: string, owner: string, authType?: string; dataType: string; dataId?: number; dataFlag?: string; }): Promise<Permission | undefined> {
+    async get(params: { ownerType: number, owner: string, authType?: number; dataType: number; dataId?: number; dataSlug?: string; }): Promise<Permission | undefined> {
         if (params.ownerType === undefined || params.owner === undefined
-            || (params.dataId === undefined && params.dataFlag === undefined)) {
+            || (params.dataId === undefined && params.dataSlug === undefined)) {
             return
         }
 
@@ -28,7 +28,7 @@ export class UseLocalStoragePermissionsApi implements UsePermissionsApiFunction 
         }
     }
 
-    async list(params: { ownerType?: string, owner?: string, authType?: string; dataType: string; dataId?: number; dataFlag?: string; }): Promise<Permission[] | undefined> {
+    async list(params: { ownerType?: number, owner?: string, authType?: number; dataType: number; dataId?: number; dataSlug?: string; }): Promise<Permission[] | undefined> {
         const permissions = this.__get()
         if (permissions) {
             return permissions.filter(item => {
@@ -42,7 +42,7 @@ export class UseLocalStoragePermissionsApi implements UsePermissionsApiFunction 
                 if (params.dataId && item.dataId !== params.dataId) {
                     flag = false
                 }
-                if (params.dataFlag && item.dataFlag !== params.dataFlag) {
+                if (params.dataSlug && item.dataSlug !== params.dataSlug) {
                     flag = false
                 }
                 if (params.ownerType && item.ownerType !== params.ownerType) {
@@ -60,6 +60,10 @@ export class UseLocalStoragePermissionsApi implements UsePermissionsApiFunction 
         let permissions = this.__get() as Permission[] | undefined
 
         if (permissions) {
+            if (!permission.id || permission.id <= 0) {
+                permission.id = Math.ceil(Math.random() * 1000000000)
+            }
+
             permissions.push(permission)
             return this.__updateCache('put', permissions)
         } else {
@@ -71,14 +75,13 @@ export class UseLocalStoragePermissionsApi implements UsePermissionsApiFunction 
 
         if (permissions) {
             permissions = permissions.filter(item => item.id !== id)
-            console.log('permissionsApi.remove', id, JSON.stringify(permissions))
             return this.__updateCache('remove', permissions)
         } else {
             return false
         }
     }
 
-    async changeAuthType(id: number, newAuthType: string): Promise<boolean> {
+    async changeAuthType(id: number, newAuthType: number): Promise<boolean> {
         let permissions = this.__get() as Permission[] | undefined
 
         if (permissions) {

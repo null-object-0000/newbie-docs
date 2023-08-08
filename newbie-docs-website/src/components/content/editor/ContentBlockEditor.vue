@@ -198,8 +198,8 @@ const config = Object.assign(defaultConfig, editorConfig.value)
 
 const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, showSuccessTips?: boolean) => {
     editor && editor.save().then((outputData) => {
-        doc.value.content = outputData.blocks;
-        emit('onChange', event, outputData.blocks, showSuccessTips);
+        doc.value.content = JSON.stringify(outputData.blocks);
+        emit('onChange', event, doc.value.content, showSuccessTips);
     });
 };
 
@@ -219,7 +219,7 @@ const onTitleChange = async (event: Event) => {
 }
 
 config.data = {
-    blocks: (doc.value.content || []) as OutputBlockData[],
+    blocks: (doc.value.content ? JSON.parse(doc.value.content) : []) as OutputBlockData[],
 };
 config.onChange = function (api, event) {
     onChange(event);
@@ -231,7 +231,7 @@ watch(doc, () => {
     docTitle.value = doc.value.title
     if (editor && editor.render) {
         editor.render({
-            blocks: (doc.value.content || []) as OutputBlockData[],
+            blocks: (doc.value.content ? JSON.parse(doc.value.content) : []) as OutputBlockData[],
         });
     }
 }, { immediate: true });
