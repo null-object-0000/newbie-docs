@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="site.snewbie.docs.server.dao.PermissionDao">
+    <resultMap id="BaseResultMap" type="site.snewbie.docs.server.model.Permission">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="auth_type" jdbcType="INTEGER" property="authType" />
+        <result column="data_type" jdbcType="INTEGER" property="dataType" />
+        <result column="data_id" jdbcType="BIGINT" property="dataId" />
+        <result column="data_slug" jdbcType="VARCHAR" property="dataSlug" />
+        <result column="owner" jdbcType="VARCHAR" property="owner" />
+        <result column="owner_type" jdbcType="INTEGER" property="ownerType" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, auth_type, data_type, data_id, data_slug, owner, owner_type
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into newbie_permissions (auth_type, data_type, data_id, data_slug, owner, owner_type, creator,
+                                        create_time, updater, update_time)
+        values (#{authType,jdbcType=INTEGER}, #{dataType,jdbcType=INTEGER}, #{dataId,jdbcType=BIGINT},
+                #{dataSlug,jdbcType=VARCHAR}, #{owner,jdbcType=VARCHAR}, #{ownerType,jdbcType=INTEGER},
+                #{creator,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updater,jdbcType=VARCHAR},
+                #{updateTime,jdbcType=TIMESTAMP})
+    </insert>
+
+    <update id="update">
+        update newbie_permissions
+        <set>
+            <if test="authType != null">
+                auth_type = #{authType,jdbcType=INTEGER},
+            </if>
+            <if test="dataType != null">
+                data_type = #{dataType,jdbcType=INTEGER},
+            </if>
+            <if test="dataId != null">
+                data_id = #{dataId,jdbcType=BIGINT},
+            </if>
+            <if test="dataSlug != null">
+                data_slug = #{dataSlug,jdbcType=VARCHAR},
+            </if>
+            <if test="owner != null">
+                owner = #{owner,jdbcType=VARCHAR},
+            </if>
+            <if test="ownerType != null">
+                owner_type = #{ownerType,jdbcType=INTEGER},
+            </if>
+            updater = #{updater,jdbcType=VARCHAR},
+            update_time = now()
+        </set>
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <update id="updateAuthType">
+        update newbie_permissions
+        <set>
+            auth_type = #{newAuthType,jdbcType=INTEGER},
+            updater = #{updater,jdbcType=VARCHAR},
+            update_time = now()
+        </set>
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <update id="delete">
+        update newbie_permissions
+        <set>
+            is_deleted = 1,
+            updater = #{updater,jdbcType=VARCHAR},
+            update_time = now()
+        </set>
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <select id="selectOne" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from newbie_permissions
+        <where>
+            is_deleted = 0
+            <if test="id != null">
+                and id = #{id,jdbcType=BIGINT}
+            </if>
+            <if test="authType != null">
+                and auth_type = #{authType,jdbcType=INTEGER}
+            </if>
+            <if test="dataType != null">
+                and data_type = #{dataType,jdbcType=INTEGER}
+            </if>
+            <if test="dataId != null">
+                and data_id = #{dataId,jdbcType=BIGINT}
+            </if>
+            <if test="dataSlug != null">
+                and data_slug = #{dataSlug,jdbcType=VARCHAR}
+            </if>
+            <if test="owner != null">
+                and owner = #{owner,jdbcType=VARCHAR}
+            </if>
+            <if test="ownerType != null">
+                and owner_type = #{ownerType,jdbcType=INTEGER}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from newbie_permissions
+        <where>
+            is_deleted = 0
+            <if test="authType != null">
+                and auth_type = #{authType,jdbcType=INTEGER}
+            </if>
+            <if test="dataType != null">
+                and data_type = #{dataType,jdbcType=INTEGER}
+            </if>
+            <if test="dataId != null">
+                and data_id = #{dataId,jdbcType=BIGINT}
+            </if>
+            <if test="dataSlug != null">
+                and data_slug = #{dataSlug,jdbcType=VARCHAR}
+            </if>
+            <if test="owner != null">
+                and owner = #{owner,jdbcType=VARCHAR}
+            </if>
+            <if test="ownerType != null">
+                and owner_type = #{ownerType,jdbcType=INTEGER}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+
+</mapper>

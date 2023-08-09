@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="site.snewbie.docs.server.dao.BookDao">
+    <resultMap id="BaseResultMap" type="site.snewbie.docs.server.model.Book">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="slug" jdbcType="VARCHAR" property="slug" />
+        <result column="title" jdbcType="VARCHAR" property="title" />
+        <result column="cover" jdbcType="VARCHAR" property="cover" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="sort" jdbcType="INTEGER" property="sort" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, slug, title, cover, description, sort
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
+        insert into newbie_books (slug, title, cover, description, creator, create_time, updater, update_time, sort)
+        values (#{slug,jdbcType=VARCHAR}, #{title,jdbcType=VARCHAR}, #{cover,jdbcType=VARCHAR},
+                #{description,jdbcType=VARCHAR}, #{creator,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP},
+                #{updater,jdbcType=VARCHAR}, #{updateTime,jdbcType=TIMESTAMP}, #{sort,jdbcType=INTEGER})
+    </insert>
+
+    <update id="delete">
+        update newbie_books
+        set is_deleted = 1, updater = #{updater,jdbcType=VARCHAR}, update_time = now()
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <update id="updateTitle">
+        update newbie_books
+        set title = #{newTitle,jdbcType=VARCHAR}, updater = #{updater,jdbcType=VARCHAR}, update_time = now()
+        where slug = #{slug,jdbcType=VARCHAR} and is_deleted = 0
+    </update>
+
+    <update id="update">
+        update newbie_books
+        <set>
+            <if test="title != null and title.length > 0">
+                title = #{title,jdbcType=VARCHAR},
+            </if>
+            <if test="cover != null and cover.length > 0">
+                cover = #{cover,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null and description.length > 0">
+                description = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="sort != null">
+                sort = #{sort,jdbcType=INTEGER},
+            </if>
+            updater = #{updater,jdbcType=VARCHAR},
+            update_time = now()
+        </set>
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from newbie_books
+        where is_deleted = 0
+        order by sort asc
+    </select>
+
+    <select id="selectOne" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from newbie_books
+        <where>
+            <if test="id != null">
+                and id = #{id,jdbcType=BIGINT}
+            </if>
+            <if test="slug != null and slug.length > 0">
+                and slug = #{slug,jdbcType=VARCHAR}
+            </if>
+            and is_deleted = 0
+        </where>
+        limit 1
+    </select>
+
+    <select id="selectMaxSort" resultType="int">
+        select ifnull(max(sort), 0) from newbie_books where is_deleted = 0
+    </select>
+
+</mapper>

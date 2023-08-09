@@ -30,7 +30,11 @@
 
 ### 本地开发
 
+#### website
 ``` bash
+# 环境配置
+copy .\newbie-docs-website\.env .\newbie-docs-website\.env.local
+
 # 本地运行
 pnpm install
 pnpm dev
@@ -42,6 +46,21 @@ git cz
 
 # 本地构建
 pnpm build
+```
+
+#### java-server
+
+- jdk 18.0.2
+- maven 3.9.4
+
+``` bash
+# 环境配置
+copy .\newbie-docs-server-java\src\main\resources\application.properties .\newbie-docs-server-java\src\main\resources\application-local.properties
+
+# 本地运行
+cd .\newbie-docs-server-java\
+mvn clean package -Dmaven.test.skip=true
+java -jar .\target\newbie-docs-server-java.jar -Dspring.profiles.active=local
 ```
 
 ### Docker 部署

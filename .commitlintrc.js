@@ -36,7 +36,7 @@ module.exports = {
     useAI: false,
     aiNumber: 1,
     themeColorCode: '',
-    scopes: ['website'],
+    scopes: ['website', 'java-server'],
     allowCustomScopes: true,
     allowEmptyScopes: true,
     customScopesAlign: 'bottom',
