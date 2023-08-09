@@ -50,17 +50,23 @@ pnpm build
 
 #### java-server
 
-- jdk 18.0.2
-- maven 3.9.4
+- jdk 17
+- maven 3.9
 
 ``` bash
-# 环境配置
-copy .\newbie-docs-server-java\src\main\resources\application.properties .\newbie-docs-server-java\src\main\resources\application-local.properties
-
-# 本地运行
 cd .\newbie-docs-server-java\
+
+# 环境配置（windows）
+copy .\src\main\resources\application.properties .\src\main\resources\application-local.properties
+# 环境配置（linux）
+cp src/main/resources/application.properties src/main/resources/application-local.properties
+
+# 本地运行（windows）
 mvn clean package -Dmaven.test.skip=true
 java -jar .\target\newbie-docs-server-java.jar -Dspring.profiles.active=local
+# 本地运行（linux）
+mvn clean package -Dmaven.test.skip=true
+java -jar target/newbie-docs-server-java.jar -Dspring.profiles.active=local
 ```
 
 ### Docker 部署
