@@ -3,19 +3,20 @@ import { Book, Doc, DocData } from "@/types/global";
 import { UseDocsApiFunction } from "@/types/api";
 import { BaseUseDocsApi } from "./base";
 import { useBooksApi } from "../books";
-import { usePermissionsApi } from "@/api/permissions";
 
 export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApiFunction {
     spaceData: Record<string, DocData>
+    localStorageCacheKey: string
 
-    constructor(spaceData: Record<string, DocData>) {
+    constructor(spaceData: Record<string, DocData>, options?: { localStorageCacheKey?: string }) {
         super()
 
         this.spaceData = spaceData
+        this.localStorageCacheKey = options?.localStorageCacheKey || 'newbie_docs'
     }
 
     async init(space: string): Promise<void> {
-        const cache = localStorage.getItem('newbie_docs_' + space);
+        const cache = localStorage.getItem(this.localStorageCacheKey + '_' + space);
         const cacheObj = cache && JSON.parse(cache)
         if (super.isValidDoc(cacheObj)) {
             this.__updateCache('init', space, cacheObj)
@@ -41,20 +42,22 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
                 tree: super.array2tree(docs) as Doc,
                 array: docs
             }
-            localStorage.setItem('newbie_docs_' + space, JSON.stringify(docs))
+            localStorage.setItem(this.localStorageCacheKey + '_' + space, JSON.stringify(docs))
             return true
         } else {
             return false
         }
     }
 
-    __get(space: string, slug?: string): Doc | Doc[] | undefined {
+    async __get(space: string, slug?: string): Promise<Doc | Doc[] | undefined> {
         if (this.spaceData[space]) {
+            let cacheDocs = JSON.parse(JSON.stringify(this.spaceData[space].array)) as Doc[]
+
             let docs;
             if (slug === undefined) {
-                docs = this.spaceData[space].array
+                docs = cacheDocs
             } else {
-                docs = this.spaceData[space].array.find(item => item.slug === slug)
+                docs = cacheDocs.find(item => item.slug === slug)
             }
 
             return docs
@@ -62,7 +65,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async dir(space: string): Promise<Doc | undefined> {
-        const docs = this.__get(space)
+        const docs = await this.__get(space)
 
         const newDocs = JSON.parse(JSON.stringify(docs)).map((item: Doc) => {
             delete item.content
@@ -73,12 +76,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async get(space: string, slug?: string): Promise<Doc | undefined> {
-        const docs = this.__get(space, slug)
+        const docs = await this.__get(space, slug)
         return super.array2tree(docs)
     }
 
     async put(space: string, doc: Doc): Promise<boolean> {
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
 
         // 如果指定了 sort 就用指定的，否则默认插入到当前父级 child 中的最后一位
         if (!doc.sort || doc.sort < 0) {
@@ -90,16 +93,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         if (!doc.id || doc.id <= 0) {
             doc.id = Math.ceil(Math.random() * 1000000000)
-
-            // 默认给自己加一个管理员权限
-            await usePermissionsApi('localStorage').put({
-                authType: 1,
-                dataType: 2,
-                dataId: doc.id as number,
-                dataSlug: doc.bookSlug + '/' + doc.slug,
-                owner: doc.creator,
-                ownerType: 1
-            })
         }
 
         if (await this.exists(space, doc.slug)) {
@@ -112,12 +105,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async exists(space: string, slug: string): Promise<boolean> {
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         return docs.some(item => item.slug === slug)
     }
 
     async remove(space: string, slug: string): Promise<boolean> {
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
 
         docs = docs.filter(item => item.slug !== slug)
 
@@ -125,7 +118,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async splice(space: string, slug: string, index: number): Promise<boolean> {
-        const docs = this.__get(space) as Doc[]
+        const docs = await this.__get(space) as Doc[]
 
         const doc = await this.get(space, slug)
         if (!doc || !doc.parentSlug) {
@@ -160,7 +153,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             return false;
         }
 
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         const doc = docs.find(item => item.slug === oldSlug)
         if (doc) {
             doc.slug = newSlug
@@ -186,7 +179,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             return false;
         }
 
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         const doc = docs.find(item => item.slug === slug)
         if (doc) {
             doc.parentSlug = parentSlug
@@ -201,7 +194,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             return false
         }
 
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         const doc = docs.find(item => item.slug === slug)
         if (doc) {
             doc.title = newTitle
@@ -213,7 +206,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async findIndex(space: string, slug: string): Promise<number | undefined> {
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         let current = await this.get(space, slug) as Doc
         let child = current && current.parentSlug ? await super.findChild(docs, current.parentSlug) as Doc[] : undefined
 
@@ -226,14 +219,14 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     }
 
     async getTotalDocCount(space: string): Promise<number> {
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         docs = docs.filter(item => item.slug !== 'root' && item.slug !== 'home')
 
         return docs.length
     }
 
     async getTotalWordCount(space: string): Promise<number> {
-        let docs = this.__get(space) as Doc[]
+        let docs = await this.__get(space) as Doc[]
         docs = docs.filter(item => item.slug !== 'root' && item.slug !== 'home')
 
         let wordCount = 0

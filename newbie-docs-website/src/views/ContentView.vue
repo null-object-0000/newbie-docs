@@ -1,7 +1,7 @@
 <template>
-  <div class="content-view" v-if="config.dir">
+  <div class="content-view" v-if="docsStore.dir">
     <div class="docs">
-      <CSidebar :space="bookSlug" :dir="config.dir" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
+      <CSidebar :space="bookSlug" :dir="docsStore.dir" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
         @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle"
         @on-change-parent-slug="docsService.onChangeParentSlug" @on-change-sort="docsService.onChangeSort">
       </CSidebar>
@@ -20,7 +20,7 @@
               </CWordEditor>
             </template>
             <template v-else>
-              <CPreview :docs="config.spaceData[bookSlug].tree" :doc="config.currentDoc"
+              <CPreview :docs="docsStore.spaceData[bookSlug].tree" :doc="config.currentDoc"
                 @onEdit="configsStore.docEditMode = true">
               </CPreview>
             </template>
@@ -30,7 +30,7 @@
             <COutline :doc="config.currentDoc" :edit-mode="configsStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome v-else :space="bookSlug" :total-doc-count="config.totalDocCount" :total-word-count="config.totalWordCount">
+        <CHome v-else :space="bookSlug">
         </CHome>
       </template>
     </div>
@@ -51,9 +51,8 @@ import { useRoute, useRouter } from "vue-router";
 import { nextTick, reactive, watch } from "vue";
 import { Message, Notification, type NotificationConfig, type NotificationReturn } from '@arco-design/web-vue';
 import type { Doc, ContentViewConfig, Book } from "@/types/global";
-import { useBooksApi } from "@/api/books";
-import { useDocsApi } from "@/api/docs";
 import { useUsersStore } from '@/stores/user';
+import { useDocsStore } from '@/stores/doc';
 import { useConfigsStore } from "@/stores/config";
 import { OutputBlockData } from "@editorjs/editorjs";
 
@@ -61,58 +60,48 @@ const route = useRoute();
 const router = useRouter();
 const { loginUser } = useUsersStore();
 const configsStore = useConfigsStore();
+const docsStore = useDocsStore();
 
 const bookSlug = route.params.bookSlug as string;
 
 const config: ContentViewConfig = reactive({
-  dir: null,
   spaceData: {},
-  currentBook: null,
   currentDoc: null,
-  totalDocCount: 0,
-  totalWordCount: 0,
 });
-
-const booksApi = useBooksApi('localStorage');
-const docsApi = useDocsApi('localStorage', config.spaceData);
 
 // 监听路由变化
 watch(route, async () => {
   const bookSlug = route.params.bookSlug as string;
-  const slug = route.params.docSlug as string;
-  const book = await booksApi.get(bookSlug) as Book
+  const docSlug = route.params.docSlug as string;
 
-  if (book === null) {
-    router.push({ path: `/` });
-  } else {
-    await docsApi.init(bookSlug);
-  }
-
-  if (book === undefined || book === null) {
+  const refreshCurrentBookResult = await docsStore.refreshCurrentBook(bookSlug)
+  if (!refreshCurrentBookResult) {
     router.push({ path: `/` });
     return
   }
 
-  const doc = await docsApi.get(bookSlug, slug);
+  const book = docsStore.book as Book
 
   if (route.path === "/" + bookSlug || route.path === "/" + bookSlug + "/") {
     router.push({ path: `/${bookSlug}/home` });
     return
   }
+
+  const refreshCurrentDocResult = await docsStore.refreshCurrentDoc(bookSlug, docSlug)
+  if (!refreshCurrentDocResult) {
+    router.push({ path: `/` });
+    return
+  }
+
+  const doc = await docsStore.docsApi.get(bookSlug, docSlug);
+
   // 判断当前路由是否存在，不存在就跳回首页
-  else if (doc?.slug !== slug) {
+  if (doc?.slug !== docSlug) {
     router.push({ path: `/${bookSlug}/home` });
     return
   }
 
-  config.dir = await docsApi.dir(bookSlug);
-  config.currentBook = book;
   config.currentDoc = doc;
-
-  if (doc.slug === 'home') {
-    config.totalDocCount = await docsApi.getTotalDocCount(bookSlug);
-    config.totalWordCount = await docsApi.getTotalWordCount(bookSlug);
-  }
 
   configsStore.setHeader('/', book.title);
   if (config.currentDoc) {
@@ -139,7 +128,7 @@ const onEditorChange = async function (event: Event, content: string, showSucces
   const doc = config.currentDoc as Doc;
   doc.content = content;
   doc.updateTime = new Date().getTime()
-  if (await docsApi.put(bookSlug, doc)) {
+  if (await docsStore.docsApi.put(bookSlug, doc)) {
     if (showSuccessTips) {
       // 保留最近的 3 个通知
       if (historyNotification.length > 2) {
@@ -169,7 +158,7 @@ const docsService = {
       return false
     }
 
-    const slug = await docsApi.generateSlug(12)
+    const slug = await docsStore.docsApi.generateSlug(12)
     let parentSlug = value?.parentSlug
     if (parentSlug === undefined || parentSlug.length <= 0) {
       parentSlug = config.currentDoc?.slug || "home";
@@ -194,7 +183,7 @@ const docsService = {
       ] as OutputBlockData[])
     }
 
-    const book = await booksApi.get(bookSlug) as Book
+    const book = await docsStore.booksApi.get(bookSlug) as Book
 
     const doc: Doc = {
       bookId: book.id as number,
@@ -209,10 +198,10 @@ const docsService = {
       children: [],
       creator: loginUser.username + loginUser.id,
       createTime: Date.now(),
-      sort: (await docsApi.getTotalDocCount(bookSlug)) + 1
+      sort: (await docsStore.docsApi.getTotalDocCount(bookSlug)) + 1
     };
 
-    const result = await docsApi.put(bookSlug, doc);
+    const result = await docsStore.docsApi.put(bookSlug, doc);
     if (result) {
       router.push(doc.path)
       configsStore.docEditMode = true
@@ -224,7 +213,7 @@ const docsService = {
       return
     }
 
-    const doc = await docsApi.get(bookSlug, value.slug) as Doc
+    const doc = await docsStore.docsApi.get(bookSlug, value.slug) as Doc
     if (doc) {
       docsService.onCreate(event, {
         parentSlug: doc.parentSlug,
@@ -235,7 +224,7 @@ const docsService = {
     }
   },
   onRemove: async (event: Event, slug: string): Promise<boolean> => {
-    const result = await docsApi.remove(bookSlug, slug)
+    const result = await docsStore.docsApi.remove(bookSlug, slug)
     if (result) {
       if (config.currentDoc?.slug === slug) {
         router.push(`/${bookSlug}`)
@@ -246,14 +235,14 @@ const docsService = {
   },
   onChangeTitle: async (event: Event, value: { slug: string, title: string }): Promise<boolean> => {
     if (value.title && value.title.length > 0) {
-      return await docsApi.changeTitle(bookSlug, value.slug, value.title)
+      return await docsStore.docsApi.changeTitle(bookSlug, value.slug, value.title)
     } else {
       return false
     }
   },
   onChangeParentSlug: async (event: Event, value: { slug: string, parentSlug: string }): Promise<boolean> => {
     if (value.parentSlug && value.parentSlug.length > 0) {
-      return await docsApi.changeParentSlug(bookSlug, value.slug, value.parentSlug)
+      return await docsStore.docsApi.changeParentSlug(bookSlug, value.slug, value.parentSlug)
     } else {
       return false
     }
@@ -264,8 +253,8 @@ const docsService = {
    * @param value { _ 当前 slug: string, 目标 targetSlug: string, -1 为上方，1 为下方 position: number }
    */
   onChangeSort: async (event: Event, value: { parentSlug: string, slug: string, targetSlug: string, position: number }): Promise<boolean> => {
-    let currentIndex = await docsApi.findIndex(bookSlug, value.slug) as number
-    let aboveIndex = await docsApi.findIndex(bookSlug, value.targetSlug) as number
+    let currentIndex = await docsStore.docsApi.findIndex(bookSlug, value.slug) as number
+    let aboveIndex = await docsStore.docsApi.findIndex(bookSlug, value.targetSlug) as number
 
     if (currentIndex === undefined || aboveIndex === undefined) {
       return false
@@ -281,7 +270,7 @@ const docsService = {
       }
     }
 
-    const result = await docsApi.splice(bookSlug, value.slug, aboveIndex)
+    const result = await docsStore.docsApi.splice(bookSlug, value.slug, aboveIndex)
     if (!result) {
       Message.error(`置于${value.position > 0 ? '下方' : '上方'}失败`)
     }
@@ -293,7 +282,7 @@ const docsService = {
 
 watch(() => config.currentDoc?.title, async () => {
   if (config.currentDoc?.slug) {
-    config.currentDoc = await docsApi.get(bookSlug, config.currentDoc?.slug)
+    config.currentDoc = await docsStore.docsApi.get(bookSlug, config.currentDoc?.slug)
   }
 })
 </script>

@@ -16,7 +16,7 @@ export class UseLocalStoragePermissionsApi implements UsePermissionsApiFunction 
         }
     }
 
-    async get(params: { ownerType: number, owner: string, authType?: number; dataType: number; dataId?: number; dataSlug?: string; }): Promise<Permission | undefined> {
+    async get(params: { ownerType?: number, owner?: string, authType?: number; dataType: number; dataId?: number; dataSlug?: string; }): Promise<Permission | undefined> {
         if (params.ownerType === undefined || params.owner === undefined
             || (params.dataId === undefined && params.dataSlug === undefined)) {
             return

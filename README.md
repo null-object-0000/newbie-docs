@@ -17,6 +17,10 @@
   - [x] newbie-docs-website
   - [ ] newbie-docs-server-java
 
+
+> `LocalStorage` 存储实现不支持权限管理能力，此时默认所有人都拥有所有知识库、文档的管理员权限
+>
+
 ### v2.0.0
 - [ ] 基于 `YJS` 实现文档协同编辑
 - [ ] 实现多语言的 RESTful API 用以服务端存储
@@ -48,6 +52,8 @@ docker build -t newbie-docs:latest .
 # 运行容器
 docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
 ```
+
+### [业务逻辑](./BusinessLogic.md)
 
 ## 技术栈
 

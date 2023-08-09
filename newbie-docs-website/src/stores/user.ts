@@ -34,6 +34,13 @@ export const useUsersStore = defineStore('users', {
                     department: '基础研发部'
                 }
 
+                // const mockUser = {
+                //     id: '10888888',
+                //     username: '李四',
+                //     avatar: 'https://avatars.githubusercontent.com/u/20601604?v=4',
+                //     department: '基础研发部'
+                // }
+
                 user = mockUser
             }
 

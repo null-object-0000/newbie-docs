@@ -14,6 +14,8 @@ export interface Book {
   updater?: string;
   updateTime?: number;
   sort?: number;
+
+  loginUserAuthType?: number;
 }
 
 export interface Doc {
@@ -40,6 +42,8 @@ export interface Doc {
    * 编辑器类型（1 word、2 block、3 link）
    */
   editor: number;
+
+  loginUserAuthType?: number;
 }
 
 export interface Permission {
@@ -68,11 +72,7 @@ export interface DocData {
 
 export interface ContentViewConfig {
   spaceData: Record<string, DocData>;
-  dir?: Doc | null;
-  currentBook?: Book | null;
   currentDoc?: Doc | null;
-  totalDocCount?: number;
-  totalWordCount?: number;
 }
 
 export interface CustomEditorConfig extends EditorConfig {

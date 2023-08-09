@@ -49,15 +49,15 @@
 
                     <div class="docs-content-home__statistics">
                         <span class="docs-content-home__docCount">
-                            <b class="docs-content-home__count">{{ totalDocCount }}</b>文档
+                            <b class="docs-content-home__count">{{ totalCount.doc }}</b>文档
                         </span>
                         <span class="docs-content-home__wordCount">
-                            <b class="docs-content-home__count">{{ totalWordCount }}</b>字
+                            <b class="docs-content-home__count">{{ totalCount.word }}</b>字
                         </span>
                     </div>
                 </div>
 
-                <div v-if="totalDocCount <= 1 || true" class="docs-content-home__default_content">
+                <div v-if="totalCount.doc <= 1 || true" class="docs-content-home__default_content">
                     <p> 👋
                         <text style="font-weight: bold; display: inline-block;">
                             欢迎来到知识库
@@ -83,38 +83,25 @@
 import { toRefs, nextTick } from "vue";
 import { ref, reactive } from "vue";
 import { useConfigsStore } from "@/stores/config";
-import { useBooksApi } from "@/api/books";
+import { useDocsStore } from '@/stores/doc';
 import { computedAsync } from "@vueuse/core";
-import { Book } from "@/types/global";
 import PermissionModal from "@/components/PermissionModal.vue";
 import { Message, Modal } from "@arco-design/web-vue";
 import { useRouter } from "vue-router";
+import { Ref } from "vue";
 
 const router = useRouter()
 const configsStore = useConfigsStore()
+const docsStore = useDocsStore();
+
+const { book } = toRefs(docsStore);
 
 const props = defineProps({
     space: {
         type: String,
         required: true,
     },
-    totalDocCount: {
-        type: Number,
-        default: 0,
-        required: false,
-    },
-    totalWordCount: {
-        type: Number,
-        default: 0,
-        required: false,
-    },
 });
-
-const booksApi = useBooksApi('localStorage')
-
-const book = computedAsync(async () => {
-    return await booksApi.get(props.space) as Book
-}, {} as Book)
 
 const permissionModal = reactive({
     visible: false,
@@ -125,6 +112,21 @@ let editMode = ref(false)
 let docTitle = ref('')
 const renameInputRef = ref<HTMLElement | null>(null)
 
+const totalCount = computedAsync(async () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const results = {
+                doc: await docsStore.docsApi.getTotalDocCount(space.value),
+                word: await docsStore.docsApi.getTotalWordCount(space.value),
+            }
+
+            resolve(results)
+        } catch (error) {
+            reject(error)
+        }
+    })
+}, { doc: 0, word: 0 }) as Ref<{ doc: number, word: number }>
+
 const coverImg = (id: number) => {
     const maxIndex = 5
     const index = id % maxIndex + 1
@@ -133,7 +135,7 @@ const coverImg = (id: number) => {
 
 const onSpaceSetting = async (value: string | number | Record<string, any> | undefined, ev: Event) => {
     if (value === 'rename') {
-        docTitle.value = book.value.title
+        docTitle.value = docsStore.book.title
         editMode.value = true
         nextTick(() => {
             renameInputRef.value?.focus()
@@ -142,10 +144,10 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
         Modal.warning({
             title: `确认框`,
             simple: true,
-            content: `确认删除 “${book.value.title}” 知识库吗？`,
+            content: `确认删除 “${docsStore.book.title}” 知识库吗？`,
             hideCancel: false,
             onOk: async () => {
-                const result = await booksApi.remove(book.value.slug)
+                const result = await docsStore.booksApi.remove(docsStore.book.slug)
                 if (result) {
                     Message.success('删除成功')
                     router.push('/')
@@ -161,9 +163,9 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
 
 const submitRenameTitle = async (event: Event) => {
     if (docTitle.value && docTitle.value.length > 0) {
-        const result = await booksApi.changeTitle(space.value, docTitle.value)
+        const result = await docsStore.booksApi.changeTitle(space.value, docTitle.value)
         if (result) {
-            book.value.title = docTitle.value
+            docsStore.book.title = docTitle.value
         }
 
         configsStore.setHeader('/', docTitle.value);

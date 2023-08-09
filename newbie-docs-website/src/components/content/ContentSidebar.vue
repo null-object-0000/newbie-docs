@@ -6,7 +6,7 @@
         <a-input ref="searchInputRef" v-model="keyword" @input="search" class="docs-sidebar__search" type="text"
           placeholder="搜索" />
         <a-dropdown trigger="hover" position="bl" @select="createDoc">
-          <a-button class="docs-sidebar__create" type="outline">
+          <a-button class="docs-sidebar__create" type="outline" :disabled="!isEditorAuth(book.loginUserAuthType)">
             <template #icon>
               <icon-plus />
             </template>
@@ -18,9 +18,10 @@
           </template>
         </a-dropdown>
       </span>
-      
-      <a-tree draggable block-node default-expand-selected class="docs-sidebar__tree" v-if="sidebarData.dir"
-        :data="sidebarData.dir" v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
+
+      <a-tree ref="sidebarTreeRef" draggable block-node default-expand-all default-expand-selected
+        class="docs-sidebar__tree" v-if="sidebarData.dir" :data="sidebarData.dir"
+        v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
         @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)" @drop="drop">
         <template #title="node">
           <span class="docs-sidebar__tree-node"
@@ -51,18 +52,26 @@
                 <icon-more-vertical class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
                   :style="{ visibility: sidebarData.hoverNode === node.key ? 'visible' : 'hidden' }" />
                 <template #content>
-                  <a-doption value="rename"><template #icon><icon-loop /></template>重命名</a-doption>
-                  <a-doption value="edit"><template #icon><icon-edit /></template>编辑文档</a-doption>
-                  <a-doption value="permission"><template #icon><icon-lock /></template>权限管理</a-doption>
-                  <a-doption value="copyLink"><template #icon><icon-link /></template>复制链接</a-doption>
-                  <a-doption value="openLink"><template #icon><icon-launch /></template>在新标签页打开</a-doption>
-                  <a-doption value="copy"><template #icon><icon-copy /></template>复制</a-doption>
-                  <a-doption value="delete" :style="{ color: 'rgb(var(--danger-6))' }">
+                  <a-doption value="rename" v-if="isEditorAuth(findDocWithPath(node.key)?.loginUserAuthType)">
+                    <template #icon><icon-loop /></template>重命名</a-doption>
+                  <a-doption value="edit" v-if="isEditorAuth(findDocWithPath(node.key)?.loginUserAuthType)">
+                    <template #icon><icon-edit /></template>编辑文档</a-doption>
+                  <a-doption value="permission" v-if="isAdminerAuth(findDocWithPath(node.key)?.loginUserAuthType)">
+                    <template #icon><icon-lock /></template>权限管理</a-doption>
+                  <a-doption value="copyLink">
+                    <template #icon><icon-link /></template>复制链接</a-doption>
+                  <a-doption value="openLink">
+                    <template #icon><icon-launch /></template>在新标签页打开</a-doption>
+                  <a-doption value="copy" v-if="isEditorAuth(book.loginUserAuthType)">
+                    <template #icon><icon-copy /></template>复制</a-doption>
+                  <a-doption value="delete" v-if="isAdminerAuth(findDocWithPath(node.key)?.loginUserAuthType)"
+                    :style="{ color: 'rgb(var(--danger-6))' }">
                     <template #icon><icon-delete /></template>删除
                   </a-doption>
                 </template>
               </a-dropdown>
-              <a-dropdown trigger="click" @select="(value, ev) => onCreate(node, value, ev)"
+              <a-dropdown v-if="isEditorAuth(book.loginUserAuthType)" trigger="click"
+                @select="(value, ev) => onCreate(node, value, ev)"
                 @popup-visible-change="visible => visible ? null : sidebarData.hoverNode = null">
                 <icon-plus class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
                   :style="{ visibility: sidebarData.hoverNode === node.key ? 'visible' : 'hidden' }" />
@@ -81,6 +90,7 @@
       </a-tree>
     </aside>
 
+    <!-- 收起展开文档索引导航栏 -->
     <!-- <div class="docs-sidebar__slider" @click="sidebar.collapsed = !sidebar.collapsed">
       <docs-icon-arrow-left />
     </div> -->
@@ -93,10 +103,11 @@
 
 <script setup lang="ts">
 import { reactive, ref, toRefs, watch, nextTick, type PropType } from "vue";
-import type { Doc } from "@/types/global";
+import type { Doc, Permission } from "@/types/global";
 import { useMagicKeys, whenever, useClipboard } from '@vueuse/core'
-import { Message, Modal, type TreeNodeData } from "@arco-design/web-vue";
+import { Message, Modal, TreeInstance, type TreeNodeData } from "@arco-design/web-vue";
 import { useConfigsStore } from "@/stores/config";
+import { useDocsStore } from "@/stores/doc";
 import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
 import PermissionModal from "@/components/PermissionModal.vue";
@@ -105,7 +116,10 @@ const route = useRoute();
 const router = useRouter();
 
 const configsStore = useConfigsStore();
-const docsEventBus = useDocsEventBus()
+const docsStore = useDocsStore();
+const docsEventBus = useDocsEventBus();
+
+const { book } = toRefs(docsStore);
 
 const sidebarRef = ref(null)
 const source = ref('')
@@ -142,6 +156,7 @@ const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "on
 
 const { space, dir } = toRefs(props);
 
+const sidebarTreeRef = ref<TreeInstance | null>(null)
 const renameInputRef = ref<HTMLElement | null>(null)
 const sidebarData = reactive({
   rawDir: [],
@@ -181,6 +196,8 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
     node.title = item.title
     if (node.key === `/${space.value}/home`) {
       node.draggable = false
+    }else{
+      node.draggable = isEditorAuth(item.loginUserAuthType)
     }
 
     return node
@@ -189,14 +206,15 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
 
 const updateDirData = (dir?: Doc) => {
   sidebarData.rawDir = dir?.children || []
-  sidebarData.dir = formatDirData(sidebarData.rawDir)
-  sidebarData.fullDir = JSON.parse(JSON.stringify(sidebarData.dir))
+  sidebarData.fullDir = formatDirData(JSON.parse(JSON.stringify(dir?.children || [])))
 
   search()
 }
 
 docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {
+  // 先更新成空数据，再更新真实数据，强制触发 tree 的更新
   updateDirData()
+
   updateDirData(value.dir)
 })
 
@@ -247,6 +265,9 @@ const search = () => {
   }
 
   sidebarData.dir = loop(JSON.parse(JSON.stringify(sidebarData.fullDir)));
+  nextTick(() => {
+    sidebarTreeRef.value?.expandAll()
+  })
 };
 
 function getMatchIndex(title: string) {
@@ -276,7 +297,10 @@ const findDocWithPath = (path: string): Doc | undefined => {
     return result
   }
 
-  return loop(sidebarData.rawDir)
+  let doc = loop(sidebarData.rawDir)
+  doc = JSON.parse(JSON.stringify(doc))
+  delete doc?.children
+  return doc
 }
 
 const createDoc = function (value: string | number | Record<string, any> | undefined, ev: Event) {
@@ -414,7 +438,21 @@ const eventStopPropagation = (ev: Event) => {
   ev.stopImmediatePropagation()
 }
 
+const isViewerAuth = (authType?: number | null) => {
+  return authType === 3
+}
+
+const isEditorAuth = (authType?: number | null) => {
+  return authType === 1 || authType === 2
+}
+
+const isAdminerAuth = (authType?: number | null) => {
+  return authType === 1
+}
+
 watch(() => dir.value.children, async () => {
+  updateDirData()
+
   updateDirData(dir.value)
 }, { immediate: true })
 

@@ -14,19 +14,22 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
     constructor(spaceData: Record<string, any>) {
         super()
 
-        this.localStorageDocsApi = new UseLocalStorageDocsApi(spaceData);
+        this.localStorageDocsApi = new UseLocalStorageDocsApi(spaceData, { localStorageCacheKey: 'newbie_docs_restful' });
     }
 
     async init(space: string): Promise<void> {
-        localStorage.removeItem('newbie_docs_' + space)
+        localStorage.removeItem('newbie_docs_restful_' + space)
         const remoteDocs = await this.get(space)
         this.localStorageDocsApi.__updateCache('init', space, super.tree2array(remoteDocs))
 
-
         const submitScheduledTask = async (task: Function, fixedDelay: number) => {
-            const promise = new Promise<void>(async (resolve, reject) => {
+            const promise = new Promise<void>(async () => {
                 while (true) {
-                    await task()
+                    try {
+                        await task()
+                    } catch (error) {
+
+                    }
                     await new Promise(resolve => setTimeout(resolve, fixedDelay))
                 }
             })
@@ -63,9 +66,9 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async dir(space: string): Promise<Doc | undefined> {
+    async dir(space: string, forceRemote?: boolean): Promise<Doc | undefined> {
         const results = await this.localStorageDocsApi.dir(space)
-        if (results) {
+        if (results && forceRemote !== true) {
             return results
         }
 

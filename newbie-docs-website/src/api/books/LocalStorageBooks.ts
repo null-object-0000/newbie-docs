@@ -1,20 +1,20 @@
 import { Book } from "@/types/global";
 import { UseBooksApiFunction } from "@/types/api";
-import { usePermissionsApi } from "@/api/permissions";
 
 export class UseLocalStorageBooksApi implements UseBooksApiFunction {
-    __get(slug?: string): Book | Book[] | undefined {
-        const cache = localStorage.getItem('newbie_books');
-        const cacheObj = cache ? JSON.parse(cache) as Book[] : []
 
-        let docs;
+    async __get(slug?: string): Promise<Book | Book[] | undefined> {
+        const cache = localStorage.getItem('newbie_books');
+        let cacheBooks = cache ? JSON.parse(cache) as Book[] : []
+
+        let results;
         if (slug === undefined) {
-            docs = cacheObj
+            results = cacheBooks
         } else {
-            docs = cacheObj.find(item => item.slug === slug)
+            results = cacheBooks.find(item => item.slug === slug)
         }
 
-        return docs
+        return results
     }
 
     __updateCache(from: string, books: Book[] | undefined): boolean {
@@ -27,15 +27,15 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
     }
 
     async dir(): Promise<Book[] | undefined> {
-        return this.__get() as Book[] | undefined;
+        return await this.__get() as Book[] | undefined;
     }
 
     async get(slug: string): Promise<Book | undefined> {
-        return this.__get(slug) as Book | undefined;
+        return await this.__get(slug) as Book | undefined;
     }
 
     async exists(slug: String): Promise<boolean> {
-        let books = this.__get() as Book[] | undefined
+        let books = await this.__get() as Book[] | undefined
         if (books) {
             return books.some(item => item.slug === slug)
         } else {
@@ -44,7 +44,7 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
     }
 
     async put(book: Book): Promise<boolean> {
-        let books = this.__get() as Book[] | undefined
+        let books = await this.__get() as Book[] | undefined
 
         if (await this.exists(book.slug)) {
             return false
@@ -52,16 +52,6 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
 
         if (!book.id || book.id <= 0) {
             book.id = Math.ceil(Math.random() * 1000000000)
-
-            // 默认给自己加一个管理员权限
-            await usePermissionsApi('localStorage').put({
-                authType: 1,
-                dataType: 1,
-                dataId: book.id as number,
-                dataSlug: book.slug,
-                owner: book.creator,
-                ownerType: 1
-            })
         }
 
         if (books) {
@@ -73,7 +63,7 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
     }
 
     async remove(slug: string): Promise<boolean> {
-        let books = this.__get() as Book[] | undefined
+        let books = await this.__get() as Book[] | undefined
         books = books?.filter(item => item.slug !== slug)
         return this.__updateCache('remove', books)
     }
@@ -83,7 +73,7 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
             return false
         }
 
-        let books = this.__get() as Book[]
+        let books = await this.__get() as Book[]
         const doc = books.find(item => item.slug === slug)
         if (doc) {
             doc.title = newTitle

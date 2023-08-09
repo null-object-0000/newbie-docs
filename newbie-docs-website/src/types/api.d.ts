@@ -1,7 +1,7 @@
 import { Book, Doc, Permission } from "@/types/global";
 
 export interface UsePermissionsApiFunction {
-    async get: (params: { authType?: number, dataType: number, ownerType: number, owner: string, dataId?: number, dataSlug?: string }) => Promise<Permission | undefined>;
+    async get: (params: { authType?: number, dataType: number, ownerType?: number, owner?: string, dataId?: number, dataSlug?: string }) => Promise<Permission | undefined>;
     async list: (params: { authType?: number, dataType: number, dataId?: number, dataSlug?: string }) => Promise<Permission[] | undefined>;
 
     async put: (permission: Permission) => Promise<boolean>;
@@ -31,7 +31,7 @@ export interface UseDocsApiFunction {
      * @param space 空间名
      * @returns 树形结构的 doc，包含子节点，不包含 doc 内容
      */
-    async dir: (space: string) => Promise<Doc | undefined>;
+    async dir: (space: string, ...any) => Promise<Doc | undefined>;
     /**
      * 获取指定空间指定 slug 的 doc
      * @param space 空间名

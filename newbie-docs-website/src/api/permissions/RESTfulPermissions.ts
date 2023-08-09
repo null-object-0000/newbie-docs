@@ -3,7 +3,7 @@ import { UsePermissionsApiFunction } from "@/types/api";
 import axiso from "axios";
 
 export class UseRESTfulPermissionsApi implements UsePermissionsApiFunction {
-    async get(params: { ownerType: number, owner: string, authType?: number; dataType: number; dataId?: number; dataSlug?: string; }): Promise<Permission | undefined> {
+    async get(params: { ownerType?: number, owner?: string, authType?: number; dataType: number; dataId?: number; dataSlug?: string; }): Promise<Permission | undefined> {
         const { data: response } = await axiso({
             method: 'get',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,

@@ -11,6 +11,6 @@
 		}
 	},
 	"devDependencies": {
-		"cz-git": "^1.7.0"
+		"cz-git": "^1.7.1"
 	}
 }

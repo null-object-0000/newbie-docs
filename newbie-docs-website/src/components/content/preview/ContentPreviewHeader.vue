@@ -12,7 +12,7 @@
             <a-breadcrumb-item>{{ doc.title }}</a-breadcrumb-item>
         </a-breadcrumb>
     </header>
-    <a-button class="edit-btn" type="primary" v-if="permission && (permission.authType === 1 || permission.authType === 2)"
+    <a-button class="edit-btn" type="primary" v-if="doc.loginUserAuthType === 1 || doc.loginUserAuthType === 2"
         @click="onEdit">
         <template #icon>
             <icon-edit />
@@ -24,14 +24,13 @@
 </template>
 
 <script setup lang="ts">
+import type { Doc } from '@/types/global';
+import { useDocsStore } from '@/stores/doc';
 import { toRefs } from 'vue';
-import type { Doc, Permission } from '@/types/global';
-import { useUsersStore } from '@/stores/user';
-import { usePermissionsApi } from '@/api/permissions';
-import { watch } from 'vue';
-import { ref } from 'vue';
 
-const propsDef = defineProps({
+const docsStore = useDocsStore()
+
+const props = defineProps({
     docs: {
         type: Object as () => Doc,
         required: true,
@@ -42,13 +41,9 @@ const propsDef = defineProps({
     },
 });
 
-const { docs, doc } = toRefs(propsDef);
-const permission = ref<Permission>();
+const { docs, doc } = toRefs(props);
 
 const emitsDef = defineEmits(['onEdit']);
-
-const { loginUser } = useUsersStore();
-const permissionsApi = usePermissionsApi('localStorage');
 
 const onEdit = (event: Event) => {
     emitsDef('onEdit', event);
@@ -60,6 +55,11 @@ const getParent = (data: Doc[], slug?: string): Doc | undefined => {
     }
 
     for (const item of data) {
+        if (item.slug === slug && slug === 'root') {
+            item.title = docsStore.book.title
+            return item;
+        }
+
         if (item.slug === slug) {
             return item;
         }
@@ -81,15 +81,6 @@ const getParents = (data: Doc[], slug?: string): Doc[] => {
     }
     return parents;
 };
-
-watch(doc, async () => {
-    permission.value = await permissionsApi.get({
-        dataType: 2,
-        dataSlug: doc.value.bookSlug + '/' + doc.value.slug,
-        ownerType: 1,
-        owner: loginUser.username + loginUser.id,
-    });
-}, { immediate: true },);
 </script>
 
 <style>

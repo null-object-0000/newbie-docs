@@ -26,8 +26,8 @@
             </template>
             <template #authType="{ record }">
                 <a-select :options="authTypes" v-model="record.authType"
-                    :disabled="modalData.tableData.filter(item => item.id && item.id > 0).length <= 1"
-                    @change="changeAuthType(record.id, record.authType)" />
+                    :disabled="!record.editMode && modalData.tableData.filter(item => item.id && item.id > 0).length <= 1"
+                    @change="record.editMode ? () => {} : changeAuthType(record.id, record.authType)" />
             </template>
             <template #actions="{ record }">
                 <template v-if="record.editMode">
