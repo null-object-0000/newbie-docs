@@ -13,6 +13,9 @@ public enum ResultsStatusEnum {
     FAILED_CLIENT_DATA_EXIST("4201", "数据已存在"),
     FAILED_CLIENT_DATA_NOT_EXIST("4202", "数据不存在"),
 
+    FAILED_CLIENT_USER_NOT_LOGIN("4301", "用户未登录"),
+    FAILED_CLIENT_USER_AUTH_DENIED("4302", "用户权限不足"),
+
     FAILED_SERVER_ERROR("5000", "服务器错误"),
 
     FAILED("9999", "失败");

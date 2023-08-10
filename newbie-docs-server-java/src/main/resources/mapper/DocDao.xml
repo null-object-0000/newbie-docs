@@ -7,7 +7,6 @@
         <result column="parent_id" jdbcType="BIGINT" property="parentId"/>
         <result column="slug" jdbcType="VARCHAR" property="slug"/>
         <result column="book_slug" jdbcType="VARCHAR" property="bookSlug"/>
-        <result column="parent_slug" jdbcType="VARCHAR" property="parentSlug"/>
         <result column="title" jdbcType="VARCHAR" property="title"/>
         <result column="editor" jdbcType="INTEGER" property="editor"/>
         <result column="content" jdbcType="VARCHAR" property="content"/>
@@ -19,20 +18,24 @@
         <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
     </resultMap>
 
-    <sql id="Base_Column_List">
+    <sql id="Base_Column_List_Without_Content">
         id
-        , book_id, parent_id, slug, book_slug, parent_slug, title, editor, words_count, sort, creator, create_time, updater, update_time
+        , book_id, parent_id, slug, book_slug, title, editor, words_count, sort, creator, create_time, updater, update_time
+    </sql>
+
+    <sql id="Base_Column_List_With_Content">
+        id
+        , book_id, parent_id, slug, book_slug, title, editor, words_count, content, sort, creator, create_time, updater, update_time
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
-        insert into newbie_docs (book_id, parent_id, slug, book_slug, parent_slug, title, editor, words_count, content,
+        insert into newbie_docs (book_id, parent_id, slug, book_slug, title, editor, words_count, content,
                                  sort,
                                  creator, create_time, updater,
                                  update_time)
         values (#{bookId,jdbcType=BIGINT}, #{parentId,jdbcType=BIGINT}, #{slug,jdbcType=VARCHAR},
-                #{bookSlug,jdbcType=VARCHAR}, #{parentSlug,jdbcType=VARCHAR},
-                #{title,jdbcType=VARCHAR}, #{editor,jdbcType=INTEGER}, #{wordsCount,jdbcType=INTEGER},
-                #{content,jdbcType=VARCHAR},
+                #{bookSlug,jdbcType=VARCHAR}, #{title,jdbcType=VARCHAR}, #{editor,jdbcType=INTEGER},
+                #{wordsCount,jdbcType=INTEGER}, #{content,jdbcType=VARCHAR},
                 #{sort,jdbcType=INTEGER}, #{creator,jdbcType=BIGINT}, #{createTime,jdbcType=TIMESTAMP},
                 #{updater,jdbcType=BIGINT}, #{updateTime,jdbcType=TIMESTAMP})
     </insert>
@@ -51,9 +54,6 @@
             </if>
             <if test="bookSlug != null">
                 book_slug = #{bookSlug,jdbcType=VARCHAR},
-            </if>
-            <if test="parentSlug != null">
-                parent_slug = #{parentSlug,jdbcType=VARCHAR},
             </if>
             <if test="title != null">
                 title = #{title,jdbcType=VARCHAR},
@@ -87,10 +87,10 @@
 
     <update id="changeParentSlug">
         update newbie_docs
-        set parent_slug = #{parentSlug,jdbcType=VARCHAR},
+        set parent_id = #{parentId,jdbcType=BIGINT},
             updater     = #{updater,jdbcType=BIGINT},
             update_time = now()
-        where slug = #{slug,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=BIGINT}
           and is_deleted = 0
     </update>
 
@@ -99,7 +99,7 @@
         set title       = #{newTitle,jdbcType=VARCHAR},
             updater     = #{updater,jdbcType=BIGINT},
             update_time = now()
-        where slug = #{slug,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=BIGINT}
           and is_deleted = 0
     </update>
 
@@ -113,28 +113,15 @@
 
     <select id="selectAllWithoutContent" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List"/>
+        <include refid="Base_Column_List_Without_Content"/>
         from newbie_docs
         where book_slug = #{bookSlug,jdbcType=VARCHAR} and is_deleted = 0
         order by sort asc
     </select>
 
     <select id="selectAllWithContent" resultMap="BaseResultMap">
-        select id
-             , book_id
-             , parent_id
-             , slug
-             , book_slug
-             , parent_slug
-             , title
-             , editor
-             , words_count
-             , sort
-             , creator
-             , create_time
-             , updater
-             , update_time
-             , content
+        select
+        <include refid="Base_Column_List_With_Content"/>
         from newbie_docs
         where book_slug = #{bookSlug,jdbcType=VARCHAR}
           and is_deleted = 0
@@ -146,7 +133,7 @@
         from newbie_docs
         where is_deleted = 0
           and book_slug = #{bookSlug,jdbcType=VARCHAR}
-          and parent_slug = #{parentSlug,jdbcType=VARCHAR}
+          and parent_id = #{parentId,jdbcType=BIGINT}
     </select>
 
     <select id="selectTotalDocsCount" resultType="java.lang.Long">
@@ -167,7 +154,23 @@
 
     <select id="selectOne" resultMap="BaseResultMap">
         select
-        <include refid="Base_Column_List"/>
+        <include refid="Base_Column_List_Without_Content"/>
+        from newbie_docs
+        where id = #{id,jdbcType=BIGINT}
+        and is_deleted = 0
+    </select>
+
+    <select id="selectOneWithoutContent" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List_Without_Content"/>
+        from newbie_docs
+        where id = #{id,jdbcType=BIGINT}
+        and is_deleted = 0
+    </select>
+
+    <select id="selectOneWithContent" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List_With_Content"/>
         from newbie_docs
         where id = #{id,jdbcType=BIGINT}
         and is_deleted = 0

@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.web.bind.annotation.*;
+import site.snewbie.docs.server.enums.PermissionDataType;
 import site.snewbie.docs.server.model.UserOauth;
 import site.snewbie.docs.server.enums.ResultsStatusEnum;
 import site.snewbie.docs.server.model.entity.Book;
@@ -29,7 +30,7 @@ public class BookController extends BaseController {
 
         User loginUser = super.getCurrentLoginUser();
         if (loginUser != null) {
-            Permission permission = super.getDataPermission(1, book.getId(), book.getSlug());
+            Permission permission = super.getDataPermission(PermissionDataType.BOOK, book.getId(), book.getSlug());
             if (permission != null) {
                 bookVO.setLoginUserAuthType(permission.getAuthType());
             }

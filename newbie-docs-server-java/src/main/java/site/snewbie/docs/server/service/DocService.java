@@ -42,6 +42,10 @@ public class DocService {
         return this.docVOArray2DocVOTree(this.doc2DocVO(docs));
     }
 
+    public Doc selectOneWithoutContent(Long id) {
+        return docDao.selectOneWithoutContent(id);
+    }
+
     public DocVO get(String bookSlug, String docSlug) {
         List<Doc> docs = docDao.selectAllWithContent(bookSlug);
         DocVO results = this.docVOArray2DocVOTree(this.doc2DocVO(docs));
@@ -50,6 +54,23 @@ public class DocService {
         } else {
             Doc currentDoc = docs.stream()
                     .filter(doc -> docSlug.equals(doc.getSlug()))
+                    .findFirst().orElse(null);
+            if (currentDoc == null) {
+                return null;
+            }
+
+            return this.buildDocVOTree(this.doc2DocVO(currentDoc), this.doc2DocVO(docs));
+        }
+    }
+
+    public DocVO getById(String bookSlug, Long id) {
+        List<Doc> docs = docDao.selectAllWithContent(bookSlug);
+        DocVO results = this.docVOArray2DocVOTree(this.doc2DocVO(docs));
+        if (id == null || id <= 0) {
+            return results;
+        } else {
+            Doc currentDoc = docs.stream()
+                    .filter(doc -> id.equals(doc.getId()))
                     .findFirst().orElse(null);
             if (currentDoc == null) {
                 return null;
@@ -69,19 +90,18 @@ public class DocService {
             return null;
         }
 
-        Doc parentDoc = this.get(book.getSlug(), doc.getParentSlug());
+        Doc parentDoc = this.getById(book.getSlug(), doc.getParentId());
         if (parentDoc == null) {
             return null;
         }
 
         doc.setParentId(parentDoc.getId());
-        doc.setParentSlug(parentDoc.getSlug());
 
         doc.setUpdater(loginUser.getUsername() + loginUser.getId());
         doc.setUpdateTime(LocalDateTime.now());
 
         doc.setWordsCount(this.getWordsCount(doc));
-        doc.setSort(doc.getSort() == null ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentSlug()) + 1 : doc.getSort());
+        doc.setSort(doc.getSort() == null ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentId()) + 1 : doc.getSort());
 
         if (doc.getId() != null && doc.getId() > 0) {
             boolean updateDocResult = docDao.update(doc);
@@ -119,16 +139,16 @@ public class DocService {
         return doc.getId();
     }
 
-    public boolean remove(String slug, User loginUser) {
-        return docDao.delete(slug, loginUser.getUsername() + loginUser.getId());
+    public boolean remove(Long id, User loginUser) {
+        return docDao.delete(id, loginUser.getUsername() + loginUser.getId());
     }
 
-    public boolean changeParentSlug(String slug, String parentSlug, User loginUser) {
-        return docDao.changeParentSlug(slug, parentSlug, loginUser.getUsername() + loginUser.getId());
+    public boolean changeParentSlug(Long id, Long parentId, User loginUser) {
+        return docDao.changeParentSlug(id, parentId, loginUser.getUsername() + loginUser.getId());
     }
 
-    public boolean changeTitle(String slug, String newTitle, User loginUser) {
-        return docDao.changeTitle(slug, newTitle, loginUser.getUsername() + loginUser.getId());
+    public boolean changeTitle(Long id, String newTitle, User loginUser) {
+        return docDao.changeTitle(id, newTitle, loginUser.getUsername() + loginUser.getId());
     }
 
     public boolean updateDocsAndWordsCount(Long id) {
@@ -146,7 +166,7 @@ public class DocService {
     private final static ConcurrentHashMap<Long, ExecutorService> updateDocsAndWordsCountExecutors = new ConcurrentHashMap<>();
 
     public boolean submitUpdateDocsAndWordsCountTask(Long bookId, Long docId) {
-        final Doc doc = docId == null || docId <= 0 ? null : docDao.selectOne(docId);
+        final Doc doc = docId == null || docId <= 0 ? null : docDao.selectOneWithContent(docId);
         final Long finalBookId = bookId == null && doc != null ? doc.getBookId() : bookId;
         if (finalBookId == null || finalBookId <= 0) {
             return false;
@@ -198,7 +218,7 @@ public class DocService {
     }
 
     private DocVO buildDocVOTree(DocVO parent, List<DocVO> docs) {
-        List<DocVO> children = docs.stream().filter(doc -> parent.getSlug().equals(doc.getParentSlug())).collect(Collectors.toList());
+        List<DocVO> children = docs.stream().filter(doc -> parent.getId().equals(doc.getParentId())).collect(Collectors.toList());
         if (CollUtil.isNotEmpty(children)) {
             parent.setChildren(children);
             children.forEach(child -> this.buildDocVOTree(child, docs));

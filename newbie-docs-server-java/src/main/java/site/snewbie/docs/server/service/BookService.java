@@ -45,7 +45,6 @@ public class BookService {
 
         doc.setSlug(slug);
         doc.setParentId(parentId);
-        doc.setParentSlug(parentSlug);
         doc.setEditor(2);
         doc.setWordsCount(0);
         doc.setContent(StrUtil.EMPTY);

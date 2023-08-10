@@ -37,7 +37,6 @@ CREATE TABLE `newbie_docs`
     `book_id`     bigint unsigned NOT NULL DEFAULT '0' COMMENT '所属书籍',
     `book_slug`   varchar(50)     NOT NULL DEFAULT '' COMMENT '所属书籍路由标识',
     `parent_id`   bigint unsigned NOT NULL DEFAULT '0' COMMENT '父级目录',
-    `parent_slug` varchar(50)     NOT NULL DEFAULT '' COMMENT '父级目录路由标识',
     `title`       varchar(50)     NOT NULL DEFAULT '' COMMENT '标题',
     `editor`      int             NOT NULL DEFAULT '0' COMMENT '1 word 2 block 3 link',
     `content`     longtext        NOT NULL COMMENT '内容',

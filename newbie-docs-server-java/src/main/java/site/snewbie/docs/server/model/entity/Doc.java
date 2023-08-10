@@ -11,7 +11,6 @@ public class Doc {
     private Long parentId;
     private String slug;
     private String bookSlug;
-    private String parentSlug;
     private String title;
     private Integer editor;
     private String content;

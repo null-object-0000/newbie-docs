@@ -15,21 +15,23 @@ public interface DocDao {
 
     List<Doc> selectAllWithContent(@Param("bookSlug") String bookSlug);
 
-    int selectMaxSort(@Param("bookSlug") String bookSlug, @Param("parentSlug") String parentSlug);
+    int selectMaxSort(@Param("bookSlug") String bookSlug, @Param("parentId") Long parentId);
 
     boolean insert(Doc doc);
 
     boolean update(Doc doc);
 
-    boolean delete(String slug, String updater);
+    boolean delete(@Param("id") Long id, @Param("updater") String updater);
 
     Long selectTotalDocsCount(@Param("bookId") Long bookId);
 
     Long selectTotalWordsCount(@Param("bookId") Long bookId);
 
-    boolean changeParentSlug(@Param("slug") String slug, @Param("parentSlug") String parentSlug, @Param("updater") String updater);
+    boolean changeParentSlug(@Param("id") Long id, @Param("parentId") Long parentId, @Param("updater") String updater);
 
-    Doc selectOne(@Param("id") Long id);
+    boolean changeTitle(@Param("id") Long id, @Param("newTitle") String newTitle, @Param("updater") String updater);
 
-    boolean changeTitle(@Param("slug") String slug, @Param("newTitle") String newTitle, @Param("updater") String updater);
+    Doc selectOneWithoutContent(@Param("id") Long id);
+
+    Doc selectOneWithContent(@Param("id") Long id);
 }
