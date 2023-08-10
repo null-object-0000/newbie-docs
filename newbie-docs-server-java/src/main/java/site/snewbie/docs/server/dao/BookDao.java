@@ -14,11 +14,17 @@ public interface BookDao {
 
     Book selectOne(@Param("id") Long id, @Param("slug") String slug);
 
-    boolean delete(@Param("slug") String slug, @Param("updater") String updater);
+    boolean delete(@Param("id") Long id, @Param("updater") String updater);
 
-    boolean updateTitle(@Param("slug") String slug, @Param("newTitle") String newTitle, @Param("updater") String updater);
+    boolean updateTitle(@Param("id") Long id, @Param("newTitle") String newTitle, @Param("updater") String updater);
 
     boolean update(Book book);
 
     int selectMaxSort();
+
+    boolean updateDocsCount(@Param("id") Long id, @Param("docsCount") Long docsCount);
+
+    boolean updateWordsCount(@Param("id") Long id, @Param("wordsCount") Long wordsCount);
+
+    boolean updateDocsAndWordsCount(@Param("id") Long id, @Param("docsCount") Long docsCount, @Param("wordsCount") Long wordsCount);
 }

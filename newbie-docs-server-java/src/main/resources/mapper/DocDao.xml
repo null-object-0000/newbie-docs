@@ -11,6 +11,7 @@
         <result column="title" jdbcType="VARCHAR" property="title"/>
         <result column="editor" jdbcType="INTEGER" property="editor"/>
         <result column="content" jdbcType="VARCHAR" property="content"/>
+        <result column="words_count" jdbcType="INTEGER" property="wordsCount"/>
         <result column="sort" jdbcType="INTEGER" property="sort"/>
         <result column="creator" jdbcType="BIGINT" property="creator"/>
         <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
@@ -20,16 +21,16 @@
 
     <sql id="Base_Column_List">
         id
-        , book_id, parent_id, slug, book_slug, parent_slug, title, editor, sort, creator, create_time, updater, update_time
+        , book_id, parent_id, slug, book_slug, parent_slug, title, editor, words_count, sort, creator, create_time, updater, update_time
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
-        insert into newbie_docs (book_id, parent_id, slug, book_slug, parent_slug, title, editor, content, sort,
+        insert into newbie_docs (book_id, parent_id, slug, book_slug, parent_slug, title, editor, words_count, content, sort,
                                  creator, create_time, updater,
                                  update_time)
         values (#{bookId,jdbcType=BIGINT}, #{parentId,jdbcType=BIGINT}, #{slug,jdbcType=VARCHAR},
                 #{bookSlug,jdbcType=VARCHAR}, #{parentSlug,jdbcType=VARCHAR},
-                #{title,jdbcType=VARCHAR}, #{editor,jdbcType=INTEGER}, #{content,jdbcType=VARCHAR},
+                #{title,jdbcType=VARCHAR}, #{editor,jdbcType=INTEGER}, #{wordsCount,jdbcType=INTEGER}, #{content,jdbcType=VARCHAR},
                 #{sort,jdbcType=INTEGER}, #{creator,jdbcType=BIGINT}, #{createTime,jdbcType=TIMESTAMP},
                 #{updater,jdbcType=BIGINT}, #{updateTime,jdbcType=TIMESTAMP})
     </insert>
@@ -57,6 +58,9 @@
             </if>
             <if test="editor != null">
                 editor = #{editor,jdbcType=INTEGER},
+            </if>
+            <if test="wordsCount != null">
+                words_count = #{wordsCount,jdbcType=INTEGER},
             </if>
             <if test="content != null">
                 content = #{content,jdbcType=VARCHAR},
@@ -113,6 +117,7 @@
              , parent_slug
              , title
              , editor
+             , words_count
              , sort
              , creator
              , create_time
@@ -133,19 +138,27 @@
           and parent_slug = #{parentSlug,jdbcType=VARCHAR}
     </select>
 
-    <select id="selectTotalDocCount" resultType="java.lang.Long">
+    <select id="selectTotalDocsCount" resultType="java.lang.Long">
         select count(*)
         from newbie_docs
         where is_deleted = 0
-          and book_slug = #{bookSlug,jdbcType=VARCHAR}
+          and book_id = #{bookId,jdbcType=BIGINT}
           and slug not in ('root', 'home')
     </select>
 
-    <select id="selectTotalWordCount" resultType="java.lang.Long">
-        select sum(length(content))
+    <select id="selectTotalWordsCount" resultType="java.lang.Long">
+        select sum(words_count)
         from newbie_docs
         where is_deleted = 0
-          and book_slug = #{bookSlug,jdbcType=VARCHAR}
+          and book_id = #{bookId,jdbcType=BIGINT}
           and slug not in ('root', 'home')
+    </select>
+
+    <select id="selectOne" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from newbie_docs
+        where id = #{id,jdbcType=BIGINT}
+          and is_deleted = 0
     </select>
 </mapper>

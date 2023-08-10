@@ -89,6 +89,7 @@ public class DocController extends BaseController {
         if (id == null || id <= 0) {
             return Results.failed("0001", "doc 保存失败");
         } else {
+            docService.submitUpdateDocsAndWordsCountTask(doc.getBookId(), doc.getId());
             return Results.success(id);
         }
     }
@@ -104,6 +105,9 @@ public class DocController extends BaseController {
         assert loginUser != null;
 
         boolean result = docService.remove(doc.getSlug(), loginUser);
+        if (result) {
+            docService.submitUpdateDocsAndWordsCountTask(doc.getBookId(), doc.getId());
+        }
         return Results.success(result);
     }
 
@@ -122,28 +126,6 @@ public class DocController extends BaseController {
 
         boolean result = docService.changeParentSlug(params.getSlug(), params.getParentSlug(), loginUser);
         return Results.success(result);
-    }
-
-    @GetMapping("/getTotalDocCount")
-    public Results<Long> getTotalDocCount() {
-        String bookSlug = this.getCurrentViewBook();
-        if (StrUtil.isBlank(bookSlug)) {
-            return Results.failed("0001", "book slug 不能为空");
-        }
-
-        Long count = docService.getTotalDocCount(bookSlug);
-        return Results.success(count == null ? 0 : count);
-    }
-
-    @GetMapping("/getTotalWordCount")
-    public Results<Long> getTotalWordCount() {
-        String bookSlug = this.getCurrentViewBook();
-        if (StrUtil.isBlank(bookSlug)) {
-            return Results.failed("0001", "book slug 不能为空");
-        }
-
-        Long count = docService.getTotalWordCount(bookSlug);
-        return Results.success(count == null ? 0 : count);
     }
 
     @Data

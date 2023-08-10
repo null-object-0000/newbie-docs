@@ -25,6 +25,7 @@ public abstract class BaseController {
         mock.setUsername("张三");
         mock.setAvatar("https://avatars.githubusercontent.com/u/10999999?v=4");
         mock.setDepartment("基础研发部");
+        mock.setIsAdminer(true);
         return mock;
     }
 

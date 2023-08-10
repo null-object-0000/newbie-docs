@@ -15,6 +15,7 @@ public class Doc {
     private String title;
     private Integer editor;
     private String content;
+    private Integer wordsCount;
     private Integer sort;
     private String creator;
     private String updater;

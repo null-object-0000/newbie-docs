@@ -12,7 +12,6 @@ import site.snewbie.docs.server.model.Results;
 import site.snewbie.docs.server.model.User;
 import site.snewbie.docs.server.model.vo.BookVO;
 import site.snewbie.docs.server.service.BookService;
-import site.snewbie.docs.server.service.PermissionService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,8 +21,6 @@ import java.util.stream.Collectors;
 public class BookController extends BaseController {
     @Resource
     private BookService bookService;
-    @Resource
-    private PermissionService permissionService;
 
     private BookVO book2VO(Book book) {
         BookVO bookVO = new BookVO();
@@ -92,34 +89,34 @@ public class BookController extends BaseController {
     @UserOauth
     @PostMapping("/remove")
     public Results<Boolean> remove(@RequestBody Book book) {
-        if (StrUtil.isBlank(book.getSlug())) {
-            return Results.failed("0001", "slug 不能为空");
+        if (book.getId() == null || book.getId() <= 0) {
+            return Results.failed("0001", "id 不能为空");
         }
 
         User loginUser = super.getCurrentLoginUser();
         assert loginUser != null;
 
-        boolean result = bookService.remove(book.getSlug(), loginUser);
+        boolean result = bookService.remove(book.getId(), loginUser);
         return Results.success(result);
     }
 
     @UserOauth
     @PostMapping("/changeTitle")
     public Results<Boolean> changeTitle(@RequestBody ChangeTitleRequest params) {
-        if (StrUtil.isBlank(params.getSlug()) || StrUtil.isBlank(params.getNewTitle())) {
-            return Results.failed("0001", "slug、newTitle 不能为空");
+        if (params.getId() == null || params.getId() <= 0 || StrUtil.isBlank(params.getNewTitle())) {
+            return Results.failed("0001", "id、newTitle 不能为空");
         }
 
         User loginUser = super.getCurrentLoginUser();
         assert loginUser != null;
 
-        boolean result = bookService.changeTitle(params.getSlug(), params.getNewTitle(), loginUser);
+        boolean result = bookService.changeTitle(params.getId(), params.getNewTitle(), loginUser);
         return Results.success(result);
     }
 
     @Data
     public static class ChangeTitleRequest {
-        private String slug;
+        private Long id;
         private String newTitle;
     }
 }

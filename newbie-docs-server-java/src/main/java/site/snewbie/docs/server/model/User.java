@@ -8,4 +8,5 @@ public class User {
     private String username;
     private String avatar;
     private String department;
+    private Boolean isAdminer;
 }

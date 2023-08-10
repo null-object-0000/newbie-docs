@@ -11,6 +11,8 @@ public class Book {
     private String title;
     private String cover;
     private String description;
+    private Long docsCount;
+    private Long wordsCount;
     private String creator;
     private LocalDateTime createTime;
     private String updater;

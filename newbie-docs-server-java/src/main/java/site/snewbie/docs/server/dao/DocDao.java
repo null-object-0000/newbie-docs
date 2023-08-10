@@ -3,7 +3,6 @@ package site.snewbie.docs.server.dao;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import site.snewbie.docs.server.model.Doc;
-import site.snewbie.docs.server.model.User;
 
 import java.util.List;
 
@@ -24,9 +23,11 @@ public interface DocDao {
 
     boolean delete(String slug, String updater);
 
-    Long selectTotalDocCount(@Param("bookSlug") String bookSlug);
+    Long selectTotalDocsCount(@Param("bookId") Long bookId);
 
-    Long selectTotalWordCount(@Param("bookSlug") String bookSlug);
+    Long selectTotalWordsCount(@Param("bookId") Long bookId);
 
     boolean changeParentSlug(@Param("slug") String slug, @Param("parentSlug") String parentSlug, @Param("updater") String updater);
+
+    Doc selectOne(@Param("id") Long id);
 }

@@ -3,9 +3,14 @@ package site.snewbie.docs.server.service;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HtmlUtil;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import jakarta.annotation.Resource;
+import lombok.Data;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.snewbie.docs.server.dao.BookDao;
 import site.snewbie.docs.server.dao.DocDao;
 import site.snewbie.docs.server.model.Book;
 import site.snewbie.docs.server.model.Doc;
@@ -14,14 +19,17 @@ import site.snewbie.docs.server.model.User;
 import site.snewbie.docs.server.model.vo.DocVO;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
 public class DocService {
     @Resource
-    private BookService bookService;
+    private BookDao bookDao;
     @Resource
     private DocDao docDao;
     @Resource
@@ -54,7 +62,7 @@ public class DocService {
     }
 
     public Long put(Doc doc, User loginUser) {
-        Book book = bookService.get(doc.getBookId(), doc.getBookSlug());
+        Book book = bookDao.selectOne(doc.getBookId(), doc.getBookSlug());
         if (book == null) {
             return null;
         }
@@ -70,6 +78,7 @@ public class DocService {
         doc.setUpdater(loginUser.getUsername() + loginUser.getId());
         doc.setUpdateTime(LocalDateTime.now());
 
+        doc.setWordsCount(this.getWordsCount(doc));
         doc.setSort(doc.getSort() == null ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentSlug()) + 1 : doc.getSort());
 
         if (doc.getId() == null || doc.getId() <= 0) {
@@ -106,6 +115,43 @@ public class DocService {
         return docDao.delete(slug, loginUser.getUsername() + loginUser.getId());
     }
 
+    public boolean changeParentSlug(String slug, String parentSlug, User loginUser) {
+        return docDao.changeParentSlug(slug, parentSlug, loginUser.getUsername() + loginUser.getId());
+    }
+
+    public boolean updateDocsAndWordsCount(Long id) {
+        if (id == null || id<=0){
+            return false;
+        }
+
+        // 更新文档数量、字数
+        Long docsCount = docDao.selectTotalDocsCount(id);
+        Long wordsCount = docDao.selectTotalWordsCount(id);
+
+        return bookDao.updateDocsAndWordsCount(id, docsCount, wordsCount);
+    }
+
+    private final static ConcurrentHashMap<Long, ExecutorService> updateDocsAndWordsCountExecutors = new ConcurrentHashMap<>();
+
+    public boolean submitUpdateDocsAndWordsCountTask(Long bookId, Long docId) {
+        final Doc doc = docId == null || docId <= 0 ? null : docDao.selectOne(docId);
+        final Long finalBookId = bookId == null && doc != null ? doc.getBookId() : bookId;
+        if (finalBookId == null || finalBookId <= 0) {
+            return false;
+        }
+
+        ExecutorService executor = updateDocsAndWordsCountExecutors.computeIfAbsent(finalBookId, k -> new ThreadPoolExecutor(
+                1, 10, 0L, TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(10),
+                new ThreadPoolExecutor.DiscardPolicy()));
+
+        executor.submit(() -> {
+            this.updateDocsAndWordsCount(finalBookId);
+        });
+
+        return true;
+    }
+
     private DocVO doc2DocVO(Doc doc) {
         DocVO docVO = new DocVO();
         BeanUtil.copyProperties(doc, docVO);
@@ -129,7 +175,7 @@ public class DocService {
             return null;
         }
 
-        Book book = bookService.get(root.getBookId(), root.getBookSlug());
+        Book book = bookDao.selectOne(root.getBookId(), root.getBookSlug());
         if (book == null) {
             return null;
         }
@@ -148,16 +194,76 @@ public class DocService {
         return parent;
     }
 
-    public Long getTotalDocCount(String bookSlug) {
-        return docDao.selectTotalDocCount(bookSlug);
+    private int getWordsCount(Doc doc) {
+        if (doc == null || StrUtil.isBlank(doc.getContent())) {
+            return 0;
+        }
+
+        if (Integer.valueOf(2).equals(doc.getEditor())) {
+            List<OutputBlockData> blocks = JSONArray.parseArray(doc.getContent()).toJavaList(OutputBlockData.class);
+            if (CollUtil.isEmpty(blocks)) {
+                return 0;
+            }
+
+            int wordsCount = 0;
+            for (OutputBlockData block : blocks) {
+                if (block.getData() == null) {
+                    continue;
+                }
+
+                BlockToolData data = block.getData();
+
+                if ("list".equals(block.getType())) {
+                    if (CollUtil.isEmpty(data.getItems())) {
+                        continue;
+                    }
+
+                    wordsCount += data.getItems().stream().map(item -> {
+                        if (item instanceof JSONObject) {
+                            return ((JSONObject) item).getString("content");
+                        } else {
+                            return StrUtil.EMPTY;
+                        }
+                    }).mapToInt(StrUtil::length).sum();
+                } else if ("table".equals(block.getType())) {
+                    if (CollUtil.isEmpty(data.getContent())) {
+                        continue;
+                    }
+
+                    wordsCount += data.getItems().stream().map(item -> {
+                        if (item instanceof JSONObject) {
+                            return ((JSONObject) item).getJSONArray("item").toJavaList(String.class);
+                        } else {
+                            return new ArrayList<String>();
+                        }
+                    }).flatMap(Collection::stream).mapToInt(StrUtil::length).sum();
+                } else {
+                    wordsCount += StrUtil.length(data.getText());
+                }
+            }
+
+            return wordsCount;
+        } else if (Integer.valueOf(1).equals(doc.getEditor())) {
+            return HtmlUtil.cleanHtmlTag(doc.getContent()).length();
+        }
+
+        return 0;
     }
 
-    public Long getTotalWordCount(String bookSlug) {
-        // TODO: 回头应该改成每次更新的时候就更新这个字段
-        return docDao.selectTotalWordCount(bookSlug);
+    @Data
+    private static class OutputBlockData {
+        /**
+         * list、table
+         */
+        private String type;
+        private BlockToolData data;
     }
 
-    public boolean changeParentSlug(String slug, String parentSlug, User loginUser) {
-        return docDao.changeParentSlug(slug, parentSlug, loginUser.getUsername() + loginUser.getId());
+    @Data
+    private static class BlockToolData {
+        private String text;
+        private JSONArray items;
+        private JSONArray content;
     }
+
 }

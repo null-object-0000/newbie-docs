@@ -7,11 +7,13 @@
         <result column="title" jdbcType="VARCHAR" property="title" />
         <result column="cover" jdbcType="VARCHAR" property="cover" />
         <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="docs_count" jdbcType="BIGINT" property="docsCount" />
+        <result column="words_count" jdbcType="BIGINT" property="wordsCount" />
         <result column="sort" jdbcType="INTEGER" property="sort" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, slug, title, cover, description, sort
+        id, slug, title, cover, description, docs_count, words_count, sort
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
@@ -30,7 +32,7 @@
     <update id="updateTitle">
         update newbie_books
         set title = #{newTitle,jdbcType=VARCHAR}, updater = #{updater,jdbcType=VARCHAR}, update_time = now()
-        where slug = #{slug,jdbcType=VARCHAR} and is_deleted = 0
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
     </update>
 
     <update id="update">
@@ -51,6 +53,24 @@
             updater = #{updater,jdbcType=VARCHAR},
             update_time = now()
         </set>
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <update id="updateDocsCount">
+        update newbie_books
+        set docs_count = #{docsCount,jdbcType=BIGINT}
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <update id="updateWordsCount">
+        update newbie_books
+        set words_count = #{wordsCount,jdbcType=BIGINT}
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+    </update>
+
+    <update id="updateDocsAndWordsCount">
+        update newbie_books
+        set docs_count = #{docsCount,jdbcType=BIGINT}, words_count = #{wordsCount,jdbcType=BIGINT}
         where id = #{id,jdbcType=BIGINT} and is_deleted = 0
     </update>
 

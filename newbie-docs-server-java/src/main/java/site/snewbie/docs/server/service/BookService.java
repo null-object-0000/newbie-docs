@@ -105,12 +105,12 @@ public class BookService {
 
     }
 
-    public boolean remove(String slug, User loginUser) {
-        return bookDao.delete(slug, loginUser.getUsername() + loginUser.getId());
+    public boolean remove(Long id, User loginUser) {
+        return bookDao.delete(id, loginUser.getUsername() + loginUser.getId());
     }
 
-    public boolean changeTitle(String slug, String newTitle, User loginUser) {
-        return bookDao.updateTitle(slug, newTitle, loginUser.getUsername() + loginUser.getId());
+    public boolean changeTitle(Long id, String newTitle, User loginUser) {
+        return bookDao.updateTitle(id, newTitle, loginUser.getUsername() + loginUser.getId());
     }
 
 }
