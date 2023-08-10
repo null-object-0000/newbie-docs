@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.snewbie.docs.server.dao.BookDao;
 import site.snewbie.docs.server.dao.DocDao;
-import site.snewbie.docs.server.model.Book;
-import site.snewbie.docs.server.model.Doc;
-import site.snewbie.docs.server.model.Permission;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.enums.ResultsStatusEnum;
+import site.snewbie.docs.server.model.ResultsException;
+import site.snewbie.docs.server.model.dto.User;
+import site.snewbie.docs.server.model.entity.Book;
+import site.snewbie.docs.server.model.entity.Doc;
+import site.snewbie.docs.server.model.entity.Permission;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,6 +47,7 @@ public class BookService {
         doc.setParentId(parentId);
         doc.setParentSlug(parentSlug);
         doc.setEditor(2);
+        doc.setWordsCount(0);
         doc.setContent(StrUtil.EMPTY);
         doc.setTitle(title);
         doc.setSort(0);
@@ -62,47 +65,57 @@ public class BookService {
 
         book.setSort(book.getSort() == null ? bookDao.selectMaxSort() + 1 : book.getSort());
 
-        if (book.getId() == null || book.getId() <= 0) {
-            book.setCreator(loginUser.getUsername() + loginUser.getId());
-            book.setCreateTime(LocalDateTime.now());
-            boolean insertBookResult = bookDao.insert(book);
-            if (insertBookResult && book.getId() != null && book.getId() > 0) {
-                // 默认新增一个 “根” 文档
-                Doc rootDoc = this.buildDoc(book, loginUser, StrUtil.EMPTY, "root", 0L, StrUtil.EMPTY);
-                boolean insertRootDocResult = docDao.insert(rootDoc);
-                if (!insertRootDocResult || rootDoc.getId() == null || rootDoc.getId() <= 0) {
-                    throw new RuntimeException("新增根文档失败");
-                }
-
-                // 默认新增一个 “首页” 文档
-                Doc homeDoc = this.buildDoc(book, loginUser, "首页", "home", rootDoc.getId(), rootDoc.getSlug());
-                boolean insertHomeDocResult = docDao.insert(homeDoc);
-                if (!insertHomeDocResult || homeDoc.getId() == null || homeDoc.getId() <= 0) {
-                    throw new RuntimeException("新增首页文档失败");
-                }
-
-                // 默认给自己加一个 adminer 权限
-                Permission permission = new Permission();
-                permission.setAuthType(1);
-                permission.setDataType(1);
-                permission.setOwnerType(1);
-                permission.setDataId(book.getId());
-                permission.setDataSlug(book.getSlug());
-                permission.setOwner(loginUser.getUsername() + loginUser.getId());
-                Long addAdminerPermissionResult = permissionService.put(permission, loginUser);
-                if (addAdminerPermissionResult == null || addAdminerPermissionResult <= 0) {
-                    throw new RuntimeException("新增权限失败");
-                }
-
+        if (book.getId() != null && book.getId() > 0) {
+            boolean updateBookResult = bookDao.update(book);
+            if (updateBookResult) {
                 return book.getId();
             } else {
-                return null;
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 book 失败");
             }
-        } else {
-            boolean updateBookResult = bookDao.update(book);
-            return updateBookResult ? book.getId() : null;
         }
 
+        // 以下是新增 book 的逻辑
+
+        // 判断 slug 是否已存在
+        if (this.exists(book.getSlug())) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_EXIST);
+        }
+
+        book.setCreator(loginUser.getUsername() + loginUser.getId());
+        book.setCreateTime(LocalDateTime.now());
+        boolean insertBookResult = bookDao.insert(book);
+        if (!insertBookResult || book.getId() == null || book.getId() <= 0) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 book 失败");
+        }
+
+        // 默认新增一个 “根” 文档
+        Doc rootDoc = this.buildDoc(book, loginUser, StrUtil.EMPTY, "root", 0L, StrUtil.EMPTY);
+        boolean insertRootDocResult = docDao.insert(rootDoc);
+        if (!insertRootDocResult || rootDoc.getId() == null || rootDoc.getId() <= 0) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 rootDoc 失败");
+        }
+
+        // 默认新增一个 “首页” 文档
+        Doc homeDoc = this.buildDoc(book, loginUser, "首页", "home", rootDoc.getId(), rootDoc.getSlug());
+        boolean insertHomeDocResult = docDao.insert(homeDoc);
+        if (!insertHomeDocResult || homeDoc.getId() == null || homeDoc.getId() <= 0) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 homeDoc 失败");
+        }
+
+        // 默认给自己加一个 adminer 权限
+        Permission permission = new Permission();
+        permission.setAuthType(1);
+        permission.setDataType(1);
+        permission.setOwnerType(1);
+        permission.setDataId(book.getId());
+        permission.setDataSlug(book.getSlug());
+        permission.setOwner(loginUser.getUsername() + loginUser.getId());
+        Long addAdminerPermissionResult = permissionService.put(permission, loginUser);
+        if (addAdminerPermissionResult == null || addAdminerPermissionResult <= 0) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 adminerPermission 失败");
+        }
+
+        return book.getId();
     }
 
     public boolean remove(Long id, User loginUser) {

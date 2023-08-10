@@ -3,10 +3,11 @@ package site.snewbie.docs.server.controller;
 import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.web.bind.annotation.*;
-import site.snewbie.docs.server.UserOauth;
-import site.snewbie.docs.server.model.Permission;
+import site.snewbie.docs.server.model.UserOauth;
+import site.snewbie.docs.server.enums.ResultsStatusEnum;
+import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.model.Results;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.service.PermissionService;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class PermissionController extends BaseController {
     public Results<Permission> get(Permission permission) {
         Permission result = permissionService.get(permission);
         if (result == null) {
-            return Results.failed("0001", "permission 不存在");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
         } else {
             return Results.success(result);
         }
@@ -41,7 +42,7 @@ public class PermissionController extends BaseController {
 
         Long id = permissionService.put(permission, loginUser);
         if (id == null || id <= 0) {
-            return Results.failed("0001", "permission 保存失败");
+            return Results.failed(ResultsStatusEnum.FAILED_SERVER_ERROR);
         } else {
             return Results.success(id);
         }

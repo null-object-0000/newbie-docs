@@ -1,4 +1,4 @@
-package site.snewbie.docs.server.model;
+package site.snewbie.docs.server.model.entity;
 
 import lombok.Data;
 

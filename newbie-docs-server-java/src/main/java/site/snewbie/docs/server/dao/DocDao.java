@@ -2,7 +2,7 @@ package site.snewbie.docs.server.dao;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.snewbie.docs.server.model.Doc;
+import site.snewbie.docs.server.model.entity.Doc;
 
 import java.util.List;
 
@@ -30,4 +30,6 @@ public interface DocDao {
     boolean changeParentSlug(@Param("slug") String slug, @Param("parentSlug") String parentSlug, @Param("updater") String updater);
 
     Doc selectOne(@Param("id") Long id);
+
+    boolean changeTitle(@Param("slug") String slug, @Param("newTitle") String newTitle, @Param("updater") String updater);
 }

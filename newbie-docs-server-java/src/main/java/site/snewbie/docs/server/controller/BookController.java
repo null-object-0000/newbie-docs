@@ -5,11 +5,12 @@ import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.web.bind.annotation.*;
-import site.snewbie.docs.server.UserOauth;
-import site.snewbie.docs.server.model.Book;
-import site.snewbie.docs.server.model.Permission;
+import site.snewbie.docs.server.model.UserOauth;
+import site.snewbie.docs.server.enums.ResultsStatusEnum;
+import site.snewbie.docs.server.model.entity.Book;
+import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.model.Results;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.vo.BookVO;
 import site.snewbie.docs.server.service.BookService;
 
@@ -51,12 +52,12 @@ public class BookController extends BaseController {
     public Results<BookVO> get(@RequestParam(value = "id", required = false) Long id,
                                @RequestParam(value = "slug", required = false) String slug) {
         if ((id == null || id <= 0) && StrUtil.isBlank(slug)) {
-            return Results.failed("0001", "id、slug 不能同时为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         Book book = bookService.get(id, slug);
         if (book == null) {
-            return Results.failed("0001", "book 不存在");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
         } else {
             return Results.success(this.book2VO(book));
         }
@@ -65,7 +66,7 @@ public class BookController extends BaseController {
     @GetMapping("/exists")
     public Results<Boolean> exists(String slug) {
         if (StrUtil.isBlank(slug)) {
-            return Results.failed("0001", "slug 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         boolean exists = bookService.exists(slug);
@@ -80,7 +81,7 @@ public class BookController extends BaseController {
 
         Long id = bookService.put(book, loginUser);
         if (id == null || id <= 0) {
-            return Results.failed("0001", "book 保存失败");
+            return Results.failed(ResultsStatusEnum.FAILED_SERVER_ERROR);
         } else {
             return Results.success(id);
         }
@@ -90,7 +91,7 @@ public class BookController extends BaseController {
     @PostMapping("/remove")
     public Results<Boolean> remove(@RequestBody Book book) {
         if (book.getId() == null || book.getId() <= 0) {
-            return Results.failed("0001", "id 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         User loginUser = super.getCurrentLoginUser();
@@ -104,7 +105,7 @@ public class BookController extends BaseController {
     @PostMapping("/changeTitle")
     public Results<Boolean> changeTitle(@RequestBody ChangeTitleRequest params) {
         if (params.getId() == null || params.getId() <= 0 || StrUtil.isBlank(params.getNewTitle())) {
-            return Results.failed("0001", "id、newTitle 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         User loginUser = super.getCurrentLoginUser();

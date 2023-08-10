@@ -2,7 +2,7 @@ package site.snewbie.docs.server.dao;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import site.snewbie.docs.server.model.Permission;
+import site.snewbie.docs.server.model.entity.Permission;
 
 import java.util.List;
 

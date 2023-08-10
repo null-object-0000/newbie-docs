@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="site.snewbie.docs.server.dao.DocDao">
-    <resultMap id="BaseResultMap" type="site.snewbie.docs.server.model.Doc">
+    <resultMap id="BaseResultMap" type="site.snewbie.docs.server.model.entity.Doc">
         <id column="id" jdbcType="BIGINT" property="id"/>
         <result column="book_id" jdbcType="BIGINT" property="bookId"/>
         <result column="parent_id" jdbcType="BIGINT" property="parentId"/>
@@ -25,12 +25,14 @@
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
-        insert into newbie_docs (book_id, parent_id, slug, book_slug, parent_slug, title, editor, words_count, content, sort,
+        insert into newbie_docs (book_id, parent_id, slug, book_slug, parent_slug, title, editor, words_count, content,
+                                 sort,
                                  creator, create_time, updater,
                                  update_time)
         values (#{bookId,jdbcType=BIGINT}, #{parentId,jdbcType=BIGINT}, #{slug,jdbcType=VARCHAR},
                 #{bookSlug,jdbcType=VARCHAR}, #{parentSlug,jdbcType=VARCHAR},
-                #{title,jdbcType=VARCHAR}, #{editor,jdbcType=INTEGER}, #{wordsCount,jdbcType=INTEGER}, #{content,jdbcType=VARCHAR},
+                #{title,jdbcType=VARCHAR}, #{editor,jdbcType=INTEGER}, #{wordsCount,jdbcType=INTEGER},
+                #{content,jdbcType=VARCHAR},
                 #{sort,jdbcType=INTEGER}, #{creator,jdbcType=BIGINT}, #{createTime,jdbcType=TIMESTAMP},
                 #{updater,jdbcType=BIGINT}, #{updateTime,jdbcType=TIMESTAMP})
     </insert>
@@ -86,6 +88,15 @@
     <update id="changeParentSlug">
         update newbie_docs
         set parent_slug = #{parentSlug,jdbcType=VARCHAR},
+            updater     = #{updater,jdbcType=BIGINT},
+            update_time = now()
+        where slug = #{slug,jdbcType=VARCHAR}
+          and is_deleted = 0
+    </update>
+
+    <update id="changeTitle">
+        update newbie_docs
+        set title       = #{newTitle,jdbcType=VARCHAR},
             updater     = #{updater,jdbcType=BIGINT},
             update_time = now()
         where slug = #{slug,jdbcType=VARCHAR}
@@ -159,6 +170,6 @@
         <include refid="Base_Column_List"/>
         from newbie_docs
         where id = #{id,jdbcType=BIGINT}
-          and is_deleted = 0
+        and is_deleted = 0
     </select>
 </mapper>

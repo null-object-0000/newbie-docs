@@ -5,11 +5,12 @@ import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.web.bind.annotation.*;
-import site.snewbie.docs.server.UserOauth;
-import site.snewbie.docs.server.model.Doc;
-import site.snewbie.docs.server.model.Permission;
+import site.snewbie.docs.server.model.UserOauth;
+import site.snewbie.docs.server.enums.ResultsStatusEnum;
+import site.snewbie.docs.server.model.entity.Doc;
+import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.model.Results;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.vo.DocVO;
 import site.snewbie.docs.server.service.DocService;
 
@@ -50,7 +51,7 @@ public class DocController extends BaseController {
     public Results<DocVO> dir() {
         String bookSlug = this.getCurrentViewBook();
         if (StrUtil.isBlank(bookSlug)) {
-            return Results.failed("0001", "book slug 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         DocVO docs = docService.dir(bookSlug);
@@ -61,7 +62,7 @@ public class DocController extends BaseController {
     public Results<DocVO> get(String slug) {
         String bookSlug = this.getCurrentViewBook();
         if (StrUtil.isBlank(bookSlug)) {
-            return Results.failed("0001", "book slug 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         DocVO docs = docService.get(bookSlug, slug);
@@ -72,7 +73,7 @@ public class DocController extends BaseController {
     public Results<Boolean> exists(String slug) {
         String bookSlug = this.getCurrentViewBook();
         if (StrUtil.isBlank(bookSlug)) {
-            return Results.failed("0001", "book slug 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         boolean exists = docService.exists(bookSlug, slug);
@@ -87,7 +88,7 @@ public class DocController extends BaseController {
 
         Long id = docService.put(doc, loginUser);
         if (id == null || id <= 0) {
-            return Results.failed("0001", "doc 保存失败");
+            return Results.failed(ResultsStatusEnum.FAILED_SERVER_ERROR);
         } else {
             docService.submitUpdateDocsAndWordsCountTask(doc.getBookId(), doc.getId());
             return Results.success(id);
@@ -98,7 +99,7 @@ public class DocController extends BaseController {
     @PostMapping("/remove")
     public Results<Boolean> remove(@RequestBody Doc doc) {
         if (StrUtil.isBlank(doc.getSlug())) {
-            return Results.failed("0001", "slug 不能为空");
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         User loginUser = super.getCurrentLoginUser();
@@ -114,11 +115,8 @@ public class DocController extends BaseController {
     @UserOauth
     @PostMapping("/changeParentSlug")
     public Results<Boolean> changeParentSlug(@RequestBody ChangeParentSlugRequest params) {
-        if (StrUtil.isBlank(params.getSlug())) {
-            return Results.failed("0001", "slug 不能为空");
-        }
-        if (StrUtil.isBlank(params.getParentSlug())) {
-            return Results.failed("0001", "parent slug 不能为空");
+        if (StrUtil.isBlank(params.getSlug()) || StrUtil.isBlank(params.getParentSlug())) {
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         User loginUser = super.getCurrentLoginUser();
@@ -128,9 +126,29 @@ public class DocController extends BaseController {
         return Results.success(result);
     }
 
+    @UserOauth
+    @PostMapping("/changeTitle")
+    public Results<Boolean> changeTitle(@RequestBody ChangeTitleRequest params) {
+        if (StrUtil.isBlank(params.getSlug()) || StrUtil.isBlank(params.getNewTitle())) {
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
+        }
+
+        User loginUser = super.getCurrentLoginUser();
+        assert loginUser != null;
+
+        boolean result = docService.changeTitle(params.getSlug(), params.getNewTitle(), loginUser);
+        return Results.success(result);
+    }
+
     @Data
     public static class ChangeParentSlugRequest {
         private String slug;
         private String parentSlug;
+    }
+
+    @Data
+    public static class ChangeTitleRequest {
+        private String slug;
+        private String newTitle;
     }
 }

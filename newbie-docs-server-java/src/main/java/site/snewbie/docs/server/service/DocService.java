@@ -12,10 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.snewbie.docs.server.dao.BookDao;
 import site.snewbie.docs.server.dao.DocDao;
-import site.snewbie.docs.server.model.Book;
-import site.snewbie.docs.server.model.Doc;
-import site.snewbie.docs.server.model.Permission;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.enums.ResultsStatusEnum;
+import site.snewbie.docs.server.model.ResultsException;
+import site.snewbie.docs.server.model.entity.Book;
+import site.snewbie.docs.server.model.entity.Doc;
+import site.snewbie.docs.server.model.entity.Permission;
+import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.vo.DocVO;
 
 import java.time.LocalDateTime;
@@ -81,34 +83,40 @@ public class DocService {
         doc.setWordsCount(this.getWordsCount(doc));
         doc.setSort(doc.getSort() == null ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentSlug()) + 1 : doc.getSort());
 
-        if (doc.getId() == null || doc.getId() <= 0) {
-            doc.setBookId(book.getId());
-            doc.setBookSlug(book.getSlug());
-            doc.setCreator(loginUser.getUsername() + loginUser.getId());
-            doc.setCreateTime(LocalDateTime.now());
-            boolean insertBookResult = docDao.insert(doc);
-            if (!insertBookResult || doc.getId() == null || doc.getId() <= 0) {
-                throw new RuntimeException("新增文档失败");
+        if (doc.getId() != null && doc.getId() > 0) {
+            boolean updateDocResult = docDao.update(doc);
+            if (updateDocResult) {
+                return doc.getId();
+            } else {
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
             }
-
-            // 默认给自己加一个 adminer 权限
-            Permission permission = new Permission();
-            permission.setAuthType(1);
-            permission.setDataType(2);
-            permission.setOwnerType(1);
-            permission.setDataId(doc.getId());
-            permission.setDataSlug(String.format("%s/%s", book.getSlug(), doc.getSlug()));
-            permission.setOwner(loginUser.getUsername() + loginUser.getId());
-            Long addAdminerPermissionResult = permissionService.put(permission, loginUser);
-            if (addAdminerPermissionResult == null || addAdminerPermissionResult <= 0) {
-                throw new RuntimeException("新增权限失败");
-            }
-
-            return doc.getId();
-        } else {
-            boolean updateBookResult = docDao.update(doc);
-            return updateBookResult ? doc.getId() : null;
         }
+
+        // 以下是新增 doc 的逻辑
+
+        doc.setBookId(book.getId());
+        doc.setBookSlug(book.getSlug());
+        doc.setCreator(loginUser.getUsername() + loginUser.getId());
+        doc.setCreateTime(LocalDateTime.now());
+        boolean insertBookResult = docDao.insert(doc);
+        if (!insertBookResult || doc.getId() == null || doc.getId() <= 0) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 doc 失败");
+        }
+
+        // 默认给自己加一个 adminer 权限
+        Permission permission = new Permission();
+        permission.setAuthType(1);
+        permission.setDataType(2);
+        permission.setOwnerType(1);
+        permission.setDataId(doc.getId());
+        permission.setDataSlug(String.format("%s/%s", book.getSlug(), doc.getSlug()));
+        permission.setOwner(loginUser.getUsername() + loginUser.getId());
+        Long addAdminerPermissionResult = permissionService.put(permission, loginUser);
+        if (addAdminerPermissionResult == null || addAdminerPermissionResult <= 0) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 adminerPermission 失败");
+        }
+
+        return doc.getId();
     }
 
     public boolean remove(String slug, User loginUser) {
@@ -119,8 +127,12 @@ public class DocService {
         return docDao.changeParentSlug(slug, parentSlug, loginUser.getUsername() + loginUser.getId());
     }
 
+    public boolean changeTitle(String slug, String newTitle, User loginUser) {
+        return docDao.changeTitle(slug, newTitle, loginUser.getUsername() + loginUser.getId());
+    }
+
     public boolean updateDocsAndWordsCount(Long id) {
-        if (id == null || id<=0){
+        if (id == null || id <= 0) {
             return false;
         }
 

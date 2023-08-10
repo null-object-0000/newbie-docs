@@ -3,6 +3,7 @@ package site.snewbie.docs.server.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import site.snewbie.docs.server.enums.ResultsStatusEnum;
 
 @Data
 @NoArgsConstructor
@@ -18,14 +19,26 @@ public class Results<R> {
     }
 
     public static <R> Results<R> success() {
-        return new Results<>("0000", "success");
+        return Results.build(ResultsStatusEnum.SUCCESS);
     }
 
     public static <R> Results<R> success(R result) {
-        return new Results<>("0000", "success", result);
+        return Results.build(ResultsStatusEnum.SUCCESS, result);
     }
 
-    public static <R> Results<R> failed(String code, String msg) {
-        return new Results<>(code, msg);
+    public static <R> Results<R> failed(ResultsStatusEnum resultsStatus) {
+        return Results.build(resultsStatus);
+    }
+
+    public static <R> Results<R> failed(ResultsException e) {
+        return Results.build(e.getResultsStatus());
+    }
+
+    public static <R> Results<R> build(ResultsStatusEnum resultsStatus) {
+        return new Results<>(resultsStatus.getCode(), resultsStatus.getMsg());
+    }
+
+    public static <R> Results<R> build(ResultsStatusEnum resultsStatus, R result) {
+        return new Results<>(resultsStatus.getCode(), resultsStatus.getMsg(), result);
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="site.snewbie.docs.server.dao.PermissionDao">
-    <resultMap id="BaseResultMap" type="site.snewbie.docs.server.model.Permission">
+    <resultMap id="BaseResultMap" type="site.snewbie.docs.server.model.entity.Permission">
         <id column="id" jdbcType="BIGINT" property="id" />
         <result column="auth_type" jdbcType="INTEGER" property="authType" />
         <result column="data_type" jdbcType="INTEGER" property="dataType" />

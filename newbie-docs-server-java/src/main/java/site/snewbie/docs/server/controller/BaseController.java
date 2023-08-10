@@ -5,8 +5,8 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.RestController;
-import site.snewbie.docs.server.model.Permission;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.model.entity.Permission;
+import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.service.PermissionService;
 
 @RestController

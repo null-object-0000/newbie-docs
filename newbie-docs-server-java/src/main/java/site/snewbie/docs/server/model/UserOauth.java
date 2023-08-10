@@ -1,4 +1,4 @@
-package site.snewbie.docs.server;
+package site.snewbie.docs.server.model;
 
 import java.lang.annotation.*;
 

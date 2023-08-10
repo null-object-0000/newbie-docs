@@ -3,8 +3,8 @@ package site.snewbie.docs.server.service;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import site.snewbie.docs.server.dao.PermissionDao;
-import site.snewbie.docs.server.model.Permission;
-import site.snewbie.docs.server.model.User;
+import site.snewbie.docs.server.model.entity.Permission;
+import site.snewbie.docs.server.model.dto.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
