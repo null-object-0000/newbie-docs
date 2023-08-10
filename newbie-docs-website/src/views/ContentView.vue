@@ -30,8 +30,7 @@
             <COutline :doc="config.currentDoc" :edit-mode="configsStore.docEditMode"></COutline>
           </aside>
         </div>
-        <CHome v-else :space="bookSlug">
-        </CHome>
+        <CHome v-else></CHome>
       </template>
     </div>
   </div>
@@ -198,7 +197,8 @@ const docsService = {
       children: [],
       creator: loginUser.username + loginUser.id,
       createTime: Date.now(),
-      sort: (await docsStore.docsApi.getTotalDocCount(bookSlug)) + 1
+      // TODO: 现在这么处理不太好
+      sort: docsStore.book.docsCount
     };
 
     const result = await docsStore.docsApi.put(bookSlug, doc);

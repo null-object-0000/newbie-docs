@@ -65,26 +65,26 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
         return response && response.code === '0000' && response.result > 0
     }
 
-    async remove(slug: string): Promise<boolean> {
+    async remove(id: number): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
             url: '/books/remove',
             data: {
-                slug: slug
+                id
             }
         })
 
         return response && response.code === '0000'
     }
 
-    async changeTitle(slug: string, newTitle: string): Promise<boolean> {
+    async changeTitle(id: number, newTitle: string): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
             url: '/books/changeTitle',
             data: {
-                slug: slug,
+                id,
                 newTitle: newTitle
             }
         })

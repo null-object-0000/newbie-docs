@@ -7,7 +7,11 @@ export const useDocsEventBus = () => {
             return useEventBus<{ event: Event, space: string, dir: Doc }>(`docs-dir-change-${space}`)
         },
 
-        __getDocChangeEventBus(space: string, slug: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
+        __getAnyDocContentChangeEventBus(space: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
+            return useEventBus<{ event: Event, space: string, slug: string, doc: Doc }>(`docs-any-doc-content-change-${space}`)
+        },
+
+        __getDocChangeEventBus(space: string, slug?: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
             return useEventBus<{ event: Event, space: string, slug: string, doc: Doc }>(`docs-doc-change-${space}-${slug}`)
         },
 
@@ -30,6 +34,12 @@ export const useDocsEventBus = () => {
             eventBus.emit({ event, space, slug, doc })
         },
 
+        emitAnyDocContentChange(type: string, space: string, slug: string, doc: Doc): void {
+            const eventBus = this.__getAnyDocContentChangeEventBus(space)
+            const event = new Event(type)
+            eventBus.emit({ event, space, slug, doc })
+        },
+
         /**
          * 监听指定空间的指定文档变化（仅标题和内容变化才会触发）
          */
@@ -38,6 +48,15 @@ export const useDocsEventBus = () => {
             eventBus.on(({ event, space, slug, doc }) => {
                 callback(event, { space, slug, doc })
             })
-        }
+        },
+        /**
+         * 监听指定空间的任意文档变化（仅标题和内容变化才会触发）
+         */
+        onAnyDocContentChange(space: string, callback: (event: Event, { space, slug, doc }: { space: string, slug: string, doc: Doc }) => void): void {
+            const eventBus = this.__getAnyDocContentChangeEventBus(space)
+            eventBus.on(({ event, space, slug, doc }) => {
+                callback(event, { space, slug, doc })
+            })
+        },
     }
 }

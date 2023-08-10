@@ -26,7 +26,7 @@
         <a-empty style="margin-top: 25vh;" v-else description="快去新建知识库吧~" />
     </div>
 
-    <a-button class="add-btn" type="primary" v-if="loginUser.isLogin" @click="editBookModal.visible = true">
+    <a-button class="add-btn" type="primary" v-if="loginUser.isAdminer" @click="editBookModal.visible = true">
         <template #icon>
             <icon-plus />
         </template>
@@ -63,7 +63,6 @@ import { useBooksApi } from '@/api/books';
 import { Book } from '@/types/global'
 import { FormInstance } from '@arco-design/web-vue/es/form';
 import { onBeforeMount } from "vue";
-import { usePermissionsApi } from "@/api/permissions";
 import { Message } from "@arco-design/web-vue";
 
 const { loginUser } = useUsersStore();

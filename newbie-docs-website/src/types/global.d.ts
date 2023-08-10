@@ -9,6 +9,10 @@ export interface Book {
   title: string;
   cover?: string;
   description?: string;
+
+  docsCount: number;
+  wordsCount: number;
+
   creator: string;
   createTime: number;
   updater?: string;
@@ -33,6 +37,9 @@ export interface Doc {
   title: string;
   children?: Doc[];
   content?: string;
+
+  wordsCount?: number;
+
   creator: string;
   createTime: number;
   updater?: string;
@@ -80,3 +87,15 @@ export interface CustomEditorConfig extends EditorConfig {
 }
 
 type ApiStorageEnum = "localStorage" | "restful";
+
+
+export interface User {
+  isLogin: boolean;
+
+  id: string;
+  username: string;
+  avatar: string;
+  department: string;
+
+  isAdminer: boolean;
+}

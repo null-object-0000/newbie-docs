@@ -57,6 +57,9 @@ export const useDocsStore = defineStore('docs', {
             docsEventBus.onDirChange(bookSlug, async (event, { space, dir }) => {
                 this.dir = await this.docsApi.dir(bookSlug, true) as Doc;
             })
+            docsEventBus.onAnyDocContentChange(bookSlug, async (event, { space, slug, doc }) => {
+                this.book = await this.booksApi.get(bookSlug) as Book
+            })
 
             return true
         },
@@ -72,6 +75,6 @@ export const useDocsStore = defineStore('docs', {
             }
 
             return true
-        }
+        },
     },
 })

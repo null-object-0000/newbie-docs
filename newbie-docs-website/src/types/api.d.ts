@@ -16,9 +16,9 @@ export interface UseBooksApiFunction {
     async exists: (slug: String) => Promise<boolean>;
 
     async put: (book: Book) => Promise<boolean>;
-    async remove: (slug: string) => Promise<boolean>;
+    async remove: (id: number) => Promise<boolean>;
 
-    async changeTitle: (slug: string, newTitle: string) => Promise<boolean>;
+    async changeTitle: (id: number, newTitle: string) => Promise<boolean>;
 }
 
 export interface UseDocsApiFunction {
