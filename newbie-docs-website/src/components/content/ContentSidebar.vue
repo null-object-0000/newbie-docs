@@ -152,7 +152,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "onChangeParentSlug", "onChangeSort"]);
+const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "onChangeParentId", "onChangeSort"]);
 
 const { space } = toRefs(props);
 
@@ -309,14 +309,14 @@ const createDoc = function (value: string | number | Record<string, any> | undef
     return
   }
 
-  emit("onCreate", ev, { parentSlug: 'root', editor: value as string })
+  emit("onCreate", ev, { parentId: -1, editor: value as string })
 }
 
 const onCreate = function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
   if (node.key && typeof node.key === 'string' && node.key.indexOf('/') !== -1) {
     const doc = findDocWithPath(node.key as string) as Doc
     emit("onCreate", ev, {
-      parentSlug: doc.slug,
+      parentId: doc.id,
       editor: value
     })
   } else {
@@ -329,10 +329,11 @@ const onCreate = function (node: TreeNodeData, value: string | number | Record<s
 const onSetting = async function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
   const doc = findDocWithPath(node.key as string) as Doc
   const options = {
+    id: doc.id,
     slug: doc.slug,
     doc: doc,
     action: value
-  } as { slug: string, doc: Doc, action: string | number | Record<string, any> | undefined }
+  } as { id: number, slug: string, doc: Doc, action: string | number | Record<string, any> | undefined }
   const docLink = `${location.protocol}//${location.host}${doc.path}`
   if (options.action === 'rename') {
     sidebarData.renameDocSlug = node.key as string
@@ -346,7 +347,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
     configsStore.docEditMode = true
   } else if (options.action === 'copy') {
     emit("onCopy", ev, {
-      slug: doc.slug
+      id: doc.id
     })
   } else if (options.action === 'delete') {
     Modal.warning({
@@ -355,7 +356,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
       content: `确认删除 “${doc.title}” 文档吗？`,
       hideCancel: false,
       onOk: async () => {
-        emit("onRemove", ev, options.slug);
+        emit("onRemove", ev, options.id);
       }
     })
   } else if (options.action === 'copyLink') {
@@ -375,7 +376,7 @@ const onRenamed = async function (ev: Event, node: TreeNodeData) {
     doc.title = sidebarData.docTitle
 
     emit("onChangeTitle", ev, {
-      slug: doc.slug,
+      id: doc.id,
       title: sidebarData.docTitle,
       doc: doc
     });
@@ -402,15 +403,15 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
   const dropDoc = findDocWithPath(data.dropNode.key as string) as Doc
 
   if (data.dropPosition === 0) {
-    emit("onChangeParentSlug", data.e, {
-      slug: dragDoc.slug,
-      parentSlug: dropDoc.slug,
+    emit("onChangeParentId", data.e, {
+      id: dragDoc.id,
+      parentId: dropDoc.id
     });
   } else {
-    if (dragDoc.parentSlug !== dropDoc.parentSlug) {
-      emit("onChangeParentSlug", data.e, {
-        slug: dragDoc.slug,
-        parentSlug: dropDoc.parentSlug,
+    if (dragDoc.parentId !== dropDoc.parentId) {
+      emit("onChangeParentId", data.e, {
+        id: dragDoc.id,
+        parentId: dropDoc.id,
       });
     }
 
@@ -418,7 +419,7 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
       // -1 为上方，1 为下方
       emit("onChangeSort", data.e, {
         slug: dragDoc.slug,
-        parentSlug: dropDoc.parentSlug,
+        parentId: dropDoc.parentId,
         targetSlug: dropDoc.slug,
         position: data.dropPosition
       });

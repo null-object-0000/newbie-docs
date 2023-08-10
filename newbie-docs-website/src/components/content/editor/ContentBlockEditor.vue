@@ -212,7 +212,7 @@ const onTitleChange = async (event: Event) => {
     }
 
     docsStore.doc.title = docTitle.value
-    emit('onChangeTitle', event, docsStore.doc.slug, docTitle.value)
+    emit('onChangeTitle', event, docsStore.doc.id, docTitle.value)
 }
 
 config.data = {

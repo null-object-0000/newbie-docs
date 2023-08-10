@@ -1,11 +1,11 @@
 <template>
     <header class="page__header" v-if="bookSlug && docsStore.spaceData[bookSlug]">
-        <a-breadcrumb v-if="getParents([docsStore.spaceData[bookSlug].tree], docsStore.doc.parentSlug)" :max-count="3">
+        <a-breadcrumb v-if="getParents([docsStore.spaceData[bookSlug].tree], docsStore.doc.parentId)" :max-count="3">
             <template #separator>
                 <icon-right />
             </template>
 
-            <a-breadcrumb-item v-for="parent in getParents([docsStore.spaceData[bookSlug].tree], docsStore.doc.parentSlug)"
+            <a-breadcrumb-item v-for="parent in getParents([docsStore.spaceData[bookSlug].tree], docsStore.doc.parentId)"
                 :key="parent.slug">
                 <router-link :to="parent.path || ''">{{ parent.title }}</router-link>
             </a-breadcrumb-item>
@@ -14,7 +14,8 @@
         </a-breadcrumb>
     </header>
     <a-button class="edit-btn" type="primary"
-        v-if="usersStore.loginUser.isAdminer || docsStore.doc.loginUserAuthType === 1 || docsStore.doc.loginUserAuthType === 2" @click="onEdit">
+        v-if="usersStore.loginUser.isAdminer || docsStore.doc.loginUserAuthType === 1 || docsStore.doc.loginUserAuthType === 2"
+        @click="onEdit">
         <template #icon>
             <icon-edit />
         </template>
@@ -44,22 +45,22 @@ const onEdit = (event: Event) => {
     emitsDef('onEdit', event);
 };
 
-const getParent = (data: Doc[], slug?: string): Doc | undefined => {
-    if (slug === undefined) {
+const getParent = (data: Doc[], id?: number): Doc | undefined => {
+    if (id === undefined) {
         return;
     }
 
     for (const item of data) {
-        if (item.slug === slug && slug === 'root') {
+        if (item.id === id && item.slug === 'root') {
             item.title = docsStore.book.title
             return item;
         }
 
-        if (item.slug === slug) {
+        if (item.id === id) {
             return item;
         }
         if (item.children && item.children.length > 0) {
-            const parent = getParent(item.children, slug);
+            const parent = getParent(item.children, id);
             if (parent) {
                 return parent;
             }
@@ -67,12 +68,12 @@ const getParent = (data: Doc[], slug?: string): Doc | undefined => {
     }
 };
 
-const getParents = (data: Doc[], slug?: string): Doc[] => {
+const getParents = (data: Doc[], id?: number): Doc[] => {
     const parents: Doc[] = [];
-    let parent = getParent(data, slug);
+    let parent = getParent(data, id);
     while (parent) {
         parents.unshift(parent);
-        parent = getParent(data, parent.parentSlug);
+        parent = getParent(data, parent.parentId);
     }
     return parents;
 };

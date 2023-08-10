@@ -89,9 +89,9 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async get(space: string, slug?: string): Promise<Doc | undefined> {
+    async get(space: string, slug?: string, forceRemote?: boolean): Promise<Doc | undefined> {
         const results = await this.localStorageDocsApi.get(space, slug)
-        if (results) {
+        if (results && forceRemote !== true) {
             return results
         }
 
@@ -104,7 +104,31 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             },
             params: {
                 space: space,
-                slug: slug
+                slug
+            }
+        })
+
+        if (response && response.code === '0000') {
+            return response.result as Doc
+        }
+    }
+
+    async getById(space: string, id: number, forceRemote?: boolean): Promise<Doc | undefined> {
+        const results = await this.localStorageDocsApi.getById(space, id)
+        if (results && forceRemote !== true) {
+            return results
+        }
+
+        const { data: response } = await axiso({
+            method: 'get',
+            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
+            url: '/docs/getById',
+            headers: {
+                'newbie-docs-book-slug': space
+            },
+            params: {
+                space: space,
+                id
             }
         })
 
@@ -143,7 +167,6 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 id: doc.id,
                 slug: doc.slug,
                 parentId: doc.parentId,
-                parentSlug: doc.parentSlug,
                 title: doc.title,
                 editor: doc.editor,
                 content: doc.editor == 2 && typeof doc.content !== 'string' ? JSON.stringify(doc.content) : doc.content,
@@ -182,7 +205,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async remove(space: string, slug: string): Promise<boolean> {
+    async remove(space: string, id: number): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
@@ -191,14 +214,14 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             data: {
-                space: space,
-                slug: slug
+                space,
+                id
             }
         })
 
         const restful = response && response.code === '0000'
         if (restful) {
-            const localStorage = await this.localStorageDocsApi.remove(space, slug)
+            const localStorage = await this.localStorageDocsApi.remove(space, id)
             return restful && localStorage
         } else {
             throw new Error(`[${response.code}] ${response.message}`)
@@ -214,9 +237,9 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             data: {
-                space: space,
-                slug: slug,
-                index: index
+                space,
+                slug,
+                index
             }
         })
 
@@ -238,7 +261,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             data: {
-                space: space,
+                space,
                 oldSlug: oldSlug,
                 newSlug: newSlug
             }
@@ -253,31 +276,31 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async changeParentSlug(space: string, slug: string, parentSlug: string): Promise<boolean> {
+    async changeParentId(space: string, id: number, parentId: number): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/changeParentSlug',
+            url: '/docs/changeParentId',
             headers: {
                 'newbie-docs-book-slug': space
             },
             data: {
-                space: space,
-                slug: slug,
-                parentSlug: parentSlug
+                space,
+                id,
+                parentId
             }
         })
 
         const restful = response && response.code === '0000'
         if (restful) {
-            const localStorage = await this.localStorageDocsApi.changeParentSlug(space, slug, parentSlug)
+            const localStorage = await this.localStorageDocsApi.changeParentId(space, id, parentId)
             return restful && localStorage
         } else {
             throw new Error(`[${response.code}] ${response.message}`)
         }
     }
 
-    async changeTitle(space: string, slug: string, newTitle: string): Promise<boolean> {
+    async changeTitle(space: string, id: number, newTitle: string): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
@@ -286,15 +309,15 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             data: {
-                space: space,
-                slug: slug,
+                space,
+                id,
                 newTitle: newTitle
             }
         })
 
         const restful = response && response.code === '0000'
         if (restful) {
-            const localStorage = await this.localStorageDocsApi.changeTitle(space, slug, newTitle)
+            const localStorage = await this.localStorageDocsApi.changeTitle(space, id, newTitle)
             return restful && localStorage
         } else {
             throw new Error(`[${response.code}] ${response.message}`)
@@ -310,8 +333,8 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             params: {
-                space: space,
-                slug: slug
+                space,
+                slug
             }
         })
 
@@ -329,7 +352,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             params: {
-                space: space
+                space
             }
         })
 
@@ -349,7 +372,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 'newbie-docs-book-slug': space
             },
             params: {
-                space: space
+                space
             }
         })
 

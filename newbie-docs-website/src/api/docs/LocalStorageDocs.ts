@@ -80,12 +80,17 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return super.array2tree(docs)
     }
 
+    async getById(space: string, id: number): Promise<Doc | undefined> {
+        const docs = await this.__get(space) as Doc[]
+        return docs.find(item => item.id === id)
+    }
+
     async put(space: string, doc: Doc): Promise<boolean> {
         let docs = await this.__get(space) as Doc[]
 
         // 如果指定了 sort 就用指定的，否则默认插入到当前父级 child 中的最后一位
         if (!doc.sort || doc.sort < 0) {
-            const parent = docs.find(item => item.slug === doc.parentSlug)
+            const parent = docs.find(item => item.id === doc.parentId)
             if (parent) {
                 doc.sort = parent.children?.length || 0
             }
@@ -109,10 +114,10 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return docs.some(item => item.slug === slug)
     }
 
-    async remove(space: string, slug: string): Promise<boolean> {
+    async remove(space: string, id: number): Promise<boolean> {
         let docs = await this.__get(space) as Doc[]
 
-        docs = docs.filter(item => item.slug !== slug)
+        docs = docs.filter(item => item.id !== id)
 
         return this.__updateCache('remove', space, docs)
     }
@@ -121,11 +126,11 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         const docs = await this.__get(space) as Doc[]
 
         const doc = await this.get(space, slug)
-        if (!doc || !doc.parentSlug) {
+        if (!doc || !doc.parentId) {
             return false
         }
 
-        let child = await super.findChild(docs, doc.parentSlug) as Doc[]
+        let child = await super.findChild(docs, doc.parentId) as Doc[]
         if (!child) {
             return false
         }
@@ -157,45 +162,39 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         const doc = docs.find(item => item.slug === oldSlug)
         if (doc) {
             doc.slug = newSlug
-
-            const child = await super.findChild(docs, oldSlug)
-            if (child) {
-                for (const item of child) {
-                    item.parentSlug = newSlug
-                }
-            }
             return this.__updateCache('changeSlug', space, docs)
         } else {
             return false
         }
     }
 
-    async changeParentSlug(space: string, slug: string, parentSlug: string): Promise<boolean> {
-        if (slug === parentSlug) {
+    async changeParentId(space: string, id: number, parentId: number): Promise<boolean> {
+        if (id === parentId) {
             return false;
         }
 
-        if (!this.exists(space, slug) || !this.exists(space, parentSlug)) {
-            return false;
-        }
+        // TODO: 检查是否存在
+        // if (!this.exists(space, id) || !this.exists(space, parentId)) {
+        //     return false;
+        // }
 
         let docs = await this.__get(space) as Doc[]
-        const doc = docs.find(item => item.slug === slug)
+        const doc = docs.find(item => item.id === id)
         if (doc) {
-            doc.parentSlug = parentSlug
-            return this.__updateCache('changeParentSlug', space, docs)
+            doc.parentId = parentId
+            return this.__updateCache('changeParentId', space, docs)
         } else {
             return false
         }
     }
 
-    async changeTitle(space: string, slug: string, newTitle: string): Promise<boolean> {
+    async changeTitle(space: string, id: number, newTitle: string): Promise<boolean> {
         if (!newTitle || newTitle.length <= 0) {
             return false
         }
 
         let docs = await this.__get(space) as Doc[]
-        const doc = docs.find(item => item.slug === slug)
+        const doc = docs.find(item => item.id === id)
         if (doc) {
             doc.title = newTitle
 
@@ -208,7 +207,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     async findIndex(space: string, slug: string): Promise<number | undefined> {
         let docs = await this.__get(space) as Doc[]
         let current = await this.get(space, slug) as Doc
-        let child = current && current.parentSlug ? await super.findChild(docs, current.parentSlug) as Doc[] : undefined
+        let child = current && current.parentId ? await super.findChild(docs, current.parentId) as Doc[] : undefined
 
         if (!current || !child) {
             return

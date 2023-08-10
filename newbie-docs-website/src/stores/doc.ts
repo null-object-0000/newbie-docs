@@ -42,23 +42,36 @@ export const useDocsStore = defineStore('docs', {
             this.docsApi = useDocsApi('localStorage', this.spaceData)
             await this.docsApi.init(bookSlug)
 
-            this.dir = await this.docsApi.dir(bookSlug, true) as Doc;
+            this.dir = await this.docsApi.dir(bookSlug, false) as Doc;
             if (!this.dir) {
                 return false
             }
+
+            // 先从本地获取 dir，然后异步更新 dir
+            this.docsApi.dir(bookSlug, true)
+                .then((dir: Doc | undefined) => {
+                    if (dir) {
+                        this.dir = dir
+                    }
+                })
+
 
             const docsEventBus = useDocsEventBus()
             docsEventBus.onDirChange(bookSlug, async (event, { space, dir }) => {
                 this.dir = await this.docsApi.dir(bookSlug, true) as Doc;
 
-                // 找到当前 doc，然后用最新的 dir 更新当前 doc 的 parentId、parentSlug、title、sort
+                // 找到当前 doc，然后用最新的 dir 更新当前 doc 的 parentId、title、sort
                 const array = this.docsApi.tree2array(this.dir) as Doc[]
                 array.forEach((doc: Doc) => {
-                    if (doc.slug === this.doc.slug) {
-                        this.doc.parentId = doc.parentId
-                        this.doc.parentSlug = doc.parentSlug
-                        this.doc.title = doc.title
-                        this.doc.sort = doc.sort
+                    if (doc.id === this.doc.id) {
+                        // 除了 content 外，其他的都更新
+                        const keys = Object.keys(doc)
+                        keys.forEach((key: string) => {
+                            if (key !== 'content') {
+                                // @ts-ignore
+                                this.doc[key as keyof Doc] = doc[key as keyof Doc]
+                            }
+                        })
                     }
                 })
             })
@@ -71,10 +84,18 @@ export const useDocsStore = defineStore('docs', {
                 return false
             }
 
-            this.doc = await this.docsApi.get(bookSlug, docSlug) as Doc;
+            // 先从本地获取 doc，然后异步更新 doc
+            this.doc = await this.docsApi.get(bookSlug, docSlug, false) as Doc;
             if (!this.doc) {
                 return false
             }
+
+            this.docsApi.get(bookSlug, docSlug, true)
+                .then((doc: Doc | undefined) => {
+                    if (doc && this.doc.id === doc.id) {
+                        this.doc = doc
+                    }
+                })
 
             return true
         },

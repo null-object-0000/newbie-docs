@@ -33,7 +33,7 @@
         <template #default>新建</template>
     </a-button>
 
-    <a-modal v-model:visible="editBookModal.visible" @before-ok="addBook">
+    <a-modal v-model:visible="editBookModal.visible" @before-ok="addBook" :modal-style="{ 'max-width': '90%' }">
         <template #title>
             新建知识库
         </template>

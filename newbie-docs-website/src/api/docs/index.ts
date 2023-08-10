@@ -5,21 +5,20 @@ import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { UseRESTfulDocsApi } from "./RESTfulDocs";
 
 let lastDir: Doc[] = [];
-let lastDocContent: Record<string, string> = {};
-let lastDocContentChangeTime: Record<string, number> = {};
+const lastDocContent: Record<string, string> = {};
+const lastDocContentChangeTime: Record<string, number> = {};
 
 const checkDirIsChanged = (currentDir: Doc[]) => {
   if (lastDir.length !== currentDir.length) return true;
 
-  const keys = ["id", "slug", "parentId", "parentSlug", "path", "title", "sort"]
+  const keys = ["id", "slug", "parentId", "path", "title", "sort"]
 
   for (let i = 0; i < lastDir.length; i++) {
     const lastDoc = lastDir[i];
     const currentDoc = currentDir[i];
     for (let j = 0; j < keys.length; j++) {
       const key = keys[j];
-      // @ts-ignore
-      if (lastDoc[key] !== currentDoc[key]) {
+      if (lastDoc[key as keyof Doc] !== currentDoc[key as keyof Doc]) {
         return true;
       }
     }
@@ -57,9 +56,17 @@ const emitDirChange = async ({ propKey, docsApi, space }: { propKey: string | sy
   }
 }
 
-const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, space, slug }: { propKey: string | symbol, docsApi: UseDocsApiFunction, space: string, slug: string }) => {
+const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, space, id, slug }: { propKey: string | symbol, docsApi: UseDocsApiFunction, space: string, id?: number, slug?: string }) => {
   try {
-    const doc = await docsApi.get(space, slug) as Doc;
+    let doc = null;
+    if (slug && slug.length > 0) {
+      doc = await docsApi.get(space, slug) as Doc;
+    } else if (id && id > 0) {
+      doc = await docsApi.getById(space, id) as Doc;
+    }
+
+    if (!doc) return false;
+
     if (checkDocContentIsChanged(doc)) {
       if (withDirChange) {
         // 主动触发 dir 变更事件
@@ -78,7 +85,7 @@ const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, 
 
 const reflecttoEmitTasks = {
   dirChange: {
-    methods: ["splice", "changeSlug", "changeParentSlug"],
+    methods: ["splice", "changeSlug", "changeParentId"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
       await emitDirChange({ propKey, docsApi, space });
     }
@@ -93,15 +100,15 @@ const reflecttoEmitTasks = {
   remove: {
     methods: ["remove"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
-      const slug = args[1] as string;
-      await emitDocContentChange(true, { propKey, docsApi, space, slug });
+      const id = args[1] as number;
+      await emitDocContentChange(true, { propKey, docsApi, space, id });
     }
   },
   changeTitle: {
     methods: ["changeTitle"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
-      const slug = args[1] as string;
-      await emitDocContentChange(true, { propKey, docsApi, space, slug });
+      const id = args[1] as number;
+      await emitDocContentChange(true, { propKey, docsApi, space, id });
     }
   },
 } as {
@@ -128,7 +135,7 @@ export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, Do
       break;
   }
 
-  // 代理 put、remove、splice、changeSlug、changeParentSlug、changeTitle 方法，每次调用成功后触发 dir 变更事件
+  // 代理 put、remove、splice、changeSlug、changeParentId、changeTitle 方法，每次调用成功后触发 dir 变更事件
   const proxy = new Proxy(docsApi, {
     get(target, propKey, receiver) {
       const targetMethod = Reflect.get(target, propKey, receiver);

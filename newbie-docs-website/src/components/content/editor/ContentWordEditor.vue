@@ -16,7 +16,7 @@
                             <input v-model="docTitle" @change="onTitleChange" placeholder="请输入标题">
                         </div>
                         <Editor class="editor-text-area" v-model="valueHtml" :defaultConfig="editorConfig" :mode="mode"
-                            @onCreated="handleCreated" @onChange="onChange" />
+                            @onCreated="handleCreated" @onChange="onChange" @onBlur="onChange" />
                     </div>
                 </div>
             </div>
@@ -66,7 +66,7 @@ const onTitleChange = async (event: Event) => {
     }
 
     docsStore.doc.title = docTitle.value
-    emit('onChangeTitle', event, docsStore.doc.slug, docTitle.value)
+    emit('onChangeTitle', event, docsStore.doc.id, docTitle.value)
 }
 
 const onPreview = (event: Event) => {

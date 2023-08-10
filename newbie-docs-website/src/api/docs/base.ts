@@ -5,13 +5,14 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract init(space: string): Promise<void>;
     abstract dir(space: string): Promise<Doc | undefined>;
     abstract get(space: string, slug?: string): Promise<Doc | undefined>;
+    abstract getById(space: string, id?: number): Promise<Doc | undefined>;
     abstract put(space: string, doc: Doc): Promise<boolean>;
     abstract exists(space: string, slug: string): Promise<boolean>;
-    abstract remove(space: string, slug: string): Promise<boolean>;
+    abstract remove(space: string, id: number): Promise<boolean>;
     abstract splice(space: string, slug: string, index: number): Promise<boolean>;
     abstract changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean>;
-    abstract changeParentSlug(space: string, slug: string, parentSlug: string): Promise<boolean>;
-    abstract changeTitle(space: string, slug: string, newTitle: string): Promise<boolean>;
+    abstract changeParentId(space: string, id: number, parentId: number): Promise<boolean>;
+    abstract changeTitle(space: string, id: number, newTitle: string): Promise<boolean>;
     abstract findIndex(space: string, slug: string): Promise<number | undefined>;
     abstract getTotalDocCount(space: string): Promise<number>;
     abstract getTotalWordCount(space: string): Promise<number>;
@@ -68,7 +69,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
 
         const processChild = (doc: Doc) => {
             docs = docs as Doc[]
-            doc.children = docs.filter(item => item.parentSlug === doc.slug).sort((a, b) => a.sort! - b.sort!)
+            doc.children = docs.filter(item => item.parentId === doc.id).sort((a, b) => a.sort! - b.sort!)
 
             for (const child of doc.children) {
                 processChild(child)
@@ -132,7 +133,6 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
                     id: Math.ceil(Math.random() * 1000000000),
                     slug: 'home',
                     parentId: rootId,
-                    parentSlug: rootSlug,
                     editor: 2,
                     title: "首页",
                     path: `/${book.slug}/home`,
@@ -152,8 +152,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
             return
         }
 
-        // @ts-ignore
-        if (docs[key] == value) {
+        if (docs[key as keyof Doc] == value) {
             return docs
         }
 
@@ -167,13 +166,13 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         }
     }
 
-    async findChild(data: Doc | Doc[] | undefined, parentSlug: string): Promise<Doc[] | undefined> {
+    async findChild(data: Doc | Doc[] | undefined, parentId: number): Promise<Doc[] | undefined> {
         if (!data) {
             return
         }
 
         data = Array.isArray(data) ? data : this.tree2array(data) as Doc[]
-        return data.filter(doc => doc.parentSlug === parentSlug)
+        return data.filter(doc => doc.parentId === parentId)
     }
 
     async generateSlug(length: number): Promise<string> {
@@ -206,14 +205,14 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         }
 
         let level = 1
-        let parentSlug = doc.parentSlug
-        while (parentSlug) {
+        let parentId = doc.parentId
+        while (parentId) {
             level++
-            const parentDoc = this.findDocBy(docs, 'slug', parentSlug)
+            const parentDoc = this.findDocBy(docs, 'id', parentId)
             if (!parentDoc) {
                 break
             }
-            parentSlug = parentDoc.parentSlug
+            parentId = parentDoc.parentId
         }
 
         return level

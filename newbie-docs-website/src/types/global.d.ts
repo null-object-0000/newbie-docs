@@ -32,7 +32,6 @@ export interface Doc {
    */
   slug: string;
   parentId?: number,
-  parentSlug?: string;
   path: string;
   title: string;
   children?: Doc[];
