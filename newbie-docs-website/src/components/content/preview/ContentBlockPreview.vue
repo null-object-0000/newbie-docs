@@ -8,23 +8,19 @@
 </template>
 
 <script setup lang="ts">
-import { resolveComponent, type PropType, watch, toRefs } from 'vue';
-import type { Doc } from '@/types/global';
+import { resolveComponent, watch } from 'vue';
 import type { OutputBlockData } from "@editorjs/editorjs";
 import { ref } from 'vue';
+import { useDocsStore } from '@/stores/doc';
 
-const props = defineProps({
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-});
+const docsStore = useDocsStore();
 
-const { doc } = toRefs(props);
 const content = ref<OutputBlockData[]>([]);
 
-watch(() => doc.value.content, () => {
-    content.value = (doc.value.content ? JSON.parse(doc.value.content) : []) as OutputBlockData[];
+watch(() => docsStore.doc.content, () => {
+    if (docsStore.doc.editor === 2) {
+        content.value = (docsStore.doc.content ? JSON.parse(docsStore.doc.content) : []) as OutputBlockData[];
+    }
 }, { immediate: true });
 
 const isComponentExists = (name: string, maybeSelfReference?: boolean) => {

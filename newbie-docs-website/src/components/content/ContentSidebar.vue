@@ -105,10 +105,11 @@
 
 <script setup lang="ts">
 import { reactive, ref, toRefs, watch, nextTick, type PropType } from "vue";
-import type { Doc, Permission } from "@/types/global";
+import type { Doc } from "@/types/global";
 import { useMagicKeys, whenever, useClipboard } from '@vueuse/core'
 import { Message, Modal, TreeInstance, type TreeNodeData } from "@arco-design/web-vue";
 import { useConfigsStore } from "@/stores/config";
+import { useUsersStore } from "@/stores/user";
 import { useDocsStore } from "@/stores/doc";
 import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
@@ -118,6 +119,7 @@ const route = useRoute();
 const router = useRouter();
 
 const configsStore = useConfigsStore();
+const usersStore = useUsersStore();
 const docsStore = useDocsStore();
 const docsEventBus = useDocsEventBus();
 
@@ -148,15 +150,11 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  dir: {
-    type: Object as PropType<Doc>,
-    required: true,
-  },
 });
 
 const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "onChangeParentSlug", "onChangeSort"]);
 
-const { space, dir } = toRefs(props);
+const { space } = toRefs(props);
 
 const sidebarTreeRef = ref<TreeInstance | null>(null)
 const renameInputRef = ref<HTMLElement | null>(null)
@@ -374,6 +372,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
 const onRenamed = async function (ev: Event, node: TreeNodeData) {
   if (sidebarData.docTitle && sidebarData.docTitle.length > 0) {
     const doc = findDocWithPath(node.key as string) as Doc
+    doc.title = sidebarData.docTitle
 
     emit("onChangeTitle", ev, {
       slug: doc.slug,
@@ -441,21 +440,21 @@ const eventStopPropagation = (ev: Event) => {
 }
 
 const isViewerAuth = (authType?: number | null) => {
-  return authType === 3
+  return authType === 3 || usersStore.loginUser.isAdminer
 }
 
 const isEditorAuth = (authType?: number | null) => {
-  return authType === 1 || authType === 2
+  return authType === 1 || authType === 2 || usersStore.loginUser.isAdminer
 }
 
 const isAdminerAuth = (authType?: number | null) => {
-  return authType === 1
+  return authType === 1 || usersStore.loginUser.isAdminer
 }
 
-watch(() => dir.value.children, async () => {
+watch(() => docsStore.dir.children, async () => {
   updateDirData()
 
-  updateDirData(dir.value)
+  updateDirData(docsStore.dir)
 }, { immediate: true })
 
 watch(() => route.path, async () => {

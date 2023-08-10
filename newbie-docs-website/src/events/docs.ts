@@ -7,12 +7,12 @@ export const useDocsEventBus = () => {
             return useEventBus<{ event: Event, space: string, dir: Doc }>(`docs-dir-change-${space}`)
         },
 
-        __getAnyDocContentChangeEventBus(space: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
-            return useEventBus<{ event: Event, space: string, slug: string, doc: Doc }>(`docs-any-doc-content-change-${space}`)
+        __getDocContentChangeEventBus(space: string, slug: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
+            return useEventBus<{ event: Event, space: string, slug: string, doc: Doc }>(`docs-doc-content-change-${space}-${slug}`)
         },
 
-        __getDocChangeEventBus(space: string, slug?: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
-            return useEventBus<{ event: Event, space: string, slug: string, doc: Doc }>(`docs-doc-change-${space}-${slug}`)
+        __getAnyDocContentChangeEventBus(space: string): UseEventBusReturn<{ event: Event, space: string; slug: string; doc: Doc; }, any> {
+            return useEventBus<{ event: Event, space: string, slug: string, doc: Doc }>(`docs-any-doc-content-change-${space}`)
         },
 
         emitDirChange(type: string, space: string, dir: Doc): void {
@@ -28,10 +28,12 @@ export const useDocsEventBus = () => {
             })
         },
 
-        emitDocChange(type: string, space: string, slug: string, doc: Doc): void {
-            const eventBus = this.__getDocChangeEventBus(space, slug)
+        emitDocContentChange(type: string, space: string, slug: string, doc: Doc): void {
+            const eventBus = this.__getDocContentChangeEventBus(space, slug)
             const event = new Event(type)
             eventBus.emit({ event, space, slug, doc })
+
+            this.emitAnyDocContentChange(type, space, slug, doc)
         },
 
         emitAnyDocContentChange(type: string, space: string, slug: string, doc: Doc): void {
@@ -43,8 +45,8 @@ export const useDocsEventBus = () => {
         /**
          * 监听指定空间的指定文档变化（仅标题和内容变化才会触发）
          */
-        onDocChange(space: string, slug: string, callback: (event: Event, { space, slug, doc }: { space: string, slug: string, doc: Doc }) => void): void {
-            const eventBus = this.__getDocChangeEventBus(space, slug)
+        onDocContentChange(space: string, slug: string, callback: (event: Event, { space, slug, doc }: { space: string, slug: string, doc: Doc }) => void): void {
+            const eventBus = this.__getDocContentChangeEventBus(space, slug)
             eventBus.on(({ event, space, slug, doc }) => {
                 callback(event, { space, slug, doc })
             })

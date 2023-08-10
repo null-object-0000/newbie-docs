@@ -1,33 +1,30 @@
 <template>
   <div class="content-view" v-if="docsStore.dir">
     <div class="docs">
-      <CSidebar :space="bookSlug" :dir="docsStore.dir" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
+      <CSidebar :space="bookSlug" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
         @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle"
         @on-change-parent-slug="docsService.onChangeParentSlug" @on-change-sort="docsService.onChangeSort">
       </CSidebar>
-      <template v-if="config.currentDoc">
-        <div v-if="config.currentDoc.slug !== 'home'" class="docs__content"
-          :class="configsStore.docEditMode && config.currentDoc.editor === 1 ? 'docs_content_word_editor' : ''">
+      <template v-if="docsStore.doc">
+        <div v-if="docsStore.doc.slug !== 'home'" class="docs__content"
+          :class="configsStore.docEditMode && docsStore.doc.editor === 1 ? 'docs_content_word_editor' : ''">
           <div class="docs__content-inner">
             <template v-if="configsStore.docEditMode">
-              <CBlockEditor v-if="config.currentDoc.editor === 2" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
-                @on-change-title="docsService.onChangeTitle">
+              <CBlockEditor v-if="docsStore.doc.editor === 2" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
               </CBlockEditor>
-              <CWordEditor v-else-if="config.currentDoc.editor === 1" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                :doc="config.currentDoc" @on-change="onEditorChange" @on-preview="onPreview"
-                @on-change-title="docsService.onChangeTitle">
+              <CWordEditor v-else-if="docsStore.doc.editor === 1" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                @on-change="onEditorChange" @on-preview="onPreview" @on-change-title="docsService.onChangeTitle">
               </CWordEditor>
             </template>
             <template v-else>
-              <CPreview :docs="docsStore.spaceData[bookSlug].tree" :doc="config.currentDoc"
-                @onEdit="configsStore.docEditMode = true">
+              <CPreview @onEdit="configsStore.docEditMode = true">
               </CPreview>
             </template>
           </div>
 
-          <aside v-if="!configsStore.docEditMode || config.currentDoc.editor !== 1" class="docs__aside-right">
-            <COutline :doc="config.currentDoc" :edit-mode="configsStore.docEditMode"></COutline>
+          <aside v-if="!configsStore.docEditMode || docsStore.doc.editor !== 1" class="docs__aside-right">
+            <COutline :edit-mode="configsStore.docEditMode"></COutline>
           </aside>
         </div>
         <CHome v-else></CHome>
@@ -47,13 +44,14 @@ import CWordEditor from "@/components/content/editor/ContentWordEditor.vue";
 import CPreview from "@/components/content/preview/ContentPreview.vue";
 import COutline from "@/components/content/ContentOutline.vue";
 import { useRoute, useRouter } from "vue-router";
-import { nextTick, reactive, watch } from "vue";
+import { nextTick, watch } from "vue";
 import { Message, Notification, type NotificationConfig, type NotificationReturn } from '@arco-design/web-vue';
-import type { Doc, ContentViewConfig, Book } from "@/types/global";
+import type { Doc, Book } from "@/types/global";
 import { useUsersStore } from '@/stores/user';
 import { useDocsStore } from '@/stores/doc';
 import { useConfigsStore } from "@/stores/config";
 import { OutputBlockData } from "@editorjs/editorjs";
+import { useBooksApi } from "@/api/books";
 
 const route = useRoute();
 const router = useRouter();
@@ -61,16 +59,13 @@ const { loginUser } = useUsersStore();
 const configsStore = useConfigsStore();
 const docsStore = useDocsStore();
 
-const bookSlug = route.params.bookSlug as string;
+const booksApi = useBooksApi('localStorage')
 
-const config: ContentViewConfig = reactive({
-  spaceData: {},
-  currentDoc: null,
-});
+let bookSlug = route.params.bookSlug as string;
 
 // 监听路由变化
 watch(route, async () => {
-  const bookSlug = route.params.bookSlug as string;
+  bookSlug = route.params.bookSlug as string;
   const docSlug = route.params.docSlug as string;
 
   const refreshCurrentBookResult = await docsStore.refreshCurrentBook(bookSlug)
@@ -92,7 +87,7 @@ watch(route, async () => {
     return
   }
 
-  const doc = await docsStore.docsApi.get(bookSlug, docSlug);
+  const doc = docsStore.doc as Doc
 
   // 判断当前路由是否存在，不存在就跳回首页
   if (doc?.slug !== docSlug) {
@@ -100,11 +95,9 @@ watch(route, async () => {
     return
   }
 
-  config.currentDoc = doc;
-
   configsStore.setHeader('/', book.title);
-  if (config.currentDoc) {
-    document.title = config.currentDoc.title + ' - ' + book.title
+  if (doc) {
+    document.title = doc.title + ' - ' + book.title
   } else {
     document.title = book.title
   }
@@ -124,7 +117,7 @@ watch(route, () => {
 
 let historyNotification = [] as NotificationReturn[]
 const onEditorChange = async function (event: Event, content: string, showSuccessTips?: boolean) {
-  const doc = config.currentDoc as Doc;
+  const doc = docsStore.doc as Doc;
   doc.content = content;
   doc.updateTime = new Date().getTime()
   if (await docsStore.docsApi.put(bookSlug, doc)) {
@@ -160,7 +153,7 @@ const docsService = {
     const slug = await docsStore.docsApi.generateSlug(12)
     let parentSlug = value?.parentSlug
     if (parentSlug === undefined || parentSlug.length <= 0) {
-      parentSlug = config.currentDoc?.slug || "home";
+      parentSlug = docsStore.doc?.slug || "home";
     }
 
     parentSlug = parentSlug === 'home' ? 'root' : parentSlug
@@ -182,7 +175,7 @@ const docsService = {
       ] as OutputBlockData[])
     }
 
-    const book = await docsStore.booksApi.get(bookSlug) as Book
+    const book = await booksApi.get(bookSlug) as Book
 
     const doc: Doc = {
       bookId: book.id as number,
@@ -226,7 +219,7 @@ const docsService = {
   onRemove: async (event: Event, slug: string): Promise<boolean> => {
     const result = await docsStore.docsApi.remove(bookSlug, slug)
     if (result) {
-      if (config.currentDoc?.slug === slug) {
+      if (docsStore.doc?.slug === slug) {
         router.push(`/${bookSlug}`)
       }
     }
@@ -278,13 +271,6 @@ const docsService = {
     return result
   }
 }
-
-
-watch(() => config.currentDoc?.title, async () => {
-  if (config.currentDoc?.slug) {
-    config.currentDoc = await docsStore.docsApi.get(bookSlug, config.currentDoc?.slug)
-  }
-})
 </script>
 
 <style scoped>

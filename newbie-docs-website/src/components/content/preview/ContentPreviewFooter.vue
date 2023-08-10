@@ -1,26 +1,18 @@
 <template>
     <footer class="page__footer">
-        <span class="updater" v-if="doc.updater || doc.creator">
-            <icon-user />{{ doc.updater || doc.creator }}
+        <span class="updater" v-if="docsStore.doc.updater || docsStore.doc.creator">
+            <icon-user />{{ docsStore.doc.updater || docsStore.doc.creator }}
         </span>
-        <span class="update-time" v-if="doc.updateTime || doc.createTime">
-            <icon-clock-circle />最后编辑于 {{ formatTime(doc.updateTime || doc.createTime) }}
+        <span class="update-time" v-if="docsStore.doc.updateTime || docsStore.doc.createTime">
+            <icon-clock-circle />最后编辑于 {{ formatTime(docsStore.doc.updateTime || docsStore.doc.createTime) }}
         </span>
     </footer>
 </template>
 
 <script setup lang="ts">
-import { type PropType, toRefs } from 'vue';
-import type { Doc } from '@/types/global';
+import { useDocsStore } from '@/stores/doc';
 
-const props = defineProps({
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-});
-
-const { doc } = toRefs(props);
+const docsStore = useDocsStore();
 
 const formatTime = (time?: number) => {
     // 不足两位就补0

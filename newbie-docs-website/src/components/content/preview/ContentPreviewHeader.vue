@@ -1,47 +1,42 @@
 <template>
-    <header class="page__header">
-        <a-breadcrumb v-if="getParents([docs], doc.parentSlug)" :max-count="3">
+    <header class="page__header" v-if="bookSlug && docsStore.spaceData[bookSlug]">
+        <a-breadcrumb v-if="getParents([docsStore.spaceData[bookSlug].tree], docsStore.doc.parentSlug)" :max-count="3">
             <template #separator>
                 <icon-right />
             </template>
 
-            <a-breadcrumb-item v-for="parent in getParents([docs], doc.parentSlug)" :key="parent.slug">
+            <a-breadcrumb-item v-for="parent in getParents([docsStore.spaceData[bookSlug].tree], docsStore.doc.parentSlug)"
+                :key="parent.slug">
                 <router-link :to="parent.path || ''">{{ parent.title }}</router-link>
             </a-breadcrumb-item>
 
-            <a-breadcrumb-item>{{ doc.title }}</a-breadcrumb-item>
+            <a-breadcrumb-item>{{ docsStore.doc.title }}</a-breadcrumb-item>
         </a-breadcrumb>
     </header>
-    <a-button class="edit-btn" type="primary" v-if="doc.loginUserAuthType === 1 || doc.loginUserAuthType === 2"
-        @click="onEdit">
+    <a-button class="edit-btn" type="primary"
+        v-if="usersStore.loginUser.isAdminer || docsStore.doc.loginUserAuthType === 1 || docsStore.doc.loginUserAuthType === 2" @click="onEdit">
         <template #icon>
             <icon-edit />
         </template>
         <template #default>编辑</template>
     </a-button>
 
-    <h1 class="page__title">{{ doc.title }}</h1>
+    <h1 class="page__title">{{ docsStore.doc.title }}</h1>
 </template>
 
 <script setup lang="ts">
 import type { Doc } from '@/types/global';
 import { useDocsStore } from '@/stores/doc';
-import { toRefs } from 'vue';
+import { watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useUsersStore } from '@/stores/user';
 
+const usersStore = useUsersStore();
 const docsStore = useDocsStore()
 
-const props = defineProps({
-    docs: {
-        type: Object as () => Doc,
-        required: true,
-    },
-    doc: {
-        type: Object as () => Doc,
-        required: true,
-    },
-});
+const route = useRoute();
 
-const { docs, doc } = toRefs(props);
+let bookSlug = route.params.bookSlug as string;
 
 const emitsDef = defineEmits(['onEdit']);
 
@@ -81,6 +76,11 @@ const getParents = (data: Doc[], slug?: string): Doc[] => {
     }
     return parents;
 };
+
+// 监听路由变化
+watch(route, async () => {
+    bookSlug = route.params.bookSlug as string;
+})
 </script>
 
 <style>
@@ -104,7 +104,7 @@ const getParents = (data: Doc[], slug?: string): Doc[] => {
         position: fixed;
         right: 16px;
         top: 10px;
-        z-index: 10;
+        z-index: 1000;
     }
 }
 

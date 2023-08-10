@@ -1,6 +1,6 @@
 <template>
     <section data-module="writing" class="content-block-ediotr">
-        <ContentEditorHeader :doc="doc" @on-change="event => onChange(event, true)" @on-preview="onPreview">
+        <ContentEditorHeader @on-change="event => onChange(event, true)" @on-preview="onPreview">
         </ContentEditorHeader>
         <div class="writing-editor">
             <div class="title-container">
@@ -45,10 +45,11 @@ import RawTool from '@editorjs/raw';
 import Table from "@editorjs/table";
 
 import { ref, toRefs, watch, type PropType } from "vue";
-
-import type { Doc, CustomEditorConfig } from "@/types/global";
-
+import type { CustomEditorConfig } from "@/types/global";
 import ContentEditorHeader from "./ContentEditorHeader.vue";
+import { useDocsStore } from "@/stores/doc";
+
+const docsStore = useDocsStore();
 
 const props = defineProps({
     editorConfig: {
@@ -56,13 +57,9 @@ const props = defineProps({
         default: () => { },
         required: false,
     },
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
 });
 
-const { editorConfig, doc } = toRefs(props);
+const { editorConfig } = toRefs(props);
 
 const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 
@@ -198,8 +195,8 @@ const config = Object.assign(defaultConfig, editorConfig.value)
 
 const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, showSuccessTips?: boolean) => {
     editor && editor.save().then((outputData) => {
-        doc.value.content = JSON.stringify(outputData.blocks);
-        emit('onChange', event, doc.value.content, showSuccessTips);
+        docsStore.doc.content = JSON.stringify(outputData.blocks);
+        emit('onChange', event, docsStore.doc.content, showSuccessTips);
     });
 };
 
@@ -210,16 +207,16 @@ const onPreview = (event: Event) => {
 const onTitleChange = async (event: Event) => {
     // 判断是否为空，为空的话，不更新
     if (docTitle.value === '') {
-        docTitle.value = doc.value.title
+        docTitle.value = docsStore.doc.title
         return
     }
 
-    doc.value.title = docTitle.value
-    emit('onChangeTitle', event, doc.value.slug, docTitle.value)
+    docsStore.doc.title = docTitle.value
+    emit('onChangeTitle', event, docsStore.doc.slug, docTitle.value)
 }
 
 config.data = {
-    blocks: (doc.value.content ? JSON.parse(doc.value.content) : []) as OutputBlockData[],
+    blocks: (docsStore.doc.content ? JSON.parse(docsStore.doc.content) : []) as OutputBlockData[],
 };
 config.onChange = function (api, event) {
     onChange(event);
@@ -227,11 +224,11 @@ config.onChange = function (api, event) {
 
 editor = new EditorJS(config);
 
-watch(doc, () => {
-    docTitle.value = doc.value.title
+watch(() => docsStore.doc.id, () => {
+    docTitle.value = docsStore.doc.title
     if (editor && editor.render) {
         editor.render({
-            blocks: (doc.value.content ? JSON.parse(doc.value.content) : []) as OutputBlockData[],
+            blocks: (docsStore.doc.content ? JSON.parse(docsStore.doc.content) : []) as OutputBlockData[],
         });
     }
 }, { immediate: true });
@@ -286,7 +283,7 @@ watch(doc, () => {
     position: fixed;
     right: 16px;
     top: -5px;
-    z-index: 9999;
+    z-index: 1000;
 }
 </style>
   

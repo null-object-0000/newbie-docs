@@ -2,10 +2,10 @@
     <section class="content-editor-header" data-module="writing">
         <header class="writing-header">
             <div class="writing-header__inner-container">
-                <a-form style="flex: 0 1 85%;" :model="doc" layout="inline">
+                <a-form style="flex: 0 1 85%;" :model="docsStore.doc" layout="inline">
                     <a-form-item field="slug" label="Slug">
-                        <a-input v-model="doc.slug" :disabled="true" id="uri-input" class="uri-input" name="uri-input"
-                            placeholder="please enter your slug..." />
+                        <a-input v-model="docsStore.doc.slug" :disabled="true" id="uri-input" class="uri-input"
+                            name="uri-input" placeholder="please enter your slug..." />
                     </a-form-item>
                 </a-form>
             </div>
@@ -33,18 +33,12 @@
 </template>
   
 <script setup lang="ts">
-import { ref, toRefs, watch, type PropType } from "vue";
-import type { Doc } from "@/types/global";
+import { ref, watch } from "vue";
 import { useMagicKeys, whenever } from '@vueuse/core'
+import { useDocsStore } from "@/stores/doc";
+import { onUnmounted } from "vue";
 
-const props = defineProps({
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-});
-
-const { doc } = toRefs(props);
+const docsStore = useDocsStore();
 
 const emit = defineEmits(["onChange", "onPreview"]);
 
@@ -63,6 +57,10 @@ whenever(ctrl_s, () => {
     onChange(new Event('ctrl_s'))
 })
 
+onUnmounted(() => {
+    onChange(new Event('onUnmounted'))
+})
+
 const onChange = (event: Event) => {
     emit('onChange', event);
 };
@@ -71,7 +69,7 @@ const onPreview = (event: Event) => {
     emit('onPreview', event)
 }
 
-watch(doc, () => {
+watch(() => docsStore.doc.id, () => {
     aboveSlug.value = null
 }, { immediate: true });
 </script>

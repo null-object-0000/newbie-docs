@@ -1,43 +1,30 @@
 <template>
     <article class="page" data-module="page">
-        <ContentPreviewHeader :docs="docs" :doc="doc" @on-edit="onEdit"></ContentPreviewHeader>
+        <ContentPreviewHeader @on-edit="onEdit"></ContentPreviewHeader>
 
         <section class="page__content">
-            <CBlockPreview v-if="doc.editor === 2" :doc="doc"></CBlockPreview>
-            <CWordPreview v-else :doc="doc"></CWordPreview>
+            <CBlockPreview v-if="docsStore.doc.editor === 2"></CBlockPreview>
+            <CWordPreview v-else></CWordPreview>
         </section>
 
-        <ContentPreviewFooter :doc="doc" @on-edit="onEdit"></ContentPreviewFooter>
+        <ContentPreviewFooter @on-edit="onEdit"></ContentPreviewFooter>
     </article>
 </template>
 
 <script setup lang="ts">
-import { type PropType, toRefs } from 'vue';
-import type { Doc } from '@/types/global';
 import ContentPreviewHeader from './ContentPreviewHeader.vue';
 import ContentPreviewFooter from './ContentPreviewFooter.vue';
 import CBlockPreview from "@/components/content/preview/ContentBlockPreview.vue";
 import CWordPreview from "@/components/content/preview/ContentWordPreview.vue";
+import { useDocsStore } from '@/stores/doc';
 
-const props = defineProps({
-    docs: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-});
-
-const { docs, doc } = toRefs(props);
+const docsStore = useDocsStore();
 
 const emits = defineEmits(['onEdit']);
 
 const onEdit = (event: Event) => {
     emits('onEdit', event);
 };
-
 </script>
 
 <style scoped>

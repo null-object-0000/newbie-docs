@@ -1,35 +1,29 @@
 import { defineStore } from "pinia";
 import { useBooksApi } from "@/api/books";
 import { useDocsApi } from "@/api/docs";
-import { UseBooksApiFunction, UseDocsApiFunction, UsePermissionsApiFunction } from "@/types/api";
+import { UseDocsApiFunction } from "@/types/api";
 import { Book, Doc, DocData } from "@/types/global";
 import { useDocsEventBus } from "@/events/docs";
 
 export const useDocsStore = defineStore('docs', {
     state: () => ({
         book: {},
-        bookPermissionAuthType: 0,
 
         spaceData: {},
         dir: {},
 
-        doc: {} as Doc,
+        doc: {},
 
-        booksApi: {} as UseBooksApiFunction,
-        docsApi: {} as UseDocsApiFunction,
-        permissionsApi: {} as UsePermissionsApiFunction,
+        docsApi: {},
     } as {
         book: Book,
-        bookPermissionAuthType: number,
 
         spaceData: Record<string, DocData>,
         dir: Doc,
 
         doc: Doc,
 
-        booksApi: UseBooksApiFunction,
         docsApi: UseDocsApiFunction,
-        permissionsApi: UsePermissionsApiFunction,
     }),
 
     actions: {
@@ -39,8 +33,8 @@ export const useDocsStore = defineStore('docs', {
                 return true
             }
 
-            this.booksApi = useBooksApi('localStorage')
-            this.book = await this.booksApi.get(bookSlug) as Book
+            const booksApi = useBooksApi('localStorage')
+            this.book = await booksApi.get(bookSlug) as Book
             if (!this.book) {
                 return false
             }
@@ -48,7 +42,7 @@ export const useDocsStore = defineStore('docs', {
             this.docsApi = useDocsApi('localStorage', this.spaceData)
             await this.docsApi.init(bookSlug)
 
-            this.dir = await this.docsApi.dir(bookSlug) as Doc;
+            this.dir = await this.docsApi.dir(bookSlug, true) as Doc;
             if (!this.dir) {
                 return false
             }
@@ -56,9 +50,17 @@ export const useDocsStore = defineStore('docs', {
             const docsEventBus = useDocsEventBus()
             docsEventBus.onDirChange(bookSlug, async (event, { space, dir }) => {
                 this.dir = await this.docsApi.dir(bookSlug, true) as Doc;
-            })
-            docsEventBus.onAnyDocContentChange(bookSlug, async (event, { space, slug, doc }) => {
-                this.book = await this.booksApi.get(bookSlug) as Book
+
+                // 找到当前 doc，然后用最新的 dir 更新当前 doc 的 parentId、parentSlug、title、sort
+                const array = this.docsApi.tree2array(this.dir) as Doc[]
+                array.forEach((doc: Doc) => {
+                    if (doc.slug === this.doc.slug) {
+                        this.doc.parentId = doc.parentId
+                        this.doc.parentSlug = doc.parentSlug
+                        this.doc.title = doc.title
+                        this.doc.sort = doc.sort
+                    }
+                })
             })
 
             return true

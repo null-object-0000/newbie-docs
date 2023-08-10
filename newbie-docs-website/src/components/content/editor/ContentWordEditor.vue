@@ -9,7 +9,7 @@
 
                 <div class="content">
                     <div class="editor-container">
-                        <ContentEditorHeader :doc="doc" @on-change="event => onChange(event, true)" @on-preview="onPreview">
+                        <ContentEditorHeader @on-change="event => onChange(event, true)" @on-preview="onPreview">
                         </ContentEditorHeader>
 
                         <div class="title-container">
@@ -27,21 +27,15 @@
 <script setup lang="ts">
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
 
-import { ref, shallowRef, watch, toRefs, type PropType } from 'vue'
-import type { Doc } from "@/types/global";
+import { ref, shallowRef, watch } from 'vue'
 // @ts-ignore
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import ContentEditorHeader from "./ContentEditorHeader.vue";
+import { useDocsStore } from '@/stores/doc';
 
-const props = defineProps({
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-});
+const docsStore = useDocsStore();
+
 const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
-
-const { doc } = toRefs(props);
 
 // 编辑器实例，必须用 shallowRef
 const editorRef = shallowRef()
@@ -67,12 +61,12 @@ const onChange = (event: Event, showSuccessTips?: boolean) => {
 const onTitleChange = async (event: Event) => {
     // 判断是否为空，为空的话，不更新
     if (docTitle.value === '') {
-        docTitle.value = doc.value.title
+        docTitle.value = docsStore.doc.title
         return
     }
 
-    doc.value.title = docTitle.value
-    emit('onChangeTitle', event, doc.value.slug, docTitle.value)
+    docsStore.doc.title = docTitle.value
+    emit('onChangeTitle', event, docsStore.doc.slug, docTitle.value)
 }
 
 const onPreview = (event: Event) => {
@@ -81,9 +75,9 @@ const onPreview = (event: Event) => {
 
 const mode = 'default'
 
-watch(doc, () => {
-    docTitle.value = (doc.value.title || '') as string
-    valueHtml.value = (doc.value.content || '') as string
+watch(() => docsStore.doc.id, () => {
+    docTitle.value = (docsStore.doc.title || '') as string
+    valueHtml.value = (docsStore.doc.content || '') as string
 }, { immediate: true });
 </script>
 

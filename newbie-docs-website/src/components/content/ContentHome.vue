@@ -80,17 +80,19 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, nextTick } from "vue";
-import { ref, reactive } from "vue";
+import { ref, reactive, toRefs, nextTick } from "vue";
 import { useConfigsStore } from "@/stores/config";
 import { useDocsStore } from '@/stores/doc';
 import PermissionModal from "@/components/PermissionModal.vue";
 import { Message, Modal } from "@arco-design/web-vue";
 import { useRouter } from "vue-router";
+import { useBooksApi } from "@/api/books";
 
 const router = useRouter()
 const configsStore = useConfigsStore()
 const docsStore = useDocsStore();
+
+const booksApi = useBooksApi('localStorage')
 
 const { book } = toRefs(docsStore);
 
@@ -122,7 +124,7 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
             content: `确认删除 “${book.value.title}” 知识库吗？`,
             hideCancel: false,
             onOk: async () => {
-                const result = await docsStore.booksApi.remove(book.value.id as number)
+                const result = await booksApi.remove(book.value.id as number)
                 if (result) {
                     Message.success('删除成功')
                     router.push('/')
@@ -138,9 +140,9 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
 
 const submitRenameTitle = async (event: Event) => {
     if (docTitle.value && docTitle.value.length > 0) {
-        const result = await docsStore.booksApi.changeTitle(book.value.id as number, docTitle.value)
+        const result = await booksApi.changeTitle(book.value.id as number, docTitle.value)
         if (result) {
-            docsStore.book.title = docTitle.value
+            book.value.title = docTitle.value
         }
 
         configsStore.setHeader('/', docTitle.value);

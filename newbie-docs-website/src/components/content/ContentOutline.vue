@@ -10,26 +10,18 @@
 </template>
 
 <script setup lang="ts">
-import { Doc } from '@/types/global';
-import { nextTick, reactive, watch, type PropType, toRefs } from 'vue';
+import { nextTick, reactive, watch } from 'vue';
 import { useConfigsStore } from '@/stores/config';
+import { useDocsStore } from '@/stores/doc';
 
 const configsStore = useConfigsStore();
+const docsStore = useDocsStore();
 
 interface Tag {
     linkTarget: string;
     innerText: string;
     classes: string;
 }
-
-const props = defineProps({
-    doc: {
-        type: Object as PropType<Doc>,
-        required: true,
-    },
-});
-
-const { doc } = toRefs(props);
 
 const config = reactive({ tags: [] as Tag[] })
 
@@ -67,5 +59,7 @@ const refreshTags = () => {
     }
 }
 
-watch(doc, () => { nextTick(() => { refreshTags() }) }, { immediate: true, deep: true });
+watch(() => {
+    return docsStore.doc.id
+}, () => { nextTick(() => { refreshTags() }) }, { immediate: true, deep: true });
 </script>

@@ -29,15 +29,12 @@ const checkDirIsChanged = (currentDir: Doc[]) => {
 }
 
 const checkDocContentIsChanged = (doc: Doc) => {
-  if (lastDocContent[doc.slug] !== doc.content) {
-    // 同一个文档，3s 内只触发一次
+  const content = doc.title + doc.content
+  if (lastDocContent[doc.slug] !== content) {
 
     const now = new Date().getTime();
-    if (now - (lastDocContentChangeTime[doc.slug] || 0) < 3000) {
-      return false;
-    }
 
-    lastDocContent[doc.slug] = doc.content as string;
+    lastDocContent[doc.slug] = content;
     lastDocContentChangeTime[doc.slug] = now;
     return true;
   } else {
@@ -45,60 +42,72 @@ const checkDocContentIsChanged = (doc: Doc) => {
   }
 }
 
+const emitDirChange = async ({ propKey, docsApi, space }: { propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
+  try {
+    const dir = await docsApi.dir(space);
+    const dirArray = docsApi.tree2array(dir) as Doc[];
+    if (checkDirIsChanged(dirArray)) {
+      lastDir = dirArray;
+      console.log('docsApiProxy dir change', space, dir)
+      useDocsEventBus().emitDirChange('docsApiProxy.' + (propKey as string), space, dir as Doc);
+    }
+  } catch (error) {
+    console.error('docsApiProxy error', error)
+    return false
+  }
+}
+
+const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, space, slug }: { propKey: string | symbol, docsApi: UseDocsApiFunction, space: string, slug: string }) => {
+  try {
+    const doc = await docsApi.get(space, slug) as Doc;
+    if (checkDocContentIsChanged(doc)) {
+      if (withDirChange) {
+        // 主动触发 dir 变更事件
+        await emitDirChange({ propKey, docsApi, space });
+      }
+
+      console.log('docsApiProxy doc content change', space, doc)
+      const docsEventBus = useDocsEventBus()
+      docsEventBus.emitDocContentChange('docsApiProxy.' + (propKey as string), space, doc.slug, doc);
+    }
+  } catch (error) {
+    console.error('docsApiProxy error', error)
+    return false
+  }
+}
+
 const reflecttoEmitTasks = {
   dirChange: {
-    methods: ["put", "remove", "splice", "changeSlug", "changeParentSlug", "changeTitle"],
+    methods: ["splice", "changeSlug", "changeParentSlug"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
-      try {
-        const dir = await docsApi.dir(space);
-        const dirArray = docsApi.tree2array(dir) as Doc[];
-        if (checkDirIsChanged(dirArray)) {
-          lastDir = dirArray;
-          console.log('docsApiProxy dir change', space, dir)
-          useDocsEventBus().emitDirChange('docsApiProxy.' + (propKey as string), space, dir as Doc);
-        }
-      } catch (error) {
-        console.error('docsApiProxy error', error)
-        return false
-      }
+      await emitDirChange({ propKey, docsApi, space });
     }
   },
   put: {
     methods: ["put"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
-      try {
-        const putDoc = args[1] as Doc;
-        const doc = await docsApi.get(space, putDoc.slug) as Doc;
-        if (checkDocContentIsChanged(doc)) {
-          console.log('docsApiProxy doc content change', space, doc)
-          useDocsEventBus().emitAnyDocContentChange('docsApiProxy.' + (propKey as string), space, doc.slug, doc);
-        }
-      } catch (error) {
-        console.error('docsApiProxy error', error)
-        return false
-      }
+      const putDoc = args[1] as Doc;
+      await emitDocContentChange(true, { propKey, docsApi, space, slug: putDoc.slug });
     }
   },
   remove: {
     methods: ["remove"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
-      try {
-        const slug = args[1] as string;
-        const doc = await docsApi.get(space, slug) as Doc;
-        if (checkDocContentIsChanged(doc)) {
-          console.log('docsApiProxy doc content change', space, doc)
-          useDocsEventBus().emitAnyDocContentChange('docsApiProxy.' + (propKey as string), space, doc.slug, doc);
-        }
-      } catch (error) {
-        console.error('docsApiProxy error', error)
-        return false
-      }
+      const slug = args[1] as string;
+      await emitDocContentChange(true, { propKey, docsApi, space, slug });
+    }
+  },
+  changeTitle: {
+    methods: ["changeTitle"],
+    actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
+      const slug = args[1] as string;
+      await emitDocContentChange(true, { propKey, docsApi, space, slug });
     }
   },
 } as {
   [key: string]: {
     methods: string[],
-    actions: ({ args, propKey, docsApi }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => any
+    actions: ({ args, propKey, docsApi }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => any,
   }
 }
 
