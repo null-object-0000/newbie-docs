@@ -2,10 +2,9 @@
     <section class="content-editor-header" data-module="writing">
         <header class="writing-header">
             <div class="writing-header__inner-container">
-                <a-form style="flex: 0 1 85%;" :model="docsStore.doc" layout="inline">
-                    <a-form-item field="slug" label="Slug">
-                        <a-input v-model="docsStore.doc.slug" :disabled="true" id="uri-input" class="uri-input"
-                            name="uri-input" placeholder="please enter your slug..." />
+                <a-form auto-label-width :model="docsStore.doc" layout="inline">
+                    <a-form-item field="slug" label="路由标识">
+                        <a-input v-model="docsStore.doc.slug" :disabled="true" />
                     </a-form-item>
                 </a-form>
             </div>

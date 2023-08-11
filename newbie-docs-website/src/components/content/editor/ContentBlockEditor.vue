@@ -63,6 +63,7 @@ const { editorConfig } = toRefs(props);
 
 const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 
+const title = ref('')
 const docTitle = ref('')
 
 const defaultConfig = {
@@ -197,7 +198,7 @@ const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, sho
     if (editor && typeof editor.save === 'function') {
         editor.save().then((outputData) => {
             docsStore.doc.content = JSON.stringify(outputData.blocks);
-            emit('onChange', event, docsStore.doc.content, showSuccessTips);
+            emit('onChange', event, { content: docsStore.doc.content, showSuccessTips });
         });
     }
 };
@@ -213,8 +214,9 @@ const onTitleChange = async (event: Event) => {
         return
     }
 
+    title.value = docTitle.value
     docsStore.doc.title = docTitle.value
-    emit('onChangeTitle', event, docsStore.doc.id, docTitle.value)
+    onChange(event)
 }
 
 config.data = {
@@ -228,9 +230,10 @@ editor = new EditorJS(config);
 
 watch(() => docsStore.doc.id, () => {
     docTitle.value = docsStore.doc.title
-    if (editor && editor.render) {
+    title.value = docTitle.value
+    if (editor && typeof editor.render === 'function') {
         editor.render({
-            blocks: (docsStore.doc.content ? JSON.parse(docsStore.doc.content) : []) as OutputBlockData[],
+            blocks: JSON.parse(docsStore.doc.content) as OutputBlockData[],
         });
     }
 }, { immediate: true });

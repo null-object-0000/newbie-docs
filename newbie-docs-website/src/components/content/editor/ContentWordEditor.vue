@@ -41,6 +41,7 @@ const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 const editorRef = shallowRef()
 
 // 内容 HTML
+const title = ref('')
 const docTitle = ref('')
 const valueHtml = ref('')
 
@@ -55,7 +56,7 @@ const handleCreated = (editor: any) => {
 }
 
 const onChange = (event: Event, showSuccessTips?: boolean) => {
-    emit('onChange', event, editorRef.value.getHtml(), showSuccessTips)
+    emit('onChange', event, { title: title.value, content: editorRef.value.getHtml(), showSuccessTips })
 }
 
 const onTitleChange = async (event: Event) => {
@@ -65,8 +66,9 @@ const onTitleChange = async (event: Event) => {
         return
     }
 
+    title.value = docTitle.value
     docsStore.doc.title = docTitle.value
-    emit('onChangeTitle', event, docsStore.doc.id, docTitle.value)
+    onChange(event)
 }
 
 const onPreview = (event: Event) => {
@@ -76,8 +78,9 @@ const onPreview = (event: Event) => {
 const mode = 'default'
 
 watch(() => docsStore.doc.id, () => {
-    docTitle.value = (docsStore.doc.title || '') as string
-    valueHtml.value = (docsStore.doc.content || '') as string
+    docTitle.value = docsStore.doc.title
+    title.value = docTitle.value
+    valueHtml.value = docsStore.doc.content
 }, { immediate: true });
 </script>
 

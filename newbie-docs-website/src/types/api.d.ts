@@ -67,6 +67,6 @@ export interface UseDocsApiFunction {
     async getTotalDocCount: (space: string) => Promise<number>;
     async getTotalWordCount: (space: string) => Promise<number>;
 
-    array2tree: (docs?: Doc | Doc[]) => Doc | undefined;
-    tree2array: (doc?: Doc) => Doc[] | undefined;
+    array2tree: (docs?: Doc | Doc[], deepClone = true) => Doc | undefined;
+    tree2array: (doc?: Doc, deepClone = true) => Doc[] | undefined;
 }

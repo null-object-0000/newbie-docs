@@ -236,9 +236,10 @@ const docsService = {
     return result
   },
 
-  onEditorChange: async function (event: Event, content: string, showSuccessTips?: boolean) {
+  onEditorChange: async function (event: Event, { title, content, showSuccessTips }: { title?: string, content?: string, showSuccessTips?: boolean }) {
     const doc = docsStore.doc as Doc;
-    doc.content = content;
+    doc.title = title || doc.title;
+    doc.content = content || doc.content;
     doc.updateTime = new Date().getTime()
     if (await docsStore.docsApi.put(bookSlug.value, doc)) {
       if (showSuccessTips) {

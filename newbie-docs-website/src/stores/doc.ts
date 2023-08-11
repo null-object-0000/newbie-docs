@@ -58,10 +58,10 @@ export const useDocsStore = defineStore('docs', {
 
             const docsEventBus = useDocsEventBus()
             docsEventBus.onDirChange(bookSlug, async (event, { space, dir }) => {
-                this.dir = await this.docsApi.dir(bookSlug, true) as Doc;
+                dir = await this.docsApi.dir(bookSlug, true) as Doc;
 
                 // 找到当前 doc，然后用最新的 dir 更新当前 doc 的 parentId、title、sort
-                const array = this.docsApi.tree2array(this.dir) as Doc[]
+                const array = this.docsApi.tree2array(dir, false) as Doc[]
                 array.forEach((doc: Doc) => {
                     if (doc.id === this.doc.id) {
                         // 除了 content 外，其他的都更新
@@ -74,6 +74,10 @@ export const useDocsStore = defineStore('docs', {
                         })
                     }
                 })
+
+                if (dir && dir.children && dir.children.length > 0) {
+                    this.dir = dir
+                }
             })
 
             return true

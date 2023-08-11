@@ -12,7 +12,7 @@ const lastDocContentChangeTime: Record<string, number> = {};
 const checkDirIsChanged = (currentDir: Doc[]) => {
   if (lastDir.length !== currentDir.length) return true;
 
-  const keys = ["id", "slug", "parentId", "path", "title", "sort"]
+  const keys = ["id", "slug", "parentId", "path", "title", "sort", "loginUserAuthType"]
 
   for (let i = 0; i < lastDir.length; i++) {
     const lastDoc = lastDir[i];
@@ -67,6 +67,8 @@ const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, 
 
     if (!doc) return false;
 
+    console.log('docsApi', 'doc.title', doc.title)
+
     if (checkDocContentIsChanged(doc)) {
       if (withDirChange) {
         // 主动触发 dir 变更事件
@@ -93,6 +95,7 @@ const reflecttoEmitTasks = {
     methods: ["put"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
       const putDoc = args[1] as Doc;
+      console.log('docsApi', 'doc.title', putDoc.title)
       await emitDocContentChange(true, { propKey, docsApi, space, slug: putDoc.slug });
     }
   },

@@ -54,13 +54,14 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         return true
     }
 
-    array2tree(docs?: Doc | Doc[]): Doc | undefined {
+    array2tree(docs?: Doc | Doc[], deepClone = true): Doc | undefined {
         if (!docs || !Array.isArray(docs)) {
             return docs
         }
 
-
-        docs = JSON.parse(JSON.stringify(docs)) as Doc[]
+        if (deepClone === true) {
+            docs = JSON.parse(JSON.stringify(docs)) as Doc[]
+        }
 
         const rootDoc = docs.find(doc => doc.slug === 'root')
         if (!rootDoc) {
@@ -81,12 +82,14 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         return rootDoc
     }
 
-    tree2array(docs?: Doc): Doc[] | undefined {
+    tree2array(docs?: Doc, deepClone = true): Doc[] | undefined {
         if (!docs) {
             return
         }
 
-        docs = JSON.parse(JSON.stringify(docs)) as Doc
+        if (deepClone === true) {
+            docs = JSON.parse(JSON.stringify(docs)) as Doc
+        }
 
         const result: Doc[] = []
 
