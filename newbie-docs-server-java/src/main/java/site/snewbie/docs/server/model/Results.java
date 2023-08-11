@@ -10,12 +10,12 @@ import site.snewbie.docs.server.enums.ResultsStatusEnum;
 @AllArgsConstructor
 public class Results<R> {
     private String code;
-    private String msg;
+    private String message;
     private R result;
 
-    public Results(String code, String msg) {
+    public Results(String code, String message) {
         this.code = code;
-        this.msg = msg;
+        this.message = message;
     }
 
     public static <R> Results<R> success() {

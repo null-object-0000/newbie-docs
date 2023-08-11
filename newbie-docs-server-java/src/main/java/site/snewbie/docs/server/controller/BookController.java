@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/books")
-public class BookController extends BaseController {
+public class BookController extends BaseAssetController {
     @Resource
     private BookService bookService;
 
