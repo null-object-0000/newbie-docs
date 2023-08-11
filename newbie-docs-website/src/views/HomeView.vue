@@ -1,7 +1,7 @@
 <template>
     <div class="home-view">
         <template v-if="loading.get()">
-            <a-spin style="margin-top: 40vh; justify-content: center; display: flex;" dot></a-spin>
+            <a-spin style="margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot></a-spin>
         </template>
         <template v-else>
             <a-row v-if="dir && dir.length > 0" :gutter="40" justify="center">
@@ -46,7 +46,8 @@
         <template #default>新建</template>
     </a-button>
 
-    <a-modal v-model:visible="editBookModal.visible" @before-ok="addBook" :modal-style="{ 'max-width': '90%' }">
+    <a-modal v-model:visible="editBookModal.visible" @before-ok="addBook" :mask-closable="false" :closable="false"
+        :modal-style="{ 'max-width': '90%' }">
         <template #title>
             新建知识库
         </template>
@@ -103,7 +104,7 @@ const editBookModal = reactive({
 })
 
 onBeforeMount(async () => {
-    await loading.set(true)
+    loading.set(true)
     try {
         dir.value = await booksApi.dir() as Book[]
     } catch (error) {
@@ -111,8 +112,10 @@ onBeforeMount(async () => {
         if (error instanceof AxiosError) {
             loadErroring.value = true
         }
+
+        console.error(error)
     } finally {
-        await loading.set(false)
+        loading.set(false)
     }
 })
 

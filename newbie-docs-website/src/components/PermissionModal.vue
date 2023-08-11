@@ -27,7 +27,7 @@
             <template #authType="{ record }">
                 <a-select :options="authTypes" v-model="record.authType"
                     :disabled="!record.editMode && modalData.tableData.filter(item => item.id && item.id > 0).length <= 1"
-                    @change="record.editMode ? () => {} : changeAuthType(record.id, record.authType)" />
+                    @change="record.editMode ? () => { } : changeAuthType(record.id, record.authType)" />
             </template>
             <template #actions="{ record }">
                 <template v-if="record.editMode">
@@ -195,6 +195,7 @@ const save = async (record: TableData) => {
     }
 
     const result = await permissionsApi.put({
+        id: -1,
         dataType: dataType.value,
         dataId: (dataType.value === 1 ? book.value.id : doc.value.id) as number,
         dataSlug: dataType.value === 1 ? book.value.slug : doc.value.bookSlug + '/' + doc.value.slug,

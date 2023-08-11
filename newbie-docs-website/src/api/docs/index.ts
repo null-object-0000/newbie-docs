@@ -3,6 +3,7 @@ import { UseDocsApiFunction } from "@/types/api";
 import { useDocsEventBus } from "@/events/docs";
 import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { UseRESTfulDocsApi } from "./RESTfulDocs";
+import { AxiosError } from "axios";
 
 let lastDir: Doc[] = [];
 const lastDocContent: Record<string, string> = {};
@@ -153,6 +154,10 @@ export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, Do
             }
             return result;
           } catch (error) {
+            if (error instanceof AxiosError) {
+              throw error
+            }
+
             console.error('docsApiProxy error', error)
             return false
           }

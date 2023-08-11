@@ -6,7 +6,8 @@
         @on-change-parent-id="docsService.onChangeParentId" @on-change-sort="docsService.onChangeSort">
       </CSidebar>
       <template v-if="loading.get()">
-        <a-spin style="margin: 0 auto; margin-top: 40vh; justify-content: center; display: flex;" dot></a-spin>
+        <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;"
+          dot></a-spin>
       </template>
       <template v-else-if="docsStore.doc">
         <div v-if="docsStore.doc.slug !== 'home'" class="docs__content"
@@ -56,8 +57,8 @@ import { useUsersStore } from '@/stores/user';
 import { useDocsStore } from '@/stores/doc';
 import { useConfigsStore } from "@/stores/config";
 import { OutputBlockData } from "@editorjs/editorjs";
-import { useBooksApi } from "@/api/books";
 import { useLoading } from '@/hooks';
+import { AxiosError } from "axios";
 
 const route = useRoute();
 const router = useRouter();
@@ -66,8 +67,6 @@ const configsStore = useConfigsStore();
 const docsStore = useDocsStore();
 
 const loading = useLoading()
-
-const booksApi = useBooksApi('localStorage')
 
 const bookSlug = ref(route.params.bookSlug as string)
 const docSlug = ref(route.params.docSlug as string)
@@ -95,6 +94,8 @@ const docsService = {
       return false
     }
 
+    loading.set(true)
+
     const slug = await docsStore.docsApi.generateSlug(12)
     const rootId = docsStore.dir.id as number
     const homeId = docsStore.dir.children?.filter((item) => item.slug === 'home')[0].id as number
@@ -106,12 +107,8 @@ const docsService = {
     parentId = parentId === homeId ? rootId : parentId
 
     let content;
-    if (value?.editor === 1) {
-      content = value?.content || ''
-    } else if (value?.editor === 3) {
-      content = value?.content || ''
-    } else {
-      content = value?.content || JSON.stringify([
+    if (value.editor === 2) {
+      content = value.content || JSON.stringify([
         {
           type: "header",
           data: {
@@ -120,18 +117,25 @@ const docsService = {
           },
         },
       ] as OutputBlockData[])
+    } else if (value.editor === 3) {
+      content = value.content || ''
+    } else {
+      content = value.content || ''
     }
 
     const doc: Doc = {
-      bookId: 0,
+      id: -1,
+
+      bookId: -1,
       bookSlug: bookSlug.value,
 
       slug,
       parentId,
-      editor: value?.editor || 2,
+      editor: value.editor || 2,
       path: `/${bookSlug.value}/${slug}`,
-      title: value?.title || "无标题文档",
+      title: value.title || "无标题文档",
       content,
+      wordsCount: -1,
       children: [],
       creator: loginUser.username + loginUser.id,
       createTime: Date.now(),
@@ -143,16 +147,23 @@ const docsService = {
       return false;
     }
 
-    const book = await booksApi.get(bookSlug.value) as Book
-    doc.bookId = book.id as number
-    doc.bookSlug = book.slug
+    try {
+      const result = await docsStore.docsApi.put(bookSlug.value, doc);
+      if (result) {
+        docSlug.value = slug
+        configsStore.docEditMode = true
+        router.push(doc.path)
+      }
+      return result
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        Message.error(error.message)
+      }
 
-    const result = await docsStore.docsApi.put(bookSlug.value, doc);
-    if (result) {
-      router.push(doc.path)
-      configsStore.docEditMode = true
+      console.error(error)
+    } finally {
+      loading.set(false)
     }
-    return result
   },
   onCopy: async (event: Event, value: { slug: string }) => {
     if (!value?.slug) {
@@ -173,6 +184,7 @@ const docsService = {
     const result = await docsStore.docsApi.remove(bookSlug.value, id)
     if (result) {
       if (docsStore.doc?.id === id) {
+        configsStore.docEditMode = false
         router.push(`/${bookSlug.value}/home`)
       }
     }
@@ -257,6 +269,8 @@ watch(route, async () => {
 
   const refreshCurrentBookResult = await docsStore.refreshCurrentBook(bookSlug.value)
   if (!refreshCurrentBookResult) {
+    console.warn('刷新当前知识库失败，跳回系统首页')
+    configsStore.docEditMode = false
     router.push({ path: `/` });
     return
   }
@@ -264,12 +278,16 @@ watch(route, async () => {
   const book = docsStore.book as Book
 
   if (route.path === "/" + bookSlug.value || route.path === "/" + bookSlug.value + "/") {
+    console.warn('知识库根路径，跳转知识库首页')
+    configsStore.docEditMode = false
     router.push({ path: `/${bookSlug.value}/home` });
     return
   }
 
   const refreshCurrentDocResult = await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value)
   if (!refreshCurrentDocResult) {
+    console.warn('刷新当前文档失败，跳回系统首页')
+    configsStore.docEditMode = false
     router.push({ path: `/` });
     return
   }
@@ -278,6 +296,8 @@ watch(route, async () => {
 
   // 判断当前路由是否存在，不存在就跳回首页
   if (doc.slug !== docSlug.value) {
+    console.warn('当前文档不存在，跳转知识库首页')
+    configsStore.docEditMode = false
     router.push({ path: `/${bookSlug.value}/home` });
     return
   }

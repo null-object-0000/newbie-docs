@@ -68,7 +68,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         const docs = await this.__get(space)
 
         const newDocs = JSON.parse(JSON.stringify(docs)).map((item: Doc) => {
-            delete item.content
+            item.content = ''
             return item
         })
 

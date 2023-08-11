@@ -4,7 +4,7 @@ import { Ref, ref } from "vue"
  * @param minInterval 打开 loading 后最小显示时间，单位 ms
  * @param delayTime 延迟 55ms 打开 loading，若在 55ms 内关闭 loading，则不打开 loading
  */
-export const useLoading = ({ minInterval, delayTime } = { minInterval: 550, delayTime: 55 }) => {
+export const useLoading = ({ minInterval, delayTime } = { minInterval: 550, delayTime: 0 }) => {
     const status = ref(false)
     const realStatus = ref(false)
     const lastTrueTime = ref(0)

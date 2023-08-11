@@ -87,3 +87,4 @@ docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
 - [VueUse](https://vueuse.org/guide/)
 - [Arco Design](https://arco.design/)
 - [YJS](https://github.com/yjs/yjs)
+- [Amazon S3]()

@@ -20,7 +20,10 @@
         </a-dropdown>
       </span>
 
-      <a-tree ref="sidebarTreeRef" draggable block-node default-expand-all default-expand-selected
+      <a-spin v-if="loading.get()" style="margin-top: calc(40vh + 28px - 64px); justify-content: center; display: flex;"
+        dot></a-spin>
+
+      <a-tree v-else ref="sidebarTreeRef" draggable block-node default-expand-all default-expand-selected
         class="docs-sidebar__tree" v-if="sidebarData.dir" :data="sidebarData.dir"
         v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
         @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)" @drop="drop">
@@ -114,6 +117,7 @@ import { useDocsStore } from "@/stores/doc";
 import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
 import PermissionModal from "@/components/PermissionModal.vue";
+import { useLoading } from '@/hooks';
 
 const route = useRoute();
 const router = useRouter();
@@ -122,6 +126,9 @@ const configsStore = useConfigsStore();
 const usersStore = useUsersStore();
 const docsStore = useDocsStore();
 const docsEventBus = useDocsEventBus();
+
+const loading = useLoading()
+loading.set(true)
 
 const { book } = toRefs(docsStore);
 
@@ -209,6 +216,10 @@ const updateDirData = (dir?: Doc) => {
   sidebarData.fullDir = formatDirData(JSON.parse(JSON.stringify(dir?.children || [])))
 
   search()
+
+  if (sidebarData.dir.length > 0) {
+    loading.set(false)
+  }
 }
 
 docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {

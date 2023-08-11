@@ -12,7 +12,7 @@ export class User {
 }
 
 export class Book {
-  id?: number;
+  id: number;
   /**
    * 唯一标识
    */
@@ -37,7 +37,7 @@ export class Doc {
   bookId: number;
   bookSlug: string;
 
-  id?: number;
+  id: number;
   /**
    * 唯一标识
    */
@@ -46,9 +46,9 @@ export class Doc {
   path: string;
   title: string;
   children?: Doc[];
-  content?: string;
+  content: string;
 
-  wordsCount?: number;
+  wordsCount: number;
 
   creator: string;
   createTime: number;
@@ -64,7 +64,7 @@ export class Doc {
 }
 
 export class Permission {
-  id?: number;
+  id: number;
   /**
    * 1 adminer、2 editor、3 viewer
    */

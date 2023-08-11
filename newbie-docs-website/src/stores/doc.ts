@@ -84,27 +84,35 @@ export const useDocsStore = defineStore('docs', {
                 return false
             }
 
-            if (forceRemote === true) {
-                this.doc = await this.docsApi.get(bookSlug, docSlug, true) as Doc;
-            } else {
-                // 先从本地获取 doc，然后异步更新 doc
-                this.doc = await this.docsApi.get(bookSlug, docSlug, false) as Doc;
-            }
+            try {
+                let doc;
+                if (forceRemote === true) {
+                    doc = await this.docsApi.get(bookSlug, docSlug, true) as Doc;
+                } else {
+                    // 先从本地获取 doc，然后异步更新 doc
+                    doc = await this.docsApi.get(bookSlug, docSlug, false) as Doc;
+                }
 
-            if (!this.doc) {
+                if (!doc) {
+                    return false
+                } else {
+                    this.doc = doc
+                }
+
+                if (forceRemote !== true) {
+                    this.docsApi.get(bookSlug, docSlug, true)
+                        .then((doc: Doc | undefined) => {
+                            if (doc && this.doc.id === doc.id) {
+                                this.doc = doc
+                            }
+                        })
+                }
+
+                return true
+            } catch (error) {
+                console.error(error)
                 return false
             }
-
-            if (forceRemote !== true) {
-                this.docsApi.get(bookSlug, docSlug, true)
-                    .then((doc: Doc | undefined) => {
-                        if (doc && this.doc.id === doc.id) {
-                            this.doc = doc
-                        }
-                    })
-            }
-
-            return true
         },
     },
 })

@@ -1,6 +1,6 @@
 import { Doc } from "@/types/global";
 import { UseDocsApiFunction } from "@/types/api";
-import axiso from "axios";
+import axiso, { AxiosError } from "axios";
 import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { BaseUseDocsApi } from "./base";
 
@@ -176,11 +176,11 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
 
         const restful = response && response.code === '0000' && response.result > 0
         if (restful) {
-            doc.id = response.result
+            doc = await this.getById(space, response.result, true) as Doc
             const localStorage = await this.localStorageDocsApi.put(space, doc)
             return restful && localStorage
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -209,7 +209,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/const',
+            url: '/docs/remove',
             headers: {
                 'newbie-docs-book-slug': space
             },

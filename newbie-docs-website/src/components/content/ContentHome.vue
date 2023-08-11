@@ -1,5 +1,8 @@
 <template>
-    <div v-if="book && book.id" class="docs-content-home"
+    <template v-if="loading.get()">
+        <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot></a-spin>
+    </template>
+    <div v-else-if="book && book.id" class="docs-content-home"
         :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${coverImg(book.id)}') center top / 100% no-repeat` }">
         <div class="docs-content-home__wrapper">
             <div class="docs-content-home__body">
@@ -88,12 +91,16 @@ import { useRoute, useRouter } from "vue-router";
 import { useBooksApi } from "@/api/books";
 import { onBeforeMount } from "vue";
 import { Book } from "@/types/global";
+import { useLoading } from '@/hooks';
 
 const route = useRoute()
 const router = useRouter()
 const configsStore = useConfigsStore()
 
 const booksApi = useBooksApi('localStorage')
+
+const loading = useLoading()
+loading.set(true)
 
 const book = ref<Book>()
 
@@ -106,8 +113,12 @@ let docTitle = ref('')
 const renameInputRef = ref<HTMLElement | null>(null)
 
 onBeforeMount(async () => {
-    const bookSlug = route.params.bookSlug as string
-    book.value = await booksApi.get(bookSlug) as Book
+    try {
+        const bookSlug = route.params.bookSlug as string
+        book.value = await booksApi.get(bookSlug) as Book
+    } finally {
+        loading.set(false)
+    }
 })
 
 const coverImg = (id: number) => {
