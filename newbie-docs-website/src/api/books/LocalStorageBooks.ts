@@ -1,11 +1,18 @@
 import { Book } from "@/types/global";
 import { UseBooksApiFunction } from "@/types/api";
+import { UseLocalStorageDocsApi } from "../docs/LocalStorageDocs";
 
 export class UseLocalStorageBooksApi implements UseBooksApiFunction {
-
     async __get(slug?: string): Promise<Book | Book[] | undefined> {
         const cache = localStorage.getItem('newbie_books');
         let cacheBooks = cache ? JSON.parse(cache) as Book[] : []
+
+        // 这里强行给每个 book 加上 docsCount、wordsCount 属性
+        for (const book of cacheBooks) {
+            const localStorageDocsApi = new UseLocalStorageDocsApi({})
+            book.docsCount = await localStorageDocsApi.getTotalDocCount(book.slug)
+            book.wordsCount = await localStorageDocsApi.getTotalWordCount(book.slug)
+        }
 
         let results;
         if (slug === undefined) {

@@ -6,7 +6,7 @@
         <a-input ref="searchInputRef" v-model="keyword" @input="search" class="docs-sidebar__search" type="text"
           placeholder="搜索" />
         <a-dropdown trigger="hover" position="bl" @select="createDoc">
-          <a-button class="docs-sidebar__create" type="outline" :disabled="!isEditorAuth(book.loginUserAuthType)">
+          <a-button class="docs-sidebar__create" type="outline" :disabled="!isEditorAuth(book?.loginUserAuthType)">
             <template #icon>
               <icon-plus />
             </template>
@@ -63,7 +63,7 @@
                     <template #icon><icon-link /></template>复制链接</a-doption>
                   <a-doption value="openLink">
                     <template #icon><icon-launch /></template>在新标签页打开</a-doption>
-                  <a-doption value="copy" v-if="isEditorAuth(book.loginUserAuthType)">
+                  <a-doption value="copy" v-if="isEditorAuth(book?.loginUserAuthType)">
                     <template #icon><icon-copy /></template>复制</a-doption>
                   <a-doption value="delete" v-if="isAdminerAuth(findDocWithPath(node.key)?.loginUserAuthType)"
                     :style="{ color: 'rgb(var(--danger-6))' }">
@@ -71,7 +71,7 @@
                   </a-doption>
                 </template>
               </a-dropdown>
-              <a-dropdown v-if="isEditorAuth(book.loginUserAuthType)" trigger="click"
+              <a-dropdown v-if="isEditorAuth(book?.loginUserAuthType)" trigger="click"
                 @select="(value, ev) => onCreate(node, value, ev)"
                 @popup-visible-change="visible => visible ? null : sidebarData.hoverNode = null">
                 <icon-plus class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
@@ -411,16 +411,16 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
     if (dragDoc.parentId !== dropDoc.parentId) {
       emit("onChangeParentId", data.e, {
         id: dragDoc.id,
-        parentId: dropDoc.id,
+        parentId: dropDoc.parentId,
       });
     }
 
     await nextTick(() => {
       // -1 为上方，1 为下方
       emit("onChangeSort", data.e, {
-        slug: dragDoc.slug,
+        id: dragDoc.id,
         parentId: dropDoc.parentId,
-        targetSlug: dropDoc.slug,
+        targetId: dropDoc.id,
         position: data.dropPosition
       });
     })

@@ -99,6 +99,10 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         if (!doc.id || doc.id <= 0) {
             doc.id = Math.ceil(Math.random() * 1000000000)
         }
+        if (doc.sort <= 0) {
+            const totalDocCount = await this.getMaxSort(space, doc.parentId) as number
+            doc.sort = totalDocCount + 1
+        }
 
         if (await this.exists(space, doc.slug)) {
             docs = docs.filter(item => item.slug !== doc.slug)
@@ -122,10 +126,10 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache('remove', space, docs)
     }
 
-    async splice(space: string, slug: string, index: number): Promise<boolean> {
+    async splice(space: string, id: number, index: number): Promise<boolean> {
         const docs = await this.__get(space) as Doc[]
 
-        const doc = await this.get(space, slug)
+        const doc = await this.getById(space, id)
         if (!doc || !doc.parentId) {
             return false
         }
@@ -135,15 +139,21 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             return false
         }
 
-        child = child.filter(item => item.slug !== slug)
+        child = child.filter(item => item.id !== id)
 
         child = child.sort((a, b) => a.sort - b.sort)
 
         child.splice(index, 0, doc)
 
-        for (let sort = 0; sort < child.length; sort++) {
-            const element = child[sort];
-            element.sort = sort
+        for (let index = 0; index < child.length; index++) {
+            const element = child[index];
+            element.sort = index
+
+            for (const item of docs) {
+                if (element.id === item.id) {
+                    item.sort = index
+                }
+            }
         }
 
         return this.__updateCache('splice', space, docs)
@@ -204,9 +214,9 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
-    async findIndex(space: string, slug: string): Promise<number | undefined> {
+    async findIndex(space: string, id: number): Promise<number | undefined> {
         let docs = await this.__get(space) as Doc[]
-        let current = await this.get(space, slug) as Doc
+        let current = await this.getById(space, id) as Doc
         let child = current && current.parentId ? await super.findChild(docs, current.parentId) as Doc[] : undefined
 
         if (!current || !child) {
@@ -214,18 +224,31 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
 
         child = child.sort((a, b) => a.sort - b.sort)
-        return child.findIndex((item) => item.slug === slug)
+        return child.findIndex((item) => item.id === id)
+    }
+
+    async getMaxSort(space: string, parentId: number): Promise<number> {
+        let docs = await this.__get(space) as Doc[]
+        let child = await super.findChild(docs, parentId) as Doc[]
+        if (!child) {
+            return 0
+        }
+
+        child = child.sort((a, b) => a.sort - b.sort)
+        return child[child.length - 1].sort
     }
 
     async getTotalDocCount(space: string): Promise<number> {
-        let docs = await this.__get(space) as Doc[]
+        const cache = localStorage.getItem(this.localStorageCacheKey + '_' + space);
+        let docs = cache && JSON.parse(cache) as Doc[] || []
         docs = docs.filter(item => item.slug !== 'root' && item.slug !== 'home')
 
         return docs.length
     }
 
     async getTotalWordCount(space: string): Promise<number> {
-        let docs = await this.__get(space) as Doc[]
+        const cache = localStorage.getItem(this.localStorageCacheKey + '_' + space);
+        let docs = cache && JSON.parse(cache) as Doc[] || []
         docs = docs.filter(item => item.slug !== 'root' && item.slug !== 'home')
 
         let wordCount = 0

@@ -9,11 +9,11 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract put(space: string, doc: Doc): Promise<boolean>;
     abstract exists(space: string, slug: string): Promise<boolean>;
     abstract remove(space: string, id: number): Promise<boolean>;
-    abstract splice(space: string, slug: string, index: number): Promise<boolean>;
+    abstract splice(space: string, id: number, index: number): Promise<boolean>;
     abstract changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean>;
     abstract changeParentId(space: string, id: number, parentId: number): Promise<boolean>;
     abstract changeTitle(space: string, id: number, newTitle: string): Promise<boolean>;
-    abstract findIndex(space: string, slug: string): Promise<number | undefined>;
+    abstract findIndex(space: string, id: number): Promise<number | undefined>;
     abstract getTotalDocCount(space: string): Promise<number>;
     abstract getTotalWordCount(space: string): Promise<number>;
 
@@ -119,6 +119,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
 
             id: rootId,
             slug: rootSlug,
+            parentId: 0,
             editor: 2,
             title: book.title,
             path: "/" + book.slug,

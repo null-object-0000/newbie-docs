@@ -78,24 +78,31 @@ export const useDocsStore = defineStore('docs', {
 
             return true
         },
-        async refreshCurrentDoc(bookSlug: string, docSlug: string): Promise<boolean> {
+        async refreshCurrentDoc(bookSlug: string, docSlug: string, forceRemote?: boolean): Promise<boolean> {
             // 判断 bookSlug 是否是当前 book
             if (!this.book || this.book.slug !== bookSlug) {
                 return false
             }
 
-            // 先从本地获取 doc，然后异步更新 doc
-            this.doc = await this.docsApi.get(bookSlug, docSlug, false) as Doc;
+            if (forceRemote === true) {
+                this.doc = await this.docsApi.get(bookSlug, docSlug, true) as Doc;
+            } else {
+                // 先从本地获取 doc，然后异步更新 doc
+                this.doc = await this.docsApi.get(bookSlug, docSlug, false) as Doc;
+            }
+
             if (!this.doc) {
                 return false
             }
 
-            this.docsApi.get(bookSlug, docSlug, true)
-                .then((doc: Doc | undefined) => {
-                    if (doc && this.doc.id === doc.id) {
-                        this.doc = doc
-                    }
-                })
+            if (forceRemote !== true) {
+                this.docsApi.get(bookSlug, docSlug, true)
+                    .then((doc: Doc | undefined) => {
+                        if (doc && this.doc.id === doc.id) {
+                            this.doc = doc
+                        }
+                    })
+            }
 
             return true
         },

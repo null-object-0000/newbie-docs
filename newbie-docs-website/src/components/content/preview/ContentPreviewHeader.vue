@@ -39,10 +39,10 @@ const route = useRoute();
 
 let bookSlug = route.params.bookSlug as string;
 
-const emitsDef = defineEmits(['onEdit']);
+const emit = defineEmits(['onEdit']);
 
 const onEdit = (event: Event) => {
-    emitsDef('onEdit', event);
+    emit('onEdit', event);
 };
 
 const getParent = (data: Doc[], id?: number): Doc | undefined => {

@@ -194,10 +194,12 @@ let editor: EditorJS;
 const config = Object.assign(defaultConfig, editorConfig.value)
 
 const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, showSuccessTips?: boolean) => {
-    editor && editor.save().then((outputData) => {
-        docsStore.doc.content = JSON.stringify(outputData.blocks);
-        emit('onChange', event, docsStore.doc.content, showSuccessTips);
-    });
+    if (editor && typeof editor.save === 'function') {
+        editor.save().then((outputData) => {
+            docsStore.doc.content = JSON.stringify(outputData.blocks);
+            emit('onChange', event, docsStore.doc.content, showSuccessTips);
+        });
+    }
 };
 
 const onPreview = (event: Event) => {

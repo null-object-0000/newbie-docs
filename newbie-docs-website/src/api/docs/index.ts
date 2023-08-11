@@ -47,7 +47,6 @@ const emitDirChange = async ({ propKey, docsApi, space }: { propKey: string | sy
     const dirArray = docsApi.tree2array(dir) as Doc[];
     if (checkDirIsChanged(dirArray)) {
       lastDir = dirArray;
-      console.log('docsApiProxy dir change', space, dir)
       useDocsEventBus().emitDirChange('docsApiProxy.' + (propKey as string), space, dir as Doc);
     }
   } catch (error) {
@@ -73,7 +72,6 @@ const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, 
         await emitDirChange({ propKey, docsApi, space });
       }
 
-      console.log('docsApiProxy doc content change', space, doc)
       const docsEventBus = useDocsEventBus()
       docsEventBus.emitDocContentChange('docsApiProxy.' + (propKey as string), space, doc.slug, doc);
     }
@@ -85,7 +83,7 @@ const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, 
 
 const reflecttoEmitTasks = {
   dirChange: {
-    methods: ["splice", "changeSlug", "changeParentId"],
+    methods: ["remove", "splice", "changeSlug", "changeParentId"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
       await emitDirChange({ propKey, docsApi, space });
     }
@@ -95,13 +93,6 @@ const reflecttoEmitTasks = {
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
       const putDoc = args[1] as Doc;
       await emitDocContentChange(true, { propKey, docsApi, space, slug: putDoc.slug });
-    }
-  },
-  remove: {
-    methods: ["remove"],
-    actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
-      const id = args[1] as number;
-      await emitDocContentChange(true, { propKey, docsApi, space, id });
     }
   },
   changeTitle: {

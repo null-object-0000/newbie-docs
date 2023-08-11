@@ -1,6 +1,17 @@
 import type { OutputBlockData, EditorConfig } from "@editorjs/editorjs";
 
-export interface Book {
+export class User {
+  isLogin: boolean;
+
+  id: string;
+  username: string;
+  avatar: string;
+  department: string;
+
+  isAdminer: boolean;
+}
+
+export class Book {
   id?: number;
   /**
    * 唯一标识
@@ -22,7 +33,7 @@ export interface Book {
   loginUserAuthType?: number;
 }
 
-export interface Doc {
+export class Doc {
   bookId: number;
   bookSlug: string;
 
@@ -31,7 +42,7 @@ export interface Doc {
    * 唯一标识
    */
   slug: string;
-  parentId?: number,
+  parentId: number;
   path: string;
   title: string;
   children?: Doc[];
@@ -52,7 +63,7 @@ export interface Doc {
   loginUserAuthType?: number;
 }
 
-export interface Permission {
+export class Permission {
   id?: number;
   /**
    * 1 adminer、2 editor、3 viewer
@@ -71,12 +82,12 @@ export interface Permission {
   ownerType: number;
 }
 
-export interface DocData {
-  tree: Doc,
-  array: Doc[]
+export class DocData {
+  tree: Doc;
+  array: Doc[];
 }
 
-export interface ContentViewConfig {
+export class ContentViewConfig {
   spaceData: Record<string, DocData>;
   currentDoc?: Doc | null;
 }
@@ -86,15 +97,3 @@ export interface CustomEditorConfig extends EditorConfig {
 }
 
 type ApiStorageEnum = "localStorage" | "restful";
-
-
-export interface User {
-  isLogin: boolean;
-
-  id: string;
-  username: string;
-  avatar: string;
-  department: string;
-
-  isAdminer: boolean;
-}

@@ -49,17 +49,17 @@ export interface UseDocsApiFunction {
     /**
      * 在指定空间中将指定 slug 的 doc 移动到指定位置并整理排序
      * @param space 空间名
-     * @param slug doc slug
+     * @param id doc id
      * @param index 目标位置
      * @returns 
      */
-    async splice: (space: string, slug: string, index: number) => Promise<boolean>;
+    async splice: (space: string, id: number, index: number) => Promise<boolean>;
 
     async changeSlug: (space: string, oldSlug: string, newSlug: string) => Promise<boolean>;
     async changeParentId: (space: string, id: number, parentId: number) => Promise<boolean>;
     async changeTitle: (space: string, id: number, newTitle: string) => Promise<boolean>;
 
-    async findIndex(space: string, slug: string): Promise<number | undefined>;
+    async findIndex(space: string, id: number): Promise<number | undefined>;
 
     async findChild(data: Doc | Doc[] | undefined, parentId: number): Promise<Doc[] | undefined>;
 

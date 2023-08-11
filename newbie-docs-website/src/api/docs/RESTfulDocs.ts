@@ -228,7 +228,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async splice(space: string, slug: string, index: number): Promise<boolean> {
+    async splice(space: string, id: number, index: number): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
@@ -238,14 +238,14 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             },
             data: {
                 space,
-                slug,
+                id,
                 index
             }
         })
 
         const restful = response && response.code === '0000'
         if (restful) {
-            const localStorage = await this.localStorageDocsApi.splice(space, slug, index)
+            const localStorage = await this.localStorageDocsApi.splice(space, id, index)
             return restful && localStorage
         } else {
             throw new Error(`[${response.code}] ${response.message}`)
@@ -324,7 +324,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async findIndex(space: string, slug: string): Promise<number | undefined> {
+    async findIndex(space: string, id: number): Promise<number | undefined> {
         const { data: response } = await axiso({
             method: 'get',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
@@ -334,7 +334,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             },
             params: {
                 space,
-                slug
+                id
             }
         })
 

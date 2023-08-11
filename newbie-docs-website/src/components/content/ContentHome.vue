@@ -82,19 +82,20 @@
 <script setup lang="ts">
 import { ref, reactive, toRefs, nextTick } from "vue";
 import { useConfigsStore } from "@/stores/config";
-import { useDocsStore } from '@/stores/doc';
 import PermissionModal from "@/components/PermissionModal.vue";
 import { Message, Modal } from "@arco-design/web-vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useBooksApi } from "@/api/books";
+import { onBeforeMount } from "vue";
+import { Book } from "@/types/global";
 
+const route = useRoute()
 const router = useRouter()
 const configsStore = useConfigsStore()
-const docsStore = useDocsStore();
 
 const booksApi = useBooksApi('localStorage')
 
-const { book } = toRefs(docsStore);
+const book = ref<Book>()
 
 const permissionModal = reactive({
     visible: false,
@@ -104,6 +105,11 @@ let editMode = ref(false)
 let docTitle = ref('')
 const renameInputRef = ref<HTMLElement | null>(null)
 
+onBeforeMount(async () => {
+    const bookSlug = route.params.bookSlug as string
+    book.value = await booksApi.get(bookSlug) as Book
+})
+
 const coverImg = (id: number) => {
     const maxIndex = 5
     const index = id % maxIndex + 1
@@ -111,6 +117,10 @@ const coverImg = (id: number) => {
 }
 
 const onSpaceSetting = async (value: string | number | Record<string, any> | undefined, ev: Event) => {
+    if (!book.value) {
+        return
+    }
+
     if (value === 'rename') {
         docTitle.value = book.value.title
         editMode.value = true
@@ -118,13 +128,14 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
             renameInputRef.value?.focus()
         })
     } else if (value === 'delete') {
+        const bookId = book.value.id as number
         Modal.warning({
             title: `确认框`,
             simple: true,
             content: `确认删除 “${book.value.title}” 知识库吗？`,
             hideCancel: false,
             onOk: async () => {
-                const result = await booksApi.remove(book.value.id as number)
+                const result = await booksApi.remove(bookId as number)
                 if (result) {
                     Message.success('删除成功')
                     router.push('/')
@@ -139,6 +150,10 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
 }
 
 const submitRenameTitle = async (event: Event) => {
+    if (!book.value) {
+        return
+    }
+
     if (docTitle.value && docTitle.value.length > 0) {
         const result = await booksApi.changeTitle(book.value.id as number, docTitle.value)
         if (result) {

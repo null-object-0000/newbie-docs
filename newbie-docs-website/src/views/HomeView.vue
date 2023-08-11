@@ -1,29 +1,42 @@
 <template>
     <div class="home-view">
-        <a-row v-if="dir && dir.length > 0" :gutter="40" justify="center">
-            <a-col flex="360px" v-for="book of dir" :style="{ marginBottom: '20px' }">
-                <router-link style="color: unset; text-decoration: unset;" :to="'/' + book.slug + '/home'">
-                    <a-card :style="{ width: '360px', height: '280px' }">
-                        <template #cover>
-                            <div :style="{ height: '204px', overflow: 'hidden', }">
-                                <img :style="{ width: '100%', transform: 'translateY(-20px)' }" alt="dessert"
-                                    :src="book.cover ? book.cover : 'https://p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/a20012a2d4d5b9db43dfc6a01fe508c0.png~tplv-uwbnlip3yd-webp.webp'" />
-                            </div>
-                        </template>
-                        <a-card-meta>
-                            <template #title>
-                                {{ book.title }}
+        <template v-if="loading.get()">
+            <a-spin style="margin-top: 40vh; justify-content: center; display: flex;" dot></a-spin>
+        </template>
+        <template v-else>
+            <a-row v-if="dir && dir.length > 0" :gutter="40" justify="center">
+                <a-col flex="360px" v-for="book of dir" :style="{ marginBottom: '20px' }">
+                    <router-link style="color: unset; text-decoration: unset;" :to="'/' + book.slug + '/home'">
+                        <a-card :style="{ width: '360px', height: '280px' }">
+                            <template #cover>
+                                <div :style="{ height: '204px', overflow: 'hidden', }">
+                                    <img :style="{ width: '100%', transform: 'translateY(-20px)' }" alt="dessert"
+                                        :src="book.cover ? book.cover : 'https://p1-arco.byteimg.com/tos-cn-i-uwbnlip3yd/a20012a2d4d5b9db43dfc6a01fe508c0.png~tplv-uwbnlip3yd-webp.webp'" />
+                                </div>
                             </template>
-                            <template #description>
-                                {{ book.description }}
-                            </template>
-                        </a-card-meta>
-                    </a-card>
-                </router-link>
-            </a-col>
-        </a-row>
+                            <a-card-meta>
+                                <template #title>
+                                    {{ book.title }}
+                                </template>
+                                <template #description>
+                                    {{ book.description }}
+                                </template>
+                            </a-card-meta>
+                        </a-card>
+                    </router-link>
+                </a-col>
+            </a-row>
 
-        <a-empty style="margin-top: 25vh;" v-else description="快去新建知识库吧~" />
+            <template v-else-if="loading.get(true) !== true">
+                <a-empty style="margin-top: 40vh;" v-if="loadErroring">
+                    <template #image>
+                        <icon-exclamation-circle-fill />
+                    </template>
+                    网络异常，请稍后重试
+                </a-empty>
+                <a-empty style="margin-top: 40vh;" v-else description="快去新建知识库吧~" />
+            </template>
+        </template>
     </div>
 
     <a-button class="add-btn" type="primary" v-if="loginUser.isAdminer" @click="editBookModal.visible = true">
@@ -64,20 +77,21 @@ import { Book } from '@/types/global'
 import { FormInstance } from '@arco-design/web-vue/es/form';
 import { onBeforeMount } from "vue";
 import { Message } from "@arco-design/web-vue";
+import { AxiosError } from "axios";
+import { useLoading } from '@/hooks';
 
 const { loginUser } = useUsersStore();
 const configsStore = useConfigsStore();
+
 const booksApi = useBooksApi('localStorage')
+
+const loading = useLoading()
 
 configsStore.setHeader('/', 'Newbie Docs');
 
 const dir = ref<Book[]>([])
-
-onBeforeMount(async () => {
-    dir.value = await booksApi.dir() as Book[]
-})
-
 const editBookFormRef = ref<FormInstance>();
+const loadErroring = ref(false)
 const editBookModal = reactive({
     visible: false,
     form: {
@@ -86,6 +100,20 @@ const editBookModal = reactive({
         cover: '',
         description: '',
     },
+})
+
+onBeforeMount(async () => {
+    await loading.set(true)
+    try {
+        dir.value = await booksApi.dir() as Book[]
+    } catch (error) {
+        // 判断是否是 Error
+        if (error instanceof AxiosError) {
+            loadErroring.value = true
+        }
+    } finally {
+        await loading.set(false)
+    }
 })
 
 const addBook = async () => {
@@ -117,6 +145,7 @@ const addBook = async () => {
         }
     } catch (error) {
         Message.error('新建知识库失败')
+        console.error('HomeView.vue: addBook()', error)
         return false
     }
 };
