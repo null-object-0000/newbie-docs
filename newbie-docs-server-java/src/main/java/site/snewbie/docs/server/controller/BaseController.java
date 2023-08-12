@@ -1,14 +1,17 @@
 package site.snewbie.docs.server.controller;
 
+import cn.hutool.core.io.resource.ResourceUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import site.snewbie.docs.server.enums.PermissionAuthType;
 import site.snewbie.docs.server.enums.PermissionDataType;
-import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.model.dto.User;
+import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.service.PermissionService;
 
 @RestController
@@ -105,5 +108,17 @@ public abstract class BaseController {
         }
 
         return result;
+    }
+
+    @GetMapping(value = "/error", produces = "text/html")
+    public String error() {
+        String html = ResourceUtil.readUtf8Str("public/index.html");
+        if (StrUtil.isNotBlank(html)) {
+            this.httpResponse.setStatus(HttpServletResponse.SC_OK);
+            return html;
+        } else {
+            this.httpResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            return "<h1>404 Not Found</h1>";
+        }
     }
 }
