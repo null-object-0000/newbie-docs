@@ -20,10 +20,10 @@ export const proxyConfig = defineConfig({
   server: {
     host: '0.0.0.0',
     proxy: {
-      '/server': {
+      '/api': {
         target: 'http://localhost:8188/',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/server/, '/server'),
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
       }
     },
   }

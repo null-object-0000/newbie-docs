@@ -116,7 +116,7 @@ import { useUsersStore } from "@/stores/user";
 import { useDocsStore } from "@/stores/doc";
 import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
-import PermissionModal from "@/components/PermissionModal.vue";
+import PermissionModal from "@/components/modals/PermissionModal.vue";
 import { useLoading } from '@/hooks';
 
 const route = useRoute();
@@ -475,6 +475,10 @@ watch(() => route.path, async () => {
 </script>
 
 <style>
+.docs-sidebar .docs-sidebar__content {
+  padding: 16px 8px;
+}
+
 .docs-sidebar .docs-sidebar__search-wrapper:after {
   margin-left: -105px;
   margin-top: 10px;
@@ -483,11 +487,12 @@ watch(() => route.path, async () => {
 .docs-sidebar .docs-sidebar__search-wrapper {
   display: flex;
   margin-bottom: 15px;
+  margin-left: 8px;
 }
 
 .docs-sidebar .docs-sidebar__search {
   display: flex;
-  width: calc(100% - 32px);
+  width: calc(100% - 32px - 12px);
   height: 34px;
 }
 

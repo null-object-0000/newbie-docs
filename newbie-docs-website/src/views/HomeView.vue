@@ -46,40 +46,19 @@
         <template #default>新建</template>
     </a-button>
 
-    <a-modal v-model:visible="editBookModal.visible" @before-ok="addBook" :mask-closable="false" :closable="false"
-        :modal-style="{ 'max-width': '90%' }">
-        <template #title>
-            新建知识库
-        </template>
-        <a-form ref="editBookFormRef" :model="editBookModal.form" auto-label-width>
-            <a-form-item field="slug" label="标识" extra="请用小写英文字母、数字、下划线、短横线组合，但只能以英文字母开头"
-                :rules="[{ required: true, type: 'string', match: /^[a-z][a-z0-9_-]*$/ }]">
-                <a-input v-model="editBookModal.form.slug" placeholder="请输入标识，例如：alle" />
-            </a-form-item>
-            <a-form-item field="title" label="名称" :rules="[{ required: true, type: 'string' }]">
-                <a-input v-model="editBookModal.form.title" placeholder="请输入名称，例如：万象开放平台" />
-            </a-form-item>
-            <a-form-item field="description" label="描述">
-                <a-input v-model="editBookModal.form.description" placeholder="请输入描述，例如：一个专业的低代码营销活动模板系统" />
-            </a-form-item>
-            <a-form-item field="cover" label="封面">
-                <a-input v-model="editBookModal.form.cover" placeholder="请输入封面图地址" />
-            </a-form-item>
-        </a-form>
-    </a-modal>
+    <BookSettingsModal v-model:visible="editBookModal.visible" v-model="editBookModal.form" @saved="bookSaved">
+    </BookSettingsModal>
 </template>
 
 <script setup lang="ts">
 import { useConfigsStore } from "@/stores/config";
 import { useUsersStore } from '@/stores/user';
-import { ref, reactive } from 'vue';
+import { ref, reactive, onBeforeMount } from 'vue';
 import { useBooksApi } from '@/api/books';
 import { Book } from '@/types/global'
-import { FormInstance } from '@arco-design/web-vue/es/form';
-import { onBeforeMount } from "vue";
-import { Message } from "@arco-design/web-vue";
 import { AxiosError } from "axios";
 import { useLoading } from '@/hooks';
+import BookSettingsModal from "@/components/modals/BookSettingsModal.vue";
 
 const { loginUser } = useUsersStore();
 const configsStore = useConfigsStore();
@@ -91,16 +70,16 @@ const loading = useLoading()
 configsStore.setHeader('/', 'Newbie Docs');
 
 const dir = ref<Book[]>([])
-const editBookFormRef = ref<FormInstance>();
 const loadErroring = ref(false)
 const editBookModal = reactive({
     visible: false,
     form: {
+        id: -1,
         slug: '',
         title: '',
         cover: '',
         description: '',
-    },
+    } as Book,
 })
 
 onBeforeMount(async () => {
@@ -119,39 +98,19 @@ onBeforeMount(async () => {
     }
 })
 
-const addBook = async () => {
-    try {
-        if (editBookFormRef.value) {
-            const errors = await editBookFormRef.value.validate()
-            if (errors !== undefined) {
-                return false
-            }
+const bookSaved = async (result: boolean) => {
+    if (result) {
+        dir.value = await booksApi.dir() as Book[]
 
-            const book = {
-                slug: editBookModal.form.slug,
-                title: editBookModal.form.title,
-                cover: editBookModal.form.cover,
-                description: editBookModal.form.description,
-                creator: loginUser.username + loginUser.id,
-                createTime: new Date().getTime()
-            } as Book
-            const result = await booksApi.put(book)
-
-            if (result) {
-                dir.value = await booksApi.dir() as Book[]
-                editBookModal.visible = false
-            } else {
-                Message.error('新建知识库失败')
-            }
-
-            return result
-        }
-    } catch (error) {
-        Message.error('新建知识库失败')
-        console.error('HomeView.vue: addBook()', error)
-        return false
+        editBookModal.form = {
+            id: -1,
+            slug: '',
+            title: '',
+            cover: '',
+            description: '',
+        } as Book
     }
-};
+}
 </script>
 
 <style scoped>

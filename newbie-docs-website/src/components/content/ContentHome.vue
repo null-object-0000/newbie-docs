@@ -43,6 +43,10 @@
                                 <template #icon><icon-lock /></template>
                                 权限管理
                             </a-doption>
+                            <a-doption value="more" @click="editBookModal.form = book; editBookModal.visible = true">
+                                <template #icon><icon-more /></template>
+                                更多设置
+                            </a-doption>
                             <a-doption value="delete" :style="{ color: 'rgb(var(--danger-6))' }">
                                 <template #icon><icon-delete /></template>
                                 删除
@@ -80,18 +84,23 @@
     <PermissionModal v-if="permissionModal.visible" :data-type="1" v-model:visible="permissionModal.visible" :book="book"
         width="750px">
     </PermissionModal>
+
+    <BookSettingsModal v-if="editBookModal.form" v-model:visible="editBookModal.visible" v-model="editBookModal.form"
+        @saved="bookSaved">
+    </BookSettingsModal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, toRefs, nextTick } from "vue";
 import { useConfigsStore } from "@/stores/config";
-import PermissionModal from "@/components/PermissionModal.vue";
+import PermissionModal from "@/components/modals/PermissionModal.vue";
 import { Message, Modal } from "@arco-design/web-vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBooksApi } from "@/api/books";
 import { onBeforeMount } from "vue";
 import { Book } from "@/types/global";
 import { useLoading } from '@/hooks';
+import BookSettingsModal from "../modals/BookSettingsModal.vue";
 
 const route = useRoute()
 const router = useRouter()
@@ -111,6 +120,11 @@ const permissionModal = reactive({
 let editMode = ref(false)
 let docTitle = ref('')
 const renameInputRef = ref<HTMLElement | null>(null)
+
+const editBookModal = reactive({
+    visible: false,
+    form: null as Book | null,
+})
 
 onBeforeMount(async () => {
     try {
@@ -175,6 +189,16 @@ const submitRenameTitle = async (event: Event) => {
         document.title = '首页 - ' + docTitle.value
     }
     editMode.value = false
+}
+
+const bookSaved = async (result: boolean) => {
+    console.log('bookSaved', result)
+
+    if (result && book.value) {
+        // FIXME: 更新知识库名称后文档集中 root 节点的标题不会更新
+        configsStore.setHeader('/', book.value.title);
+        document.title = '首页 - ' + book.value.title
+    }
 }
 </script>
 

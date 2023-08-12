@@ -53,15 +53,17 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
     async put(book: Book): Promise<boolean> {
         let books = await this.__get() as Book[] | undefined
 
-        if (await this.exists(book.slug)) {
-            return false
-        }
+        // TODO: 这里应该增加一个是否是当前 doc
+        // if (await this.exists(book.slug)) {
+        //     return false
+        // }
 
         if (!book.id || book.id <= 0) {
             book.id = Math.ceil(Math.random() * 1000000000)
         }
 
         if (books) {
+            books = books.filter(item => item.id !== book.id)
             books.push(book)
             return this.__updateCache('put', books)
         } else {

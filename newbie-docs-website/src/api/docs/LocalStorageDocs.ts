@@ -104,10 +104,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             doc.sort = totalDocCount + 1
         }
 
+        // TODO: 这里应该增加一个是否是当前 doc
         if (await this.exists(space, doc.slug)) {
             docs = docs.filter(item => item.slug !== doc.slug)
         }
 
+        docs = docs.filter(item => item.id !== doc.id)
         docs.push(doc)
 
         return this.__updateCache("put", space, docs)
