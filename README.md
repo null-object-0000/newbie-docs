@@ -13,9 +13,9 @@
 - [ ] 实现基于 `LocalStorage` 的客户端存储
 - [ ] 实现基于 `Java` 的 RESTful API 用以服务端存储
 - [ ] 支持知识库、文档的权限管理
-- [ ] 支持通过 Docker 部署
+- [x] 支持通过 Docker 部署
   - [x] newbie-docs-website
-  - [ ] newbie-docs-server-java
+  - [x] newbie-docs-server-java
 
 
 > `LocalStorage` 存储实现不支持权限管理能力，此时默认所有人都拥有所有知识库、文档的管理员权限
