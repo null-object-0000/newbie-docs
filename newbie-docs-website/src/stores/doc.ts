@@ -70,7 +70,7 @@ export const useDocsStore = defineStore('docs', {
                 }).catch((error: Error) => {
                     if (error instanceof AxiosError) {
                         Notification.error({
-                            title: '远程获取到最新的文档目录失败，请注意当前预览内容可能不是最新的，请稍后再试',
+                            title: '请注意当前预览内容可能不是最新的，远程获取最新文档目录失败，请稍后再试',
                             style: {
                                 top: '50px',
                             },
@@ -137,7 +137,7 @@ export const useDocsStore = defineStore('docs', {
                         }).catch((error: Error) => {
                             if (error instanceof AxiosError) {
                                 Notification.error({
-                                    title: '远程获取到最新的文档内容失败，请注意当前预览内容可能不是最新的，请稍后再试',
+                                    title: '请注意当前预览内容可能不是最新的，远程获取最新文档内容失败，请稍后再试',
                                     style: {
                                         top: '50px',
                                     },
