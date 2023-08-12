@@ -487,7 +487,6 @@ watch(() => route.path, async () => {
 .docs-sidebar .docs-sidebar__search-wrapper {
   display: flex;
   margin-bottom: 15px;
-  margin-left: 8px;
 }
 
 .docs-sidebar .docs-sidebar__search {

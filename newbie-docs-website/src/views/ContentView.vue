@@ -165,12 +165,12 @@ const docsService = {
       loading.set(false)
     }
   },
-  onCopy: async (event: Event, value: { slug: string }) => {
-    if (!value?.slug) {
+  onCopy: async (event: Event, value: { id: number }) => {
+    if (!value?.id) {
       return
     }
 
-    const doc = await docsStore.docsApi.get(bookSlug.value, value.slug) as Doc
+    const doc = await docsStore.docsApi.getById(bookSlug.value, value.id, true) as Doc
     if (doc) {
       docsService.onCreate(event, {
         parentId: doc.parentId,
