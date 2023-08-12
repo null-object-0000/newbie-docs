@@ -52,15 +52,17 @@ export const useDocsStore = defineStore('docs', {
             this.docsApi = useDocsApi('localStorage', this.spaceData)
             await this.docsApi.init(bookSlug)
 
-            this.dir = await this.docsApi.dir(bookSlug, false) as Doc;
-            if (!this.dir) {
+            // 先从本地获取 dir，然后异步更新 dir
+            const dir = await this.docsApi.dir(bookSlug, false) as Doc;
+            if (!dir || !dir.children || dir.children.length <= 0) {
                 return false
             }
 
-            // 先从本地获取 dir，然后异步更新 dir
+            this.dir = dir
+
             this.docsApi.dir(bookSlug, true)
                 .then((dir: Doc | undefined) => {
-                    if (dir) {
+                    if (dir && dir.children && dir.children.length > 0) {
                         this.dir = dir
                     }
                 })

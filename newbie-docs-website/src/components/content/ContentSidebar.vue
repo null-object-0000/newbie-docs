@@ -121,6 +121,7 @@ import { useRoute, useRouter } from "vue-router";
 import PermissionModal from "@/components/modals/PermissionModal.vue";
 import { useLoading } from '@/hooks';
 import { computed } from "vue";
+import { AxiosError } from "axios";
 
 const route = useRoute();
 const router = useRouter();
@@ -235,13 +236,6 @@ const updateDirData = (dir?: Doc) => {
     loading.set(false)
   }
 }
-
-docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {
-  // 先更新成空数据，再更新真实数据，强制触发 tree 的更新
-  updateDirData()
-
-  updateDirData(value.dir)
-})
 
 const sidebar = reactive({
   collapsed: false,
@@ -364,6 +358,12 @@ const docsService = {
       }
 
       return result
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        Message.error(error.message)
+      }
+
+      console.error(error)
     } finally {
       nodesLoading.value[nodeKey as string].set(false)
     }
@@ -518,6 +518,12 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
         position: data.dropPosition
       })
     }
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      Message.error(error.message)
+    }
+
+    console.error(error)
   } finally {
     nodesLoading.value[data.dragNode.key as string].set(false)
     nodesLoading.value[data.dropNode.key as string].set(false)
@@ -558,6 +564,13 @@ watch(() => docsStore.dir.children, async () => {
 watch(() => route.path, async () => {
   sidebarData.selectedKeys = [route.path]
 }, { immediate: true })
+
+docsEventBus.onDirChange(space.value, (event: Event, value: { space: string, dir: Doc }) => {
+  // 先更新成空数据，再更新真实数据，强制触发 tree 的更新
+  updateDirData()
+
+  updateDirData(value.dir)
+})
 </script>
 
 <style>

@@ -18,7 +18,7 @@
             </span>
             <span class="update-time" v-if="docsStore.doc.updateTime || docsStore.doc.createTime">
                 <icon-clock-circle />最后编辑于 {{ useDateFormat(docsStore.doc.updateTime || docsStore.doc.createTime,
-                    'YYYY年MM月dd日 hh:mm:ss').value }}
+                    'YYYY年MM月DD日 HH:mm:ss').value }}
             </span>
         </footer>
     </article>

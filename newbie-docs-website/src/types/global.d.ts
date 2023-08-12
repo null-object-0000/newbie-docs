@@ -51,9 +51,9 @@ export class Doc {
   wordsCount: number;
 
   creator: string;
-  createTime: number;
+  createTime: number | string;
   updater?: string;
-  updateTime?: number;
+  updateTime?: number | string;
   sort: number;
   /**
    * 编辑器类型（1 word、2 block、3 link）

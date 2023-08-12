@@ -64,7 +64,7 @@
                     </div>
                 </div>
 
-                <div v-if="book.docsCount <= 0 || true" class="docs-content-home__default_content">
+                <div v-if="book.docsCount <= 0" class="docs-content-home__default_content">
                     <p> 👋
                         <text style="font-weight: bold; display: inline-block;">
                             欢迎来到知识库
@@ -76,7 +76,19 @@
                         </text>
                     </p>
                 </div>
-                <div v-else></div>
+                <div v-else style="margin-top: 52px;">
+                    <a-tree ref="homeTreeRef" block-node default-expand-all class="docs-content-home__tree"
+                        v-if="sidebarData.dir" :data="sidebarData.dir"
+                        @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)">
+                        <template #title="node">
+                            <div class="content">
+                                <span class="title">{{ node?.title }}</span>
+                                <span class="line"></span>
+                                <span class="time">{{ node.time }}</span>
+                            </div>
+                        </template>
+                    </a-tree>
+                </div>
             </div>
         </div>
     </div>
@@ -91,25 +103,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, toRefs, nextTick } from "vue";
+import { watch, ref, reactive, nextTick, onBeforeMount } from "vue";
 import { useConfigsStore } from "@/stores/config";
 import PermissionModal from "@/components/modals/PermissionModal.vue";
-import { Message, Modal } from "@arco-design/web-vue";
+import { Message, Modal, TreeInstance, TreeNodeData } from "@arco-design/web-vue";
 import { useRoute, useRouter } from "vue-router";
 import { useBooksApi } from "@/api/books";
-import { onBeforeMount } from "vue";
-import { Book } from "@/types/global";
+import { Book, Doc } from "@/types/global";
+import { useDocsStore } from '@/stores/doc'
 import { useLoading } from '@/hooks';
 import BookSettingsModal from "../modals/BookSettingsModal.vue";
+import { useDateFormat } from "@vueuse/core";
+import { useDocsEventBus } from "@/events/docs";
 
 const route = useRoute()
 const router = useRouter()
+
 const configsStore = useConfigsStore()
+const docsStore = useDocsStore()
 
 const booksApi = useBooksApi('localStorage')
 
+const docsEventBus = useDocsEventBus();
+
+const homeTreeRef = ref<TreeInstance | null>(null)
+
 const loading = useLoading()
 loading.set(true)
+
+const bookSlug = route.params.bookSlug as string
 
 const book = ref<Book>()
 
@@ -124,15 +146,6 @@ const renameInputRef = ref<HTMLElement | null>(null)
 const editBookModal = reactive({
     visible: false,
     form: null as Book | null,
-})
-
-onBeforeMount(async () => {
-    try {
-        const bookSlug = route.params.bookSlug as string
-        book.value = await booksApi.get(bookSlug) as Book
-    } finally {
-        loading.set(false)
-    }
 })
 
 const coverImg = (id: number) => {
@@ -199,6 +212,89 @@ const bookSaved = async (result: boolean) => {
         document.title = '首页 - ' + book.value.title
     }
 }
+
+// 以下是索引内容相关逻辑
+const sidebarData = reactive({
+    rawDir: [],
+    fullDir: [],
+    dir: [],
+    selectedKeys: [],
+    editMode: false,
+    hoverNode: null,
+    renameDocSlug: '',
+    docTitle: '',
+    settingDoc: undefined
+} as {
+    rawDir: Doc[],
+    fullDir: TreeNodeData[],
+    dir: TreeNodeData[],
+    selectedKeys: Array<string | number>,
+    editMode: boolean,
+    hoverNode: string | null,
+    renameDocSlug: string,
+    docTitle: string,
+    settingDoc: Doc | undefined,
+});
+
+const formatDirData = (dir: Doc[]): TreeNodeData[] => {
+    return dir.filter(doc => doc.slug !== 'home').map(item => {
+        const nowDate = new Date()
+        const timeDate = new Date(item.updateTime || item.createTime)
+        let time = useDateFormat(timeDate, 'YYYY-MM-DD HH:mm')
+        if (timeDate.getFullYear() === nowDate.getFullYear() && timeDate.getMonth() === nowDate.getMonth() && timeDate.getDate() === nowDate.getDate()) {
+            time = useDateFormat(timeDate, '今天 HH:mm')
+        } else if (timeDate.getFullYear() === nowDate.getFullYear()) {
+            time = useDateFormat(timeDate, 'MM-DD HH:mm')
+        }
+
+        const node = { ...item, time } as TreeNodeData
+
+        if (item.children && item.children.length > 0) {
+            node.children = formatDirData(item.children)
+        }
+
+        node.key = `/${bookSlug}/${item.slug}`
+        node.title = item.title
+        node.draggable = false
+
+        return node
+    })
+}
+
+const updateDirData = (dir?: Doc) => {
+    sidebarData.rawDir = dir?.children || []
+    sidebarData.fullDir = formatDirData(JSON.parse(JSON.stringify(dir?.children || [])))
+
+    sidebarData.dir = JSON.parse(JSON.stringify(sidebarData.fullDir))
+
+    nextTick(() => {
+        homeTreeRef.value?.expandAll()
+    })
+}
+
+const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {
+    if (typeof path === 'string' && path) {
+        configsStore.docEditMode = docEditMode
+        router.push(path)
+    }
+}
+
+onBeforeMount(async () => {
+    try {
+        book.value = await booksApi.get(bookSlug) as Book
+
+        updateDirData(docsStore.dir)
+    } finally {
+        loading.set(false)
+    }
+})
+
+docsEventBus.onDirChange(bookSlug, (event: Event, value: { space: string, dir: Doc }) => {
+    // 先更新成空数据，再更新真实数据，强制触发 tree 的更新
+    updateDirData()
+
+    updateDirData(value.dir)
+})
 </script>
 
 <style scoped>
@@ -328,5 +424,37 @@ body[arco-theme='dark'] .docs-content-home__body {
 <style>
 .rename-title-input-wrapper span.arco-input-append {
     padding: 0 2px;
+}
+
+.docs-content-home__tree .arco-tree-node .arco-tree-node-title-text {
+    width: 100%;
+}
+
+.docs-content-home__tree .arco-tree-node .content {
+    font-size: 15px;
+
+    display: flex;
+    flex: 1;
+    align-items: center;
+    overflow: hidden;
+}
+
+.docs-content-home__tree .arco-tree-node .content .title {
+    font-size: 15px;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.docs-content-home__tree .arco-tree-node .content .line {
+    flex: 1;
+    margin: 0 16px;
+    border-top: 1px dashed #D8DAD9;
+}
+
+.docs-content-home__tree .arco-tree-node .content .time {
+    color: #8A8F8D;
+    font-size: 14px;
 }
 </style>
