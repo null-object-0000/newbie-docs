@@ -41,7 +41,7 @@ export interface UseDocsApiFunction {
      * @returns 树形结构的 doc，包含子节点，包含 doc 内容
      */
     async get: (space: string, slug?: string, ...any) => Promise<Doc | undefined>;
-    async getById: (space: string, id: number) => Promise<Doc | undefined>;
+    async getById: (space: string, id: number, ...any) => Promise<Doc | undefined>;
     async exists: (space: string, slug: string) => Promise<boolean>;
 
     async put: (space: string, doc: Doc) => Promise<boolean>;

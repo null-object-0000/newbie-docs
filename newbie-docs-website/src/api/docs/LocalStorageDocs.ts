@@ -232,7 +232,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
     async getMaxSort(space: string, parentId: number): Promise<number> {
         let docs = await this.__get(space) as Doc[]
         let child = await super.findChild(docs, parentId) as Doc[]
-        if (!child) {
+        if (!child || child.length <= 0) {
             return 0
         }
 

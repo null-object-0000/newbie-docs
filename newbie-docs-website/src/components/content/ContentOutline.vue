@@ -61,5 +61,5 @@ const refreshTags = () => {
 
 watch(() => {
     return docsStore.doc.id
-}, () => { nextTick(() => { refreshTags() }) }, { immediate: true, deep: true });
+}, () => { nextTick(refreshTags) }, { immediate: true, deep: true });
 </script>

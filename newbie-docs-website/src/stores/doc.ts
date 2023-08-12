@@ -7,6 +7,9 @@ import { useDocsEventBus } from "@/events/docs";
 
 export const useDocsStore = defineStore('docs', {
     state: () => ({
+        bookId: -1,
+        bookSlug: '',
+
         book: {},
 
         spaceData: {},
@@ -16,6 +19,9 @@ export const useDocsStore = defineStore('docs', {
 
         docsApi: {},
     } as {
+        bookId: number,
+        bookSlug: string,
+
         book: Book,
 
         spaceData: Record<string, DocData>,
@@ -34,10 +40,14 @@ export const useDocsStore = defineStore('docs', {
             }
 
             const booksApi = useBooksApi('localStorage')
-            this.book = await booksApi.get(bookSlug) as Book
-            if (!this.book) {
+            const book = await booksApi.get(bookSlug) as Book
+            if (!book) {
                 return false
             }
+
+            this.bookId = book.id
+            this.bookSlug = book.slug
+            this.book = book
 
             this.docsApi = useDocsApi('localStorage', this.spaceData)
             await this.docsApi.init(bookSlug)

@@ -149,9 +149,8 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
     if (value === 'rename') {
         docTitle.value = book.value.title
         editMode.value = true
-        nextTick(() => {
-            renameInputRef.value?.focus()
-        })
+        await nextTick()
+        renameInputRef.value?.focus()
     } else if (value === 'delete') {
         const bookId = book.value.id as number
         Modal.warning({

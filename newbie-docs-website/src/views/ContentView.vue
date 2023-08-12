@@ -2,8 +2,7 @@
   <div class="content-view" v-if="docsStore.dir">
     <div class="docs">
       <CSidebar :space="bookSlug" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
-        @on-remove="docsService.onRemove" @on-change-title="docsService.onChangeTitle"
-        @on-change-parent-id="docsService.onChangeParentId" @on-change-sort="docsService.onChangeSort">
+        @on-change-title="docsService.onChangeTitle">
       </CSidebar>
       <template v-if="loading.get()">
         <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;"
@@ -180,60 +179,12 @@ const docsService = {
       } as Doc)
     }
   },
-  onRemove: async (event: Event, id: number): Promise<boolean> => {
-    const result = await docsStore.docsApi.remove(bookSlug.value, id)
-    if (result) {
-      if (docsStore.doc?.id === id) {
-        configsStore.docEditMode = false
-        router.push(`/${bookSlug.value}/home`)
-      }
-    }
-
-    return result
-  },
   onChangeTitle: async (event: Event, value: { id: number, title: string }): Promise<boolean> => {
     if (value.title && value.title.length > 0) {
       return await docsStore.docsApi.changeTitle(bookSlug.value, value.id, value.title)
     } else {
       return false
     }
-  },
-  onChangeParentId: async (event: Event, value: { id: number, parentId: number }): Promise<boolean> => {
-    if (value.parentId && value.parentId > 0) {
-      return await docsStore.docsApi.changeParentId(bookSlug.value, value.id, value.parentId)
-    } else {
-      return false
-    }
-  },
-  /**
-   * 
-   * @param event 
-   * @param value { _ 当前 id: number, 目标 targetId: number, -1 为上方，1 为下方 position: number }
-   */
-  onChangeSort: async (event: Event, value: { parentId: string, id: number, targetId: number, position: number }): Promise<boolean> => {
-    let currentIndex = await docsStore.docsApi.findIndex(bookSlug.value, value.id) as number
-    let aboveIndex = await docsStore.docsApi.findIndex(bookSlug.value, value.targetId) as number
-
-    if (currentIndex === undefined || aboveIndex === undefined) {
-      return false
-    }
-
-    if (currentIndex < aboveIndex) {
-      if (value.position === -1) {
-        aboveIndex = aboveIndex - 1
-      }
-    } else {
-      if (value.position === 1) {
-        aboveIndex = aboveIndex + 1
-      }
-    }
-
-    const result = await docsStore.docsApi.splice(bookSlug.value, value.id, aboveIndex)
-    if (!result) {
-      Message.error(`置于${value.position > 0 ? '下方' : '上方'}失败`)
-    }
-
-    return result
   },
 
   onEditorChange: async function (event: Event, { title, content, showSuccessTips }: { title?: string, content?: string, showSuccessTips?: boolean }) {
@@ -306,17 +257,17 @@ watch(route, async () => {
   configsStore.setHeader('/', book.title);
   document.title = doc.title + ' - ' + book.title
 
-  nextTick(() => {
-    // 判断是否有锚点，没有的话就不滚动到页面顶部
-    if (window.location.hash) {
-      const anchor = document.querySelector(window.location.hash);
-      anchor && anchor.scrollIntoView();
-    } else {
-      window.scrollTo(0, 0)
-    }
+  await nextTick()
 
-    loading.set(false)
-  })
+  // 判断是否有锚点，没有的话就不滚动到页面顶部
+  if (window.location.hash) {
+    const anchor = document.querySelector(window.location.hash);
+    anchor && anchor.scrollIntoView();
+  } else {
+    window.scrollTo(0, 0)
+  }
+
+  loading.set(false)
 }, { immediate: true });
 
 watch(() => configsStore.docEditMode, async () => {

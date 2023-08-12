@@ -22,7 +22,6 @@
 
       <a-spin v-if="loading.get()" style="margin-top: calc(40vh + 28px - 64px); justify-content: center; display: flex;"
         dot></a-spin>
-
       <a-tree v-else ref="sidebarTreeRef" draggable block-node default-expand-all default-expand-selected
         class="docs-sidebar__tree" v-if="sidebarData.dir" :data="sidebarData.dir"
         v-model:selected-keys="sidebarData.selectedKeys" :allow-drop="checkIsAllowDrop"
@@ -50,7 +49,8 @@
               </template>
             </a-input>
 
-            <template v-if="node.key !== `/${space}/home` && sidebarData.renameDocSlug !== node.key">
+            <template
+              v-if="node.key !== `/${space}/home` && sidebarData.renameDocSlug !== node.key && isAnyNodeLoading !== true">
               <a-dropdown trigger="click" @select="(value, ev) => onSetting(node, value, ev)" :popup-max-height="false"
                 @popup-visible-change="visible => visible ? null : sidebarData.hoverNode = null">
                 <icon-more-vertical class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
@@ -87,6 +87,8 @@
                 </template>
               </a-dropdown>
             </template>
+
+            <icon-loading v-if="nodesLoading[node.key].get()" class="docs-sidebar__tree-node-tools" />
           </span>
         </template>
         <template #extra="node">
@@ -118,6 +120,7 @@ import { useDocsEventBus } from "@/events/docs";
 import { useRoute, useRouter } from "vue-router";
 import PermissionModal from "@/components/modals/PermissionModal.vue";
 import { useLoading } from '@/hooks';
+import { computed } from "vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -131,6 +134,11 @@ const loading = useLoading()
 loading.set(true)
 
 const { book } = toRefs(docsStore);
+
+const nodesLoading = ref({} as Record<string, {
+  get: (real?: boolean) => boolean,
+  set: (value: boolean) => Promise<void>
+}>)
 
 const sidebarRef = ref(null)
 const source = ref('')
@@ -159,7 +167,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["onCreate", 'onCopy', "onRemove", "onChangeTitle", "onChangeParentId", "onChangeSort"]);
+const emit = defineEmits(["onCreate", 'onCopy', "onChangeTitle"]);
 
 const { space } = toRefs(props);
 
@@ -191,6 +199,10 @@ const permissionModal = reactive({
   visible: false,
 })
 
+const isAnyNodeLoading = computed(() => {
+  return sidebarData.dir.some(node => nodesLoading.value[node.key as string].get())
+})
+
 const formatDirData = (dir: Doc[]): TreeNodeData[] => {
   return dir.map(item => {
     const node = {} as TreeNodeData
@@ -206,6 +218,8 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
     } else {
       node.draggable = isEditorAuth(item.loginUserAuthType)
     }
+
+    nodesLoading.value[node.key] = useLoading()
 
     return node
   })
@@ -337,14 +351,74 @@ const onCreate = function (node: TreeNodeData, value: string | number | Record<s
   }
 }
 
+const docsService = {
+  removeDoc: async (nodeKey: string, doc: Doc) => {
+    nodesLoading.value[nodeKey as string].set(true)
+    try {
+      const result = await docsStore.docsApi.remove(space.value, doc.id)
+      if (result) {
+        if (docsStore.doc?.id === doc.id) {
+          configsStore.docEditMode = false
+          router.push(`/${space.value}/home`)
+        }
+      }
+
+      return result
+    } finally {
+      nodesLoading.value[nodeKey as string].set(false)
+    }
+  },
+
+  onChangeParentId: async (event: Event, value: { id: number, parentId: number }): Promise<boolean> => {
+    if (value.parentId && value.parentId > 0) {
+      return await docsStore.docsApi.changeParentId(space.value, value.id, value.parentId)
+    } else {
+      return false
+    }
+  },
+
+  /**
+ * 
+ * @param event 
+ * @param value { _ 当前 id: number, 目标 targetId: number, -1 为上方，1 为下方 position: number }
+ */
+  onChangeSort: async (event: Event, value: { parentId: number, id: number, targetId: number, position: number }): Promise<boolean> => {
+    let currentIndex = await docsStore.docsApi.findIndex(space.value, value.id) as number
+    let aboveIndex = await docsStore.docsApi.findIndex(space.value, value.targetId) as number
+
+    if (currentIndex === undefined || aboveIndex === undefined) {
+      return false
+    }
+
+    if (currentIndex < aboveIndex) {
+      if (value.position === -1) {
+        aboveIndex = aboveIndex - 1
+      }
+    } else {
+      if (value.position === 1) {
+        aboveIndex = aboveIndex + 1
+      }
+    }
+
+    const result = await docsStore.docsApi.splice(space.value, value.id, aboveIndex)
+    if (!result) {
+      Message.error(`置于${value.position > 0 ? '下方' : '上方'}失败`)
+    }
+
+    return result
+  }
+}
+
 const onSetting = async function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
+  if (isAnyNodeLoading.value) {
+    console.warn('有节点在 loading 暂不可设置')
+    return
+  }
+
   const doc = findDocWithPath(node.key as string) as Doc
   const options = {
-    id: doc.id,
-    slug: doc.slug,
-    doc: doc,
     action: value
-  } as { id: number, slug: string, doc: Doc, action: string | number | Record<string, any> | undefined }
+  } as { action: string | number | Record<string, any> | undefined }
   const docLink = `${location.protocol}//${location.host}${doc.path}`
   if (options.action === 'rename') {
     sidebarData.renameDocSlug = node.key as string
@@ -367,7 +441,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
       content: `确认删除 “${doc.title}” 文档吗？`,
       hideCancel: false,
       onOk: async () => {
-        emit("onRemove", ev, options.id);
+        await docsService.removeDoc(node.key as string, doc)
       }
     })
   } else if (options.action === 'copyLink') {
@@ -408,33 +482,45 @@ const checkIsAllowDrop = (options: { dropNode: TreeNodeData; dropPosition: -1 | 
 }
 
 const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: TreeNodeData; dropPosition: number; }) => {
+  if (isAnyNodeLoading.value) {
+    console.warn('有节点在 loading 暂不可拖拽')
+    return
+  }
+
   // 拖拽节点
   const dragDoc = findDocWithPath(data.dragNode.key as string) as Doc
   // 目标节点
   const dropDoc = findDocWithPath(data.dropNode.key as string) as Doc
 
-  if (data.dropPosition === 0) {
-    emit("onChangeParentId", data.e, {
-      id: dragDoc.id,
-      parentId: dropDoc.id
-    });
-  } else {
-    if (dragDoc.parentId !== dropDoc.parentId) {
-      emit("onChangeParentId", data.e, {
+  nodesLoading.value[data.dragNode.key as string].set(true)
+  nodesLoading.value[data.dropNode.key as string].set(true)
+  try {
+    if (data.dropPosition === 0) {
+      await docsService.onChangeParentId(data.e, {
         id: dragDoc.id,
-        parentId: dropDoc.parentId,
-      });
-    }
+        parentId: dropDoc.id
+      })
+    } else {
+      if (dragDoc.parentId !== dropDoc.parentId) {
+        await docsService.onChangeParentId(data.e, {
+          id: dragDoc.id,
+          parentId: dropDoc.parentId,
+        })
+      }
 
-    await nextTick(() => {
+      await nextTick()
+
       // -1 为上方，1 为下方
-      emit("onChangeSort", data.e, {
+      await docsService.onChangeSort(data.e, {
         id: dragDoc.id,
         parentId: dropDoc.parentId,
         targetId: dropDoc.id,
         position: data.dropPosition
-      });
-    })
+      })
+    }
+  } finally {
+    nodesLoading.value[data.dragNode.key as string].set(false)
+    nodesLoading.value[data.dropNode.key as string].set(false)
   }
 }
 
@@ -548,6 +634,7 @@ watch(() => route.path, async () => {
 .docs-sidebar .docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block,
 .docs-sidebar .docs-sidebar__tree .arco-tree-node span.arco-tree-node-title.arco-tree-node-title-block span.arco-tree-node-title-text {
   width: 100%;
+  max-width: calc(var(--layout-sidebar-width) - 50px);
   padding: 0;
   /* FIXME: 开启后 tree 的拖拽辅助线就没了，会有有空再看 */
   /* overflow-x: hidden; */
