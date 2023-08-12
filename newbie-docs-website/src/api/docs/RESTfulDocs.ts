@@ -110,6 +110,8 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
 
         if (response && response.code === '0000') {
             return response.result as Doc
+        } else {
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -134,13 +136,15 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
 
         if (response && response.code === '0000') {
             return response.result as Doc
+        } else {
+            throw new AxiosError(response.message, response.code)
         }
     }
 
-    async put(space: string, doc: Doc): Promise<boolean> {
+    async put(space: string, doc: Doc, forceRemote?: boolean): Promise<boolean> {
         const isCreate = doc.id === undefined || doc.id === null || doc.id <= 0
 
-        if (isCreate) {
+        if (isCreate || forceRemote === true) {
             // 新建文档时因为需要获取 id，所以需要先远程 put，再本地 put
             return await this.remotePut(space, doc)
         } else {
@@ -340,6 +344,8 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
 
         if (response && response.code === '0000') {
             return response.result as number
+        } else {
+            throw new AxiosError(response.message, response.code)
         }
     }
 

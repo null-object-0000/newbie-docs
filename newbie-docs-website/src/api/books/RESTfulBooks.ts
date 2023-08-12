@@ -1,6 +1,6 @@
 import { Book } from "@/types/global";
 import { UseBooksApiFunction } from "@/types/api";
-import axiso from "axios";
+import axiso, { AxiosError } from "axios";
 
 export class UseRESTfulBooksApi implements UseBooksApiFunction {
 
@@ -13,6 +13,8 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
 
         if (response && response.code === '0000') {
             return response.result as Book[]
+        } else {
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -28,6 +30,8 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
 
         if (response && response.code === '0000') {
             return response.result as Book
+        } else {
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -62,7 +66,12 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
             }
         })
 
-        return response && response.code === '0000' && response.result > 0
+        const restful = response && response.code === '0000' && response.result > 0
+        if (restful) {
+            return restful
+        } else {
+            throw new AxiosError(response.message, response.code)
+        }
     }
 
     async remove(id: number): Promise<boolean> {
@@ -75,7 +84,12 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
             }
         })
 
-        return response && response.code === '0000'
+        const restful = response && response.code === '0000'
+        if (restful) {
+            return restful
+        } else {
+            throw new Error(`[${response.code}] ${response.message}`)
+        }
     }
 
     async changeTitle(id: number, newTitle: string): Promise<boolean> {
@@ -89,6 +103,11 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
             }
         })
 
-        return response && response.code === '0000'
+        const restful = response && response.code === '0000'
+        if (restful) {
+            return restful
+        } else {
+            throw new Error(`[${response.code}] ${response.message}`)
+        }
     }
 }

@@ -44,7 +44,7 @@ export interface UseDocsApiFunction {
     async getById: (space: string, id: number, ...any) => Promise<Doc | undefined>;
     async exists: (space: string, slug: string) => Promise<boolean>;
 
-    async put: (space: string, doc: Doc) => Promise<boolean>;
+    async put: (space: string, doc: Doc, ...any) => Promise<boolean>;
     async remove: (space: string, id: number) => Promise<boolean>;
     /**
      * 在指定空间中将指定 slug 的 doc 移动到指定位置并整理排序

@@ -4,6 +4,8 @@ import { useDocsApi } from "@/api/docs";
 import { UseDocsApiFunction } from "@/types/api";
 import { Book, Doc, DocData } from "@/types/global";
 import { useDocsEventBus } from "@/events/docs";
+import { Notification, type NotificationConfig } from '@arco-design/web-vue';
+import { AxiosError } from "axios";
 
 export const useDocsStore = defineStore('docs', {
     state: () => ({
@@ -65,6 +67,17 @@ export const useDocsStore = defineStore('docs', {
                     if (dir && dir.children && dir.children.length > 0) {
                         this.dir = dir
                     }
+                }).catch((error: Error) => {
+                    if (error instanceof AxiosError) {
+                        Notification.error({
+                            title: '远程获取到最新的文档目录失败，请注意当前预览内容可能不是最新的，请稍后再试',
+                            style: {
+                                top: '50px',
+                            },
+                        } as NotificationConfig)
+                    }
+
+                    console.error(error)
                 })
 
 
@@ -121,6 +134,17 @@ export const useDocsStore = defineStore('docs', {
                             if (doc && this.doc.id === doc.id) {
                                 this.doc = doc
                             }
+                        }).catch((error: Error) => {
+                            if (error instanceof AxiosError) {
+                                Notification.error({
+                                    title: '远程获取到最新的文档内容失败，请注意当前预览内容可能不是最新的，请稍后再试',
+                                    style: {
+                                        top: '50px',
+                                    },
+                                } as NotificationConfig)
+                            }
+
+                            console.error(error)
                         })
                 }
 

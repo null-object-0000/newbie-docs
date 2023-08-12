@@ -4,7 +4,8 @@
 		"website:dev": "cd newbie-docs-website && pnpm run dev",
 		"java-server:dev": "cd newbie-docs-server-java && mvn spring-boot:run -Dspring-boot.run.profiles=local",
 		"build": "pnpm run website:build",
-		"website:build": "cd newbie-docs-website && pnpm run build"
+		"website:build": "cd newbie-docs-website && pnpm run build",
+		"website:commit": "pnpm run website:build && git add ./newbie-docs-website && git cz"
 	},
 	"config": {
 		"commitizen": {

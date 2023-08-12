@@ -1,41 +1,61 @@
 <template>
-  <div class="content-view" v-if="docsStore.dir">
-    <div class="docs">
-      <CSidebar :space="bookSlug" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
-        @on-change-title="docsService.onChangeTitle">
-      </CSidebar>
-      <template v-if="loading.get()">
-        <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;"
-          dot></a-spin>
-      </template>
-      <template v-else-if="docsStore.doc">
-        <div v-if="docsStore.doc.slug !== 'home'" class="docs__content"
-          :class="configsStore.docEditMode && docsStore.doc.editor === 1 ? 'docs_content_word_editor' : ''">
-          <div class="docs__content-inner">
-            <template v-if="configsStore.docEditMode">
-              <CBlockEditor v-if="docsStore.doc.editor === 2" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                @on-change="docsService.onEditorChange" @on-preview="onPreview"
-                @on-change-title="docsService.onChangeTitle">
-              </CBlockEditor>
-              <CWordEditor v-else-if="docsStore.doc.editor === 1" :editor-config="{ headerPlaceholder: '请输入标题' }"
-                @on-change="docsService.onEditorChange" @on-preview="onPreview"
-                @on-change-title="docsService.onChangeTitle">
-              </CWordEditor>
-            </template>
-            <template v-else>
-              <CPreview @onEdit="configsStore.docEditMode = true">
-              </CPreview>
-            </template>
-          </div>
+  <template v-if="(docsStore.dir && docsStore.dir.children && docsStore.dir.children.length > 0) || loading.get()">
+    <div class="content-view">
+      <div class="docs">
+        <CSidebar :space="bookSlug" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
+          @on-change-title="docsService.onChangeTitle">
+        </CSidebar>
 
-          <aside v-if="!configsStore.docEditMode || docsStore.doc.editor !== 1" class="docs__aside-right">
-            <COutline></COutline>
-          </aside>
-        </div>
-        <CHome v-else></CHome>
-      </template>
+        <a-empty style="margin-top: 40vh;" v-if="loadErroring">
+          <template #image>
+            <icon-exclamation-circle-fill />
+          </template>
+          网络异常，请稍后重试
+        </a-empty>
+
+        <template v-else>
+          <template v-if="loading.get()">
+            <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;"
+              dot></a-spin>
+          </template>
+          <template v-else-if="docsStore.doc">
+            <div v-if="docsStore.doc.slug !== 'home'" class="docs__content"
+              :class="configsStore.docEditMode && docsStore.doc.editor === 1 ? 'docs_content_word_editor' : ''">
+              <div class="docs__content-inner">
+                <template v-if="configsStore.docEditMode">
+                  <CBlockEditor v-if="docsStore.doc.editor === 2" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                    @on-change="docsService.onEditorChange" @on-preview="onPreview"
+                    @on-change-title="docsService.onChangeTitle">
+                  </CBlockEditor>
+                  <CWordEditor v-else-if="docsStore.doc.editor === 1" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                    @on-change="docsService.onEditorChange" @on-preview="onPreview"
+                    @on-change-title="docsService.onChangeTitle">
+                  </CWordEditor>
+                </template>
+                <template v-else>
+                  <CPreview @onEdit="configsStore.docEditMode = true">
+                  </CPreview>
+                </template>
+              </div>
+
+              <aside v-if="!configsStore.docEditMode || docsStore.doc.editor !== 1" class="docs__aside-right">
+                <COutline></COutline>
+              </aside>
+            </div>
+            <CHome v-else></CHome>
+          </template>
+        </template>
+      </div>
     </div>
-  </div>
+  </template>
+  <template v-else>
+    <a-empty style="margin-top: 40vh;" v-if="loadErroring">
+      <template #image>
+        <icon-exclamation-circle-fill />
+      </template>
+      网络异常，请稍后重试
+    </a-empty>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -65,6 +85,7 @@ const { loginUser } = useUsersStore();
 const configsStore = useConfigsStore();
 const docsStore = useDocsStore();
 
+const loadErroring = ref(false)
 const loading = useLoading()
 
 const bookSlug = ref(route.params.bookSlug as string)
@@ -216,34 +237,43 @@ const docsService = {
 // 监听路由变化
 watch(route, async () => {
   loading.set(true)
+  loadErroring.value = false
   bookSlug.value = route.params.bookSlug as string;
   docSlug.value = route.params.docSlug as string;
 
-  const refreshCurrentBookResult = await docsStore.refreshCurrentBook(bookSlug.value)
-  if (!refreshCurrentBookResult) {
-    console.warn('刷新当前知识库失败，跳回系统首页')
-    configsStore.docEditMode = false
-    router.push({ path: `/` });
-    return
+  try {
+    const refreshCurrentBookResult = await docsStore.refreshCurrentBook(bookSlug.value)
+    if (!refreshCurrentBookResult) {
+      console.warn('刷新当前知识库失败，跳回系统首页')
+      configsStore.docEditMode = false
+      router.push({ path: `/` });
+      return
+    }
+
+    if (route.path === "/" + bookSlug.value || route.path === "/" + bookSlug.value + "/") {
+      console.warn('知识库根路径，跳转知识库首页')
+      configsStore.docEditMode = false
+      router.push({ path: `/${bookSlug.value}/home` });
+      return
+    }
+
+    const refreshCurrentDocResult = await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value)
+    if (!refreshCurrentDocResult) {
+      console.warn('刷新当前文档失败，跳回系统首页')
+      configsStore.docEditMode = false
+      router.push({ path: `/` });
+      return
+    }
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      loadErroring.value = true
+      loading.set(false)
+    }
+
+    console.error(error)
   }
 
   const book = docsStore.book as Book
-
-  if (route.path === "/" + bookSlug.value || route.path === "/" + bookSlug.value + "/") {
-    console.warn('知识库根路径，跳转知识库首页')
-    configsStore.docEditMode = false
-    router.push({ path: `/${bookSlug.value}/home` });
-    return
-  }
-
-  const refreshCurrentDocResult = await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value)
-  if (!refreshCurrentDocResult) {
-    console.warn('刷新当前文档失败，跳回系统首页')
-    configsStore.docEditMode = false
-    router.push({ path: `/` });
-    return
-  }
-
   const doc = docsStore.doc as Doc
 
   // 判断当前路由是否存在，不存在就跳回首页

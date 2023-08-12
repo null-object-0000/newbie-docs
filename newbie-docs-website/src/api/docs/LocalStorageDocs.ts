@@ -99,7 +99,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         if (!doc.id || doc.id <= 0) {
             doc.id = Math.ceil(Math.random() * 1000000000)
         }
-        if (doc.sort <= 0) {
+        if (doc.sort < 0) {
             const totalDocCount = await this.getMaxSort(space, doc.parentId) as number
             doc.sort = totalDocCount + 1
         }

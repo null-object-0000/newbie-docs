@@ -101,7 +101,7 @@ public class DocService {
         doc.setUpdateTime(LocalDateTime.now());
 
         doc.setWordsCount(this.getWordsCount(doc));
-        doc.setSort(doc.getSort() == null || doc.getSort() <= 0 ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentId()) + 1 : doc.getSort());
+        doc.setSort(doc.getSort() == null || doc.getSort() < 0 ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentId()) + 1 : doc.getSort());
 
         if (doc.getId() != null && doc.getId() > 0) {
             boolean updateDocResult = docDao.update(doc);

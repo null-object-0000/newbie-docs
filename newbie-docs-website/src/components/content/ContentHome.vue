@@ -21,10 +21,12 @@
                         </a-input>
                     </div>
 
-
-                    <a-dropdown @select="onSpaceSetting" position="br" :popup-max-height="false">
-                        <a-button class="docs-content-home__more-actions"
-                            style="line-height: 16px; padding: 0; float: right;">
+                    <a-button :loading="saveHomeLoading.get()" v-if="editHome"
+                        class="docs-content-home__actions docs-content-home__edit-home-save-actions" @click="saveHome">
+                        更新
+                    </a-button>
+                    <a-dropdown v-else @select="onSpaceSetting" position="br" :popup-max-height="false">
+                        <a-button class="docs-content-home__actions docs-content-home__more-actions">
                             <template #icon>
                                 <icon-more />
                             </template>
@@ -35,7 +37,7 @@
                                 <template #icon><icon-loop /></template>
                                 重命名
                             </a-doption>
-                            <a-doption value="edit" disabled>
+                            <a-doption value="editHome">
                                 <template #icon><icon-edit /></template>
                                 编辑首页
                             </a-doption>
@@ -64,7 +66,18 @@
                     </div>
                 </div>
 
-                <div v-if="book.docsCount <= 0" class="docs-content-home__default_content">
+                <div v-if="home && (homeDocContent.length > 0 || editHome)" class="home-doc-content">
+                    <div v-if="editHome" style="border: 1px solid #ccc;">
+                        <Toolbar style="border-bottom: 1px solid #ccc" :editor="editorRef" :defaultConfig="toolbarConfig"
+                            mode="default" />
+                        <Editor style="height: 188px; overflow-y: hidden;" v-model="home.content"
+                            :defaultConfig="editorConfig" mode="default" @onCreated="handleCreated" />
+                    </div>
+                    <div v-else v-html="home.content">
+
+                    </div>
+                </div>
+                <div v-else-if="book.docsCount <= 0" class="docs-content-home__default_content">
                     <p> 👋
                         <text style="font-weight: bold; display: inline-block;">
                             欢迎来到知识库
@@ -76,14 +89,15 @@
                         </text>
                     </p>
                 </div>
-                <div v-else style="margin-top: 52px;">
+
+                <div v-if="book.docsCount > 0" style="margin-top: 52px;">
                     <a-tree ref="homeTreeRef" block-node default-expand-all class="docs-content-home__tree"
                         v-if="sidebarData.dir" :data="sidebarData.dir"
                         @select="(selectedKeys, { node }) => jump2Doc(node?.key, false)">
                         <template #title="node">
                             <div class="content">
                                 <span class="title">{{ node?.title }}</span>
-                                <span class="line"></span>
+                                <span class="dashed-line"></span>
                                 <span class="time">{{ node.time }}</span>
                             </div>
                         </template>
@@ -103,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, ref, reactive, nextTick, onBeforeMount } from "vue";
+import { onBeforeUnmount, shallowRef, onMounted, ref, reactive, nextTick, onBeforeMount } from "vue";
 import { useConfigsStore } from "@/stores/config";
 import PermissionModal from "@/components/modals/PermissionModal.vue";
 import { Message, Modal, TreeInstance, TreeNodeData } from "@arco-design/web-vue";
@@ -115,6 +129,10 @@ import { useLoading } from '@/hooks';
 import BookSettingsModal from "../modals/BookSettingsModal.vue";
 import { useDateFormat } from "@vueuse/core";
 import { useDocsEventBus } from "@/events/docs";
+// @ts-ignore
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import { computed } from "vue";
+import { AxiosError } from "axios";
 
 const route = useRoute()
 const router = useRouter()
@@ -131,9 +149,26 @@ const homeTreeRef = ref<TreeInstance | null>(null)
 const loading = useLoading()
 loading.set(true)
 
+const saveHomeLoading = useLoading()
+
 const bookSlug = route.params.bookSlug as string
 
 const book = ref<Book>()
+const home = ref<Doc>()
+
+const homeDocContent = computed(() => {
+    if (home.value) {
+        if (home.value.content === '<p></p>' || home.value.content === '<p><br></p>') {
+            return ''
+        } else {
+            return home.value.content
+        }
+    } else {
+        return ''
+    }
+})
+
+const editHome = ref(false)
 
 const permissionModal = reactive({
     visible: false,
@@ -164,7 +199,10 @@ const onSpaceSetting = async (value: string | number | Record<string, any> | und
         editMode.value = true
         await nextTick()
         renameInputRef.value?.focus()
-    } else if (value === 'delete') {
+    } else if (value === 'editHome') {
+        editHome.value = true
+    }
+    else if (value === 'delete') {
         const bookId = book.value.id as number
         Modal.warning({
             title: `确认框`,
@@ -213,7 +251,50 @@ const bookSaved = async (result: boolean) => {
     }
 }
 
-// 以下是索引内容相关逻辑
+// 以下是编辑首页相关逻辑 ---------------------------------------------------------------
+
+// 编辑器实例，必须用 shallowRef
+const editorRef = shallowRef()
+
+const toolbarConfig = {}
+const editorConfig = { placeholder: '请输入内容...' }
+
+// 组件销毁时，也及时销毁编辑器
+onBeforeUnmount(() => {
+    const editor = editorRef.value
+    if (editor == null) return
+    editor.destroy()
+})
+
+const handleCreated = (editor: any) => {
+    editorRef.value = editor // 记录 editor 实例，重要！
+}
+
+const saveHome = async (event: Event) => {
+    if (!home.value) {
+        return
+    }
+
+    saveHomeLoading.set(true)
+    try {
+        home.value.editor = 1
+        home.value.sort = 0
+        const result = await docsStore.docsApi.put(bookSlug, home.value, true)
+        if (result) {
+            editHome.value = false
+        }
+    } catch (error) {
+        if (error instanceof AxiosError) {
+            Message.error(error.message)
+        }
+
+        console.error(error)
+    } finally {
+        saveHomeLoading.set(false)
+    }
+}
+
+// 以下是索引内容相关逻辑 ---------------------------------------------------------------
 const sidebarData = reactive({
     rawDir: [],
     fullDir: [],
@@ -282,7 +363,7 @@ const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {
 onBeforeMount(async () => {
     try {
         book.value = await booksApi.get(bookSlug) as Book
-
+        home.value = await docsStore.docsApi.get(bookSlug, 'home') as Doc
         updateDirData(docsStore.dir)
     } finally {
         loading.set(false)
@@ -345,13 +426,10 @@ body[arco-theme='dark'] .docs-content-home__body {
     margin-left: 18px;
 }
 
-.docs-content-home__more-actions {
-    border: 1px solid var(--color-border-1);
+.docs-content-home__actions {
     border-radius: 6px;
-    color: var(--color-text-1);
     text-align: center;
     padding: 7px;
-    min-width: 32px;
     height: 32px;
     display: flex;
     align-items: center;
@@ -360,11 +438,30 @@ body[arco-theme='dark'] .docs-content-home__body {
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
-    background: var(--color-bg-1);
 
     width: 32px;
 
     margin: 0;
+
+    line-height: 16px;
+    padding: 0;
+    float: right;
+}
+
+.docs-content-home__actions.docs-content-home__more-actions {
+    border: 1px solid var(--color-border-1);
+    color: var(--color-text-1);
+    background: var(--color-bg-1);
+}
+
+.docs-content-home__actions.docs-content-home__more-actions:hover {
+    background: var(--color-fill-2);
+}
+
+.docs-content-home__actions.docs-content-home__edit-home-save-actions {
+    width: 72px;
+    background: #00b96b;
+    color: #FFFFFF
 }
 
 .docs-content-home__statistics {
@@ -447,7 +544,7 @@ body[arco-theme='dark'] .docs-content-home__body {
     white-space: nowrap;
 }
 
-.docs-content-home__tree .arco-tree-node .content .line {
+.docs-content-home__tree .arco-tree-node .content .dashed-line {
     flex: 1;
     margin: 0 16px;
     border-top: 1px dashed #D8DAD9;
@@ -456,5 +553,11 @@ body[arco-theme='dark'] .docs-content-home__body {
 .docs-content-home__tree .arco-tree-node .content .time {
     color: #8A8F8D;
     font-size: 14px;
+}
+
+.home-doc-content {
+    width: calc(100% - 45px);
+    margin: 0 auto;
+    margin-top: 60px;
 }
 </style>
