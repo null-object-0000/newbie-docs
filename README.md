@@ -11,7 +11,7 @@
   - [ ] Markdown 编辑器
 - [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
 - [x] 实现基于 `LocalStorage` 的客户端存储
-- [ ] 实现基于 `Java` 的 RESTful API 用以服务端存储
+- [ ] 实现基于 `Java` 的 RESTful API 用以服务端 `Amazon S3` 存储
 - [ ] 支持知识库、文档的权限管理
 - [x] 支持通过 Docker 部署
   - [x] newbie-docs-website
@@ -22,7 +22,7 @@
 
 ### v2.0.0
 - [ ] 基于 `YJS` 实现文档协同编辑
-- [ ] 实现多语言的 RESTful API 用以服务端存储
+- [ ] 实现多语言的 RESTful API 用以服务端 `Amazon S3` 存储
   - [ ] 基于 `Node.js` 的 RESTful API
 
 ## 开发部署
@@ -81,10 +81,28 @@ docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
 
 ## 技术栈
 
+### website
 - [Vue 3.0](https://cn.vuejs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://cn.vitejs.dev/)
+- [Pinia](https://pinia.vuejs.org/zh/)
+- [Vue Router](https://next.router.vuejs.org/zh/)
+---
+- [axios](https://axios-http.com/zh/)
+- [VueUse](https://vueuse.org/guide/)
+---
+- [Arco Design](https://arco.design/)
 - [Editor.js](https://github.com/codex-team/editor.js)
 - [wangEditor 5](https://www.wangeditor.com/)
-- [VueUse](https://vueuse.org/guide/)
-- [Arco Design](https://arco.design/)
 - [YJS](https://github.com/yjs/yjs)
-- [Amazon S3]()
+
+### server
+- [Spring Boot](https://spring.io/projects/spring-boot)
+- [Lombok](https://projectlombok.org/)
+---
+- [MyBatis](https://mybatis.org/mybatis-3/zh/index.html)
+- [HuTool](https://hutool.cn/)
+- [FastJson 2.0](https://alibaba.github.io/fastjson2/)
+---
+- [Amazon S3](https://aws.amazon.com/cn/s3/)
+- [MySQL](https://www.mysql.com/cn/)
