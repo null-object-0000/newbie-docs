@@ -30,6 +30,10 @@
 ### 本地开发
 
 #### website
+
+- node 20
+- pnpm 8.6
+
 ``` bash
 # 环境配置
 copy .\newbie-docs-website\.env .\newbie-docs-website\.env.local
@@ -70,8 +74,20 @@ java -jar target/newbie-docs-server-java.jar -Dspring.profiles.active=local
 
 ### Docker 部署
 
+#### java-server + website
+
 ``` bash
 # 构建镜像
+docker build -t newbie-docs:latest .
+# 运行容器
+docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
+```
+
+#### nginx + website
+
+``` bash
+# 构建镜像
+cd .\newbie-docs-website\
 docker build -t newbie-docs:latest .
 # 运行容器
 docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
