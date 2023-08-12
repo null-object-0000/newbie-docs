@@ -9,8 +9,8 @@
   - [ ] 富文本编辑器，参考 [腾讯文档](https://docs.qq.com/)
   - [ ] 块式编辑器，参考 [飞书](https://www.feishu.cn/product/docs)
   - [ ] Markdown 编辑器
-- [ ] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
-- [ ] 实现基于 `LocalStorage` 的客户端存储
+- [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
+- [x] 实现基于 `LocalStorage` 的客户端存储
 - [ ] 实现基于 `Java` 的 RESTful API 用以服务端存储
 - [ ] 支持知识库、文档的权限管理
 - [x] 支持通过 Docker 部署
