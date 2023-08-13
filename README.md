@@ -1,5 +1,13 @@
 # newbie-docs
 
+### 主要功能
+
+- 像书一样的知识库
+- 多样的在线编辑器
+- 便捷的私有化部署
+
+详细 [业务逻辑](./BusinessLogic.md) 介绍
+
 ## 开发计划
 
 ### v1.0.0
@@ -16,7 +24,7 @@
 - [x] 支持通过 Docker 部署
   - [x] newbie-docs-website
   - [x] newbie-docs-server-java
-
+- [ ] 支持基于 OAuth2 的第三方登录
 
 > `LocalStorage` 存储实现不支持权限管理能力，此时默认所有人都拥有所有知识库、文档的管理员权限
 
@@ -97,8 +105,6 @@ docker build -t newbie-docs:latest .
 # 运行容器
 docker run -d -p 8080:80 --name newbie-docs newbie-docs:latest
 ```
-
-### [业务逻辑](./BusinessLogic.md)
 
 ## 技术栈
 
