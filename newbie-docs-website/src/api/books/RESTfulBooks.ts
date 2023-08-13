@@ -48,7 +48,7 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
         if (response && response.code === '0000') {
             return response.result as boolean
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -88,7 +88,7 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
         if (restful) {
             return restful
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -107,7 +107,7 @@ export class UseRESTfulBooksApi implements UseBooksApiFunction {
         if (restful) {
             return restful
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 }

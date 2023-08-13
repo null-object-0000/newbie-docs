@@ -1,9 +1,12 @@
 package site.snewbie.docs.server.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.io.resource.ResourceUtil;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +16,8 @@ import site.snewbie.docs.server.enums.PermissionDataType;
 import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.service.PermissionService;
+
+import java.util.Arrays;
 
 @RestController
 public abstract class BaseController {
@@ -31,6 +36,20 @@ public abstract class BaseController {
         mock.setAvatar("https://avatars.githubusercontent.com/u/10999999?v=4");
         mock.setDepartment("基础研发部");
         mock.setIsAdminer(true);
+
+        if (ArrayUtil.isNotEmpty(this.httpRequest.getCookies())){
+            String cookieMockUser = Arrays.stream(this.httpRequest.getCookies())
+                    .filter(cookie -> "mockUser".equals(cookie.getName()))
+                    .findFirst().map(Cookie::getValue).orElse(null);
+
+            if (StrUtil.isNotBlank(cookieMockUser)) {
+                // 中文 + 纯数字，提取出数字
+                String id = cookieMockUser.replaceAll("[^0-9]", "");
+                mock.setId(id);
+                mock.setUsername(StrUtil.removeSuffix(cookieMockUser, id));
+            }
+        }
+
         return mock;
     }
 

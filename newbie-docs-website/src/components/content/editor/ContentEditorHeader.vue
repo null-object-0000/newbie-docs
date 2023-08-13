@@ -34,7 +34,9 @@
 <script setup lang="ts">
 import { ref, watch, onBeforeMount, onBeforeUnmount } from "vue";
 import { useMagicKeys, whenever } from '@vueuse/core'
-import { useDocsStore } from "@/stores/doc";;
+import { useDocsStore } from "@/stores/doc"; import { AxiosError } from "axios";
+import { Message } from "@arco-design/web-vue";
+;
 
 const docsStore = useDocsStore();
 
@@ -68,12 +70,29 @@ watch(() => docsStore.doc.id, () => {
     aboveSlug.value = null
 }, { immediate: true });
 
+const interval = ref(null as number | null)
 onBeforeMount(() => {
     docId.value = docsStore.doc.id
+
+    // 每隔 5s 主动刷新 lock
+    interval.value = setInterval(() => {
+        try {
+            docsStore.docsApi.tryLock(docsStore.bookSlug, docId.value)
+        } catch (error) {
+            if (error instanceof AxiosError) {
+                Message.error(error.message)
+            }
+
+            console.error(error)
+        }
+    }, 5000)
 })
 
 onBeforeUnmount(() => {
-    // @ts-ignore
+    if (interval.value) {
+        clearInterval(interval.value)
+    }
+
     docsStore.docsApi.tryUnlock(docsStore.bookSlug, docId.value)
 
     docId.value = -1

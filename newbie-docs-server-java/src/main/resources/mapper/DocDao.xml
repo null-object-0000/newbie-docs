@@ -113,7 +113,7 @@
     <update id="forceUpdateEditingUser">
         update newbie_docs
         set editing_user = #{editingUser,jdbcType=VARCHAR}, update_time = now()
-        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0 and (now() - update_time) > #{timeout,jdbcType=INTEGER}
     </update>
 
     <select id="exists" resultType="boolean">

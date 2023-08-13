@@ -1,5 +1,6 @@
 package site.snewbie.docs.server.model;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,7 +32,11 @@ public class Results<R> {
     }
 
     public static <R> Results<R> failed(ResultsException e) {
-        return Results.build(e.getResultsStatus());
+        if (StrUtil.isBlank(e.getMessage())){
+            return Results.build(e.getResultsStatus());
+        }else{
+            return new Results<>(e.getCode(), e.getMessage());
+        }
     }
 
     public static <R> Results<R> build(ResultsStatusEnum resultsStatus) {

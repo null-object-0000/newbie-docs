@@ -10,6 +10,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.annotation.Resource;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.snewbie.docs.server.dao.BookDao;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional(rollbackFor = Exception.class)
 public class DocService {
@@ -150,38 +152,6 @@ public class DocService {
     /**
      * TODO: 性能优化
      */
-    public boolean splice(Long id, Integer index, User loginUser) {
-        Doc doc = docDao.selectOneWithoutContent(id);
-        if (doc == null) {
-            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
-        }
-
-        List<Doc> parentChild = docDao.findChildren(doc.getParentId());
-        if (CollUtil.isEmpty(parentChild)) {
-            return false;
-        }
-
-        parentChild = parentChild.stream().filter(d -> ObjectUtil.notEqual(d.getId(), id)).collect(Collectors.toList());
-
-        parentChild = parentChild.stream().sorted(Comparator.comparing(Doc::getSort)).collect(Collectors.toList());
-
-        parentChild.add(index, doc);
-
-        for (int i = 0; i < parentChild.size(); i++) {
-            Doc d = new Doc();
-            d.setId(parentChild.get(i).getId());
-            d.setSort(i);
-            d.setUpdater(loginUser.getUsername() + loginUser.getId());
-            d.setUpdateTime(LocalDateTime.now());
-            docDao.update(d);
-        }
-
-        return true;
-    }
-
-    /**
-     * TODO: 性能优化
-     */
     public boolean move(Integer dropPosition, Long dragDocId, Long dropDocId, User loginUser) {
         Doc dragDoc = docDao.selectOneWithoutContent(dragDocId);
         Doc dropDoc = docDao.selectOneWithoutContent(dropDocId);
@@ -277,33 +247,39 @@ public class DocService {
     public boolean tryLock(Long id, String editingUser) {
         boolean updateEditingUserResult = docDao.updateEditingUser(id, editingUser);
         if (updateEditingUserResult) {
+            log.info("占有锁成功 {} {}", id, editingUser);
             return true;
         }
 
         // 占有失败，说明已被其他用户占有，看一下是否占有超时，是的话就释放锁
         Doc doc = docDao.selectOneWithoutContent(id);
         if (doc == null) {
+            log.warn("占有锁失败，文档不存在 {} {}", id, editingUser);
             return false;
         }
 
         if (doc.getEditingUser() == null || doc.getEditingUser().isEmpty()) {
+            log.warn("占有锁失败，文档已被释放，再次尝试站有锁 {} {}", id, editingUser);
             return docDao.updateEditingUser(id, editingUser);
         }
 
         LocalDateTime updateTime = doc.getUpdateTime();
         LocalDateTime now = LocalDateTime.now();
-        // 超过 5 分钟就释放锁
-        if (updateTime == null || updateTime.plusMinutes(5).isBefore(now)) {
-            return docDao.forceUpdateEditingUser(id, editingUser);
+        // 超过 30s 就释放锁
+        int timeout = 30;
+        if (updateTime.plusSeconds(timeout).isBefore(now) && docDao.forceUpdateEditingUser(id, editingUser, timeout)) {
+            log.info("占有锁失败，文档已被占有超过 {}s，释放锁 {} {}", timeout, id, editingUser);
+            return true;
         } else {
-            return false;
+            log.warn("占有锁失败，文档已被占有 {} {}", id, editingUser);
+            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_LOCKED, String.format("文档已被 %s 占有", doc.getEditingUser()));
         }
     }
 
     public boolean tryUnlock(Long id, String editingUser) {
         // 先要判断是否是自己占有的锁
         if (this.tryLock(id, editingUser)) {
-            return docDao.forceUpdateEditingUser(id, StrUtil.EMPTY);
+            return docDao.forceUpdateEditingUser(id, StrUtil.EMPTY, Integer.MAX_VALUE);
         } else {
             return false;
         }

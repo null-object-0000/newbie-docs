@@ -64,6 +64,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                             } catch (error) {
                                 if (error instanceof AxiosError) {
                                     Message.error(error.message)
+                                    lastRemotePutTimes[key] = Date.now()
                                 }
 
                                 console.log(error)
@@ -215,7 +216,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         if (response && response.code === '0000') {
             return response.result as boolean
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -238,7 +239,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             const localStorage = await this.localStorageDocsApi.remove(space, id)
             return restful && localStorage
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -263,7 +264,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             const localStorage = await this.localStorageDocsApi.move(space, dropPosition, dragDocId, dropDocId)
             return restful && localStorage
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -287,7 +288,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             const localStorage = await this.localStorageDocsApi.changeSlug(space, oldSlug, newSlug)
             return restful && localStorage
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -311,7 +312,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
             const localStorage = await this.localStorageDocsApi.changeTitle(space, id, newTitle)
             return restful && localStorage
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -333,7 +334,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         if (restful) {
             return restful
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 
@@ -355,7 +356,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         if (restful) {
             return restful
         } else {
-            throw new Error(`[${response.code}] ${response.message}`)
+            throw new AxiosError(response.message, response.code)
         }
     }
 

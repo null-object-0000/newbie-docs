@@ -136,7 +136,7 @@ public class DocController extends BaseAssetController {
 
     @UserOauth
     @PostMapping(value = {"/tryLock", "/tryUnlock"})
-    public Results<Boolean> tryLock(@RequestBody Doc params) {
+    public Results<Void> tryLock(@RequestBody Doc params) {
         if (params.getId() == null || params.getId() <= 0) {
             return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
@@ -154,10 +154,10 @@ public class DocController extends BaseAssetController {
         // 判断当前是 lock 还是 unlock
         if (super.httpRequest.getRequestURI().contains("tryLock")) {
             boolean result = docService.tryLock(params.getId(), loginUser.getUsername() + loginUser.getId());
-            return Results.success(result);
+            return result ? Results.success() : Results.failed(ResultsStatusEnum.FAILED_CLIENT_LOCKED);
         } else if (super.httpRequest.getRequestURI().contains("tryUnlock")) {
             boolean result = docService.tryUnlock(params.getId(), loginUser.getUsername() + loginUser.getId());
-            return Results.success(result);
+            return result ? Results.success() : Results.failed(ResultsStatusEnum.FAILED_CLIENT_LOCKED);
         }else {
             return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }

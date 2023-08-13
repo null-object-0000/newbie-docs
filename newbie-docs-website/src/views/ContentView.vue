@@ -238,14 +238,12 @@ const docsService = {
 
     try {
       // 先尝试获取编辑锁
-      // @ts-ignore
       const tryLock = await docsStore.docsApi.tryLock(bookSlug.value, docsStore.doc.id)
       if (!tryLock) {
         throw new Error('获取编辑锁失败')
       }
 
       await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value, true)
-      loading.set(false)
 
       configsStore.docEditMode = true;
     } catch (error) {
@@ -254,6 +252,8 @@ const docsService = {
       }
 
       console.error(error)
+    } finally {
+      loading.set(false)
     }
   }
 }
