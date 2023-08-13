@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.emoji.EmojiUtil;
 import cn.hutool.http.HtmlUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -86,15 +87,6 @@ public class DocService {
         return docDao.exists(bookSlug, docSlug);
     }
 
-    public Integer findIndex(Long id) {
-        Doc doc = docDao.selectOneWithoutContent(id);
-        if (doc == null) {
-            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
-        }
-
-        return docDao.findIndex(doc.getParentId(), id);
-    }
-
     public Long put(Doc doc, User loginUser) {
         Book book = bookDao.selectOne(doc.getBookId(), doc.getBookSlug());
         if (book == null) {
@@ -113,6 +105,7 @@ public class DocService {
 
         doc.setWordsCount(this.getWordsCount(doc));
         doc.setSort(doc.getSort() == null || doc.getSort() < 0 ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentId()) + 1 : doc.getSort());
+        doc.setContent(EmojiUtil.toAlias(doc.getContent()));
 
         if (doc.getId() != null && doc.getId() > 0) {
             boolean updateDocResult = docDao.update(doc);
@@ -310,6 +303,10 @@ public class DocService {
             docVO.setPath(String.format("/%s", doc.getBookSlug()));
         } else {
             docVO.setPath(String.format("/%s/%s", doc.getBookSlug(), doc.getSlug()));
+        }
+
+        if (StrUtil.isNotBlank(doc.getContent())){
+            docVO.setContent(EmojiUtil.toUnicode(doc.getContent()));
         }
 
         return docVO;

@@ -12,8 +12,10 @@ export const useLoading = ({ minInterval, delayTime } = { minInterval: 550, dela
 
     const getStatus = (real?: boolean) => real ? realStatus.value : status.value
 
-    const setStatus = async (value: boolean) => {
+    const setStatus = async (value: boolean, options?: { delayTime?: null | number }) => {
         realStatus.value = value
+
+        delayTime = options?.delayTime ?? delayTime
 
         if (value === true) {
             if (delayTime > 0) {

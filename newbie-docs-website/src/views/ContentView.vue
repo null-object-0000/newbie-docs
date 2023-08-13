@@ -302,7 +302,7 @@ watch(route, async () => {
 
 watch(() => configsStore.docEditMode, async () => {
   if (configsStore.docEditMode === true) {
-    loading.set(true)
+    loading.set(true, { delayTime: 0 })
     await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value, true)
     loading.set(false)
   }

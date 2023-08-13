@@ -3,6 +3,7 @@ import { UseDocsApiFunction } from "@/types/api";
 import axiso, { AxiosError } from "axios";
 import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { BaseUseDocsApi } from "./base";
+import { Message } from "@arco-design/web-vue";
 
 const lastLocalPutTimes = {} as Record<string, number>
 const lastRemotePutTimes = {} as Record<string, number>
@@ -53,11 +54,19 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                     if (lastLocalPutTime - lastRemotePutTime > 1500) {
                         const localDoc = await this.localStorageDocsApi.get(bookSlug, docSlug)
                         if (localDoc) {
-                            const result = await this.remotePut(space, localDoc)
-                            if (result) {
-                                lastRemotePutTimes[key] = Date.now()
-                            } else {
-                                console.error(`同步失败：${bookSlug}/${docSlug}`)
+                            try {
+                                const result = await this.remotePut(space, localDoc)
+                                if (result) {
+                                    lastRemotePutTimes[key] = Date.now()
+                                } else {
+                                    console.error(`同步失败：${bookSlug}/${docSlug}`)
+                                }
+                            } catch (error) {
+                                if (error instanceof AxiosError) {
+                                    Message.error(error.message)
+                                }
+
+                                console.log(error)
                             }
                         }
                     }

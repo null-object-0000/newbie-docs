@@ -41,9 +41,6 @@ public class FileController extends BaseController {
         return Results.success(url.toString());
     }
 
-    /**
-     * 上传文件
-     */
     @SneakyThrows
     @PostMapping("/api/files/image/upload")
     public Results<String> uploadImage(@RequestParam(value = "file", required = true) MultipartFile uploadFile) {
@@ -53,5 +50,16 @@ public class FileController extends BaseController {
         String fileName = md5 + "." + FileUtil.extName(uploadFile.getOriginalFilename());
 
         return this.upload(uploadFile, "images/" + fileName);
+    }
+
+    @SneakyThrows
+    @PostMapping("/api/files/video/upload")
+    public Results<String> uploadVideo(@RequestParam(value = "file", required = true) MultipartFile uploadFile) {
+        String id = IdUtil.fastSimpleUUID();
+        String md5 = DigestUtil.md5Hex(uploadFile.getInputStream());
+
+        String fileName = md5 + "." + FileUtil.extName(uploadFile.getOriginalFilename());
+
+        return this.upload(uploadFile, "videos/" + fileName);
     }
 }

@@ -18,7 +18,6 @@
 import { nextTick, reactive, watch } from 'vue';
 import { useConfigsStore } from '@/stores/config';
 import { useDocsStore } from '@/stores/doc';
-import { onBeforeMount } from 'vue';
 
 const configsStore = useConfigsStore();
 const docsStore = useDocsStore();
@@ -85,16 +84,8 @@ const refreshTags = () => {
     }
 }
 
-onBeforeMount(() => {
-    refreshTags()
-})
-
 watch(() => {
     return docsStore.doc.content
-}, () => { nextTick(refreshTags) }, { immediate: true });
-
-watch(() => {
-    return configsStore.docEditMode
 }, () => { nextTick(refreshTags) }, { immediate: true });
 </script>
 

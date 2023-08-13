@@ -9,7 +9,7 @@
                     <div v-else style="background-color: pink;">eb-{{ block.type }}: {{ block.data }}</div>
                 </div>
             </template>
-            <div v-else v-html="docsStore.doc.content"></div>
+            <div class="page__content-word-preview" v-else v-html="docsStore.doc.content"></div>
         </section>
 
         <footer class="page__footer">
@@ -27,9 +27,12 @@
 <script setup lang="ts">
 import ContentPreviewHeader from './ContentPreviewHeader.vue';
 import { useDocsStore } from '@/stores/doc';
-import { resolveComponent, computed } from 'vue';
+import { resolveComponent, computed, onMounted } from 'vue';
 import { OutputBlockData } from '@editorjs/editorjs';
 import { useDateFormat } from '@vueuse/core';
+// @ts-ignore
+import Prism from 'prismjs';
+import 'prismjs/themes/prism.css';
 
 const docsStore = useDocsStore();
 
@@ -49,26 +52,67 @@ const isComponentExists = (name: string, maybeSelfReference?: boolean) => {
     const component = resolveComponent(name, maybeSelfReference);
     return component !== undefined && typeof component !== 'string';
 };
+
+onMounted(() => {
+    Prism.highlightAll();
+});
 </script>
 
-<style scoped>
-.page__header-time {
+<style>
+.page .page__header-time {
     width: 180px;
 }
 
-.page__footer {
+.page .page__footer {
     padding-top: 62px;
 }
 
-.page__footer .updater,
-.page__footer .update-time {
+.page .page__footer .updater,
+.page .page__footer .update-time {
     color: var(--color-text-3);
     font-size: 12px;
     padding-right: 10px;
 }
 
-.page__footer .updater svg,
-.page__footer .update-time svg {
+.page .page__footer .updater svg,
+.page .page__footer .update-time svg {
     margin-right: 10px;
+}
+
+.page__content-word-preview p,
+.page__content-word-preview li {
+    white-space: pre-wrap;
+    /* 保留空格 */
+}
+
+.page__content-word-preview blockquote {
+    border-left: 8px solid #d0e5f2;
+    padding: 10px 10px;
+    margin: 10px 0;
+    background-color: #f1f1f1;
+}
+
+.page__content-word-preview table {
+    border-collapse: collapse;
+}
+
+.page__content-word-preview td,
+.page__content-word-preview th {
+    border: 1px solid #ccc;
+    min-width: 50px;
+    height: 20px;
+}
+
+.page__content-word-preview th {
+    background-color: #f1f1f1;
+}
+
+.page__content-word-preview ul,
+.page__content-word-preview ol {
+    padding-left: 20px;
+}
+
+.page__content-word-preview input[type="checkbox"] {
+    margin-right: 5px;
 }
 </style>

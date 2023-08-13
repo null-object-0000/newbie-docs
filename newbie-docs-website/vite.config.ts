@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig, mergeConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import prismjs from 'vite-plugin-prismjs';
 
 // https://vitejs.dev/config/
 export const baseConfig = defineConfig({
@@ -10,7 +11,12 @@ export const baseConfig = defineConfig({
   },
   plugins: [
     vue(),
-
+    prismjs({
+      languages: 'all',
+      plugins: ["line-numbers"], // 配置显示行号插件
+      theme: "solarizedlight", // 主题名称
+      css: true, // 是否需要引入css
+    })
   ],
   resolve: {
     alias: {

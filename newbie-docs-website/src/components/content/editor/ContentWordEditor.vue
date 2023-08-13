@@ -32,6 +32,7 @@ import { ref, shallowRef, watch } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import ContentEditorHeader from "./ContentEditorHeader.vue";
 import { useDocsStore } from '@/stores/doc';
+import { Message } from '@arco-design/web-vue';
 
 const docsStore = useDocsStore();
 
@@ -45,6 +46,8 @@ const title = ref('')
 const docTitle = ref('')
 const valueHtml = ref('')
 
+type InsertFnType = (url: string, alt?: string, href?: string, poster?: string) => void
+
 const toolbarConfig = {
     excludeKeys: [
         "fullScreen"
@@ -53,6 +56,35 @@ const toolbarConfig = {
 const editorConfig = {
     placeholder: '请输入正文',
     scroll: false, // 禁止编辑器滚动
+
+    MENU_CONF: {
+        uploadImage: {
+            fieldName: 'file',
+            server: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_IMAGE_API_URL,
+            customInsert(res: any, insertFn: InsertFnType) {
+                console.log('customInsert', res)
+
+                if (res.code === '0000') {
+                    insertFn(res.result, '', res.result)
+                } else {
+                    Message.error(res.message)
+                }
+            }
+        },
+        uploadVideo: {
+            fieldName: 'file',
+            server: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_VIDEO_API_URL,
+            customInsert(res: any, insertFn: InsertFnType) {
+                console.log('customInsert', res)
+
+                if (res.code === '0000') {
+                    insertFn(res.result, '')
+                } else {
+                    Message.error(res.message)
+                }
+            }
+        }
+    }
 }
 
 const handleCreated = (editor: any) => {
@@ -60,6 +92,7 @@ const handleCreated = (editor: any) => {
 }
 
 const onChange = (event: Event, showSuccessTips?: boolean) => {
+    console.log('onChange', event)
     emit('onChange', event, { title: title.value, content: editorRef.value.getHtml(), showSuccessTips })
 }
 

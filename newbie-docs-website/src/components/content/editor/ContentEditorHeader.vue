@@ -56,10 +56,6 @@ whenever(ctrl_s, () => {
     onChange(new Event('ctrl_s'))
 })
 
-onUnmounted(() => {
-    onChange(new Event('onUnmounted'))
-})
-
 const onChange = (event: Event) => {
     emit('onChange', event);
 };
