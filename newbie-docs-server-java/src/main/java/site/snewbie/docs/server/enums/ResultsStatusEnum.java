@@ -16,6 +16,8 @@ public enum ResultsStatusEnum {
     FAILED_CLIENT_USER_NOT_LOGIN("4301", "用户未登录"),
     FAILED_CLIENT_USER_AUTH_DENIED("4302", "用户权限不足"),
 
+    FAILED_CLIENT_LOCKED("4401", "数据已被锁定"),
+
     FAILED_SERVER_ERROR("5000", "服务器错误"),
 
     FAILED("9999", "失败");

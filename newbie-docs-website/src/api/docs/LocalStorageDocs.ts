@@ -89,7 +89,7 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         let docs = await this.__get(space) as Doc[]
 
         // 如果指定了 sort 就用指定的，否则默认插入到当前父级 child 中的最后一位
-        if (!doc.sort || doc.sort < 0) {
+        if (doc.sort < 0) {
             const children = docs.filter(item => item.parentId === doc.parentId) as Doc[]
             if (children && children.length > 0) {
                 doc.sort = children.length || 0
@@ -98,10 +98,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         if (!doc.id || doc.id <= 0) {
             doc.id = Math.ceil(Math.random() * 1000000000)
-        }
-        if (doc.sort < 0) {
-            const totalDocCount = await this.getMaxSort(space, doc.parentId) as number
-            doc.sort = totalDocCount + 1
         }
 
         // TODO: 这里应该增加一个是否是当前 doc
@@ -227,17 +223,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         } else {
             return false
         }
-    }
-
-    async getMaxSort(space: string, parentId: number): Promise<number> {
-        let docs = await this.__get(space) as Doc[]
-        let child = await super.findChild(docs, parentId) as Doc[]
-        if (!child || child.length <= 0) {
-            return 0
-        }
-
-        child = child.sort((a, b) => a.sort - b.sort)
-        return child[child.length - 1].sort
     }
 
     async getTotalDocCount(space: string): Promise<number> {

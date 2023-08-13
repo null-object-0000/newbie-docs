@@ -12,6 +12,7 @@
         <result column="content" jdbcType="VARCHAR" property="content"/>
         <result column="words_count" jdbcType="INTEGER" property="wordsCount"/>
         <result column="sort" jdbcType="INTEGER" property="sort"/>
+        <result column="editing_user" jdbcType="VARCHAR" property="editingUser"/>
         <result column="creator" jdbcType="BIGINT" property="creator"/>
         <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
         <result column="updater" jdbcType="BIGINT" property="updater"/>
@@ -20,12 +21,12 @@
 
     <sql id="Base_Column_List_Without_Content">
         id
-        , book_id, parent_id, slug, book_slug, title, editor, words_count, sort, creator, create_time, updater, update_time
+        , book_id, parent_id, slug, book_slug, title, editor, words_count, sort, editing_user, creator, create_time, updater, update_time
     </sql>
 
     <sql id="Base_Column_List_With_Content">
         id
-        , book_id, parent_id, slug, book_slug, title, editor, words_count, content, sort, creator, create_time, updater, update_time
+        , book_id, parent_id, slug, book_slug, title, editor, words_count, content, sort, editing_user, creator, create_time, updater, update_time
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id">
@@ -101,6 +102,18 @@
             update_time = now()
         where id = #{id,jdbcType=BIGINT}
           and is_deleted = 0
+    </update>
+
+    <update id="updateEditingUser">
+        update newbie_docs
+        set editing_user = #{editingUser,jdbcType=VARCHAR}, update_time = now()
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0 and (editing_user = #{editingUser,jdbcType=VARCHAR} or editing_user = '')
+    </update>
+
+    <update id="forceUpdateEditingUser">
+        update newbie_docs
+        set editing_user = #{editingUser,jdbcType=VARCHAR}, update_time = now()
+        where id = #{id,jdbcType=BIGINT} and is_deleted = 0
     </update>
 
     <select id="exists" resultType="boolean">

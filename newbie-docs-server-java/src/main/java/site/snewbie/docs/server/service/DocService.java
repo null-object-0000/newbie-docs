@@ -274,6 +274,41 @@ public class DocService {
         return bookDao.updateDocsAndWordsCount(id, docsCount, wordsCount);
     }
 
+    public boolean tryLock(Long id, String editingUser) {
+        boolean updateEditingUserResult = docDao.updateEditingUser(id, editingUser);
+        if (updateEditingUserResult) {
+            return true;
+        }
+
+        // 占有失败，说明已被其他用户占有，看一下是否占有超时，是的话就释放锁
+        Doc doc = docDao.selectOneWithoutContent(id);
+        if (doc == null) {
+            return false;
+        }
+
+        if (doc.getEditingUser() == null || doc.getEditingUser().isEmpty()) {
+            return docDao.updateEditingUser(id, editingUser);
+        }
+
+        LocalDateTime updateTime = doc.getUpdateTime();
+        LocalDateTime now = LocalDateTime.now();
+        // 超过 5 分钟就释放锁
+        if (updateTime == null || updateTime.plusMinutes(5).isBefore(now)) {
+            return docDao.forceUpdateEditingUser(id, editingUser);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean tryUnlock(Long id, String editingUser) {
+        // 先要判断是否是自己占有的锁
+        if (this.tryLock(id, editingUser)) {
+            return docDao.forceUpdateEditingUser(id, StrUtil.EMPTY);
+        } else {
+            return false;
+        }
+    }
+
     private final static ConcurrentHashMap<Long, ExecutorService> updateDocsAndWordsCountExecutors = new ConcurrentHashMap<>();
 
     public boolean submitUpdateDocsAndWordsCountTask(Long bookId, Long docId) {
@@ -305,7 +340,7 @@ public class DocService {
             docVO.setPath(String.format("/%s/%s", doc.getBookSlug(), doc.getSlug()));
         }
 
-        if (StrUtil.isNotBlank(doc.getContent())){
+        if (StrUtil.isNotBlank(doc.getContent())) {
             docVO.setContent(EmojiUtil.toUnicode(doc.getContent()));
         }
 

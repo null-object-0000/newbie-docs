@@ -27,4 +27,5 @@ public interface BookDao {
     boolean updateWordsCount(@Param("id") Long id, @Param("wordsCount") Long wordsCount);
 
     boolean updateDocsAndWordsCount(@Param("id") Long id, @Param("docsCount") Long docsCount, @Param("wordsCount") Long wordsCount);
+
 }

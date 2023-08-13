@@ -33,7 +33,7 @@
                   </CWordEditor>
                 </template>
                 <template v-else>
-                  <CPreview @onEdit="configsStore.docEditMode = true">
+                  <CPreview @onEdit="docsService.change2Edit">
                   </CPreview>
                 </template>
               </div>
@@ -231,6 +231,30 @@ const docsService = {
     } else {
       Notification.error('文档保存失败')
     }
+  },
+
+  change2Edit: async () => {
+    loading.set(true, { delayTime: 0 })
+
+    try {
+      // 先尝试获取编辑锁
+      // @ts-ignore
+      const tryLock = await docsStore.docsApi.tryLock(bookSlug.value, docsStore.doc.id)
+      if (!tryLock) {
+        throw new Error('获取编辑锁失败')
+      }
+
+      await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value, true)
+      loading.set(false)
+
+      configsStore.docEditMode = true;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        Message.error(error.message)
+      }
+
+      console.error(error)
+    }
   }
 }
 
@@ -278,10 +302,17 @@ watch(route, async () => {
 
   // 判断当前路由是否存在，不存在就跳回首页
   if (doc.slug !== docSlug.value) {
-    console.warn('当前文档不存在，跳转知识库首页')
-    configsStore.docEditMode = false
-    router.push({ path: `/${bookSlug.value}/home` });
-    return
+    if (docSlug.value === 'home') {
+      console.warn('当前知识库不存在，跳转首页')
+      configsStore.docEditMode = false
+      router.push({ path: `/` });
+      return
+    } else {
+      console.warn('当前文档不存在，跳转知识库首页')
+      configsStore.docEditMode = false
+      router.push({ path: `/${bookSlug.value}/home` });
+      return
+    }
   }
 
   configsStore.setHeader('/', book.title);
@@ -299,14 +330,6 @@ watch(route, async () => {
 
   loading.set(false)
 }, { immediate: true });
-
-watch(() => configsStore.docEditMode, async () => {
-  if (configsStore.docEditMode === true) {
-    loading.set(true, { delayTime: 0 })
-    await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value, true)
-    loading.set(false)
-  }
-})
 </script>
 
 <style scoped>

@@ -60,6 +60,7 @@ import { Book } from '@/types/global'
 import { AxiosError } from "axios";
 import { useLoading } from '@/hooks';
 import BookSettingsModal from "@/components/modals/BookSettingsModal.vue";
+import { nextTick } from "vue";
 
 const { loginUser } = useUsersStore();
 const configsStore = useConfigsStore();
@@ -110,6 +111,8 @@ const bookSaved = async (result: boolean) => {
             cover: '',
             description: '',
         } as Book
+
+        await nextTick()
     }
 }
 </script>

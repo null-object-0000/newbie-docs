@@ -190,6 +190,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         const restful = response && response.code === '0000' && response.result > 0
         if (restful) {
             doc = await this.getById(space, response.result, true) as Doc
+            console.log('remotePut', 'doc', doc.slug, doc.sort)
             const localStorage = await this.localStorageDocsApi.put(space, doc)
             return restful && localStorage
         } else {
@@ -309,6 +310,50 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         if (restful) {
             const localStorage = await this.localStorageDocsApi.changeTitle(space, id, newTitle)
             return restful && localStorage
+        } else {
+            throw new Error(`[${response.code}] ${response.message}`)
+        }
+    }
+
+    async tryLock(space: string, id: number): Promise<boolean> {
+        const { data: response } = await axiso({
+            method: 'post',
+            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
+            url: '/docs/tryLock',
+            headers: {
+                'newbie-docs-book-slug': space
+            },
+            data: {
+                space,
+                id
+            }
+        })
+
+        const restful = response && response.code === '0000'
+        if (restful) {
+            return restful
+        } else {
+            throw new Error(`[${response.code}] ${response.message}`)
+        }
+    }
+
+    async tryUnlock(space: string, id: number): Promise<boolean> {
+        const { data: response } = await axiso({
+            method: 'post',
+            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
+            url: '/docs/tryUnlock',
+            headers: {
+                'newbie-docs-book-slug': space
+            },
+            data: {
+                space,
+                id
+            }
+        })
+
+        const restful = response && response.code === '0000'
+        if (restful) {
+            return restful
         } else {
             throw new Error(`[${response.code}] ${response.message}`)
         }

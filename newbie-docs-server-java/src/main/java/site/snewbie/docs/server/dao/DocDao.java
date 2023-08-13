@@ -38,4 +38,8 @@ public interface DocDao {
     Integer findIndex(@Param("parentId") Long parentId, @Param("id") Long id);
 
     List<Doc> findChildren(@Param("parentId") Long parentId);
+
+    boolean updateEditingUser(@Param("id") Long id, @Param("editingUser") String editingUser);
+
+    boolean forceUpdateEditingUser(@Param("id") Long id, @Param("editingUser") String editingUser);
 }

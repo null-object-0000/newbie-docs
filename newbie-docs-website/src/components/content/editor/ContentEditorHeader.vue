@@ -32,16 +32,16 @@
 </template>
   
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onBeforeMount, onBeforeUnmount } from "vue";
 import { useMagicKeys, whenever } from '@vueuse/core'
-import { useDocsStore } from "@/stores/doc";
-import { onUnmounted } from "vue";
+import { useDocsStore } from "@/stores/doc";;
 
 const docsStore = useDocsStore();
 
 const emit = defineEmits(["onChange", "onPreview"]);
 
 let aboveSlug = ref()
+let docId = ref(-1)
 
 const { ctrl_s } = useMagicKeys({
     passive: false,
@@ -67,6 +67,17 @@ const onPreview = (event: Event) => {
 watch(() => docsStore.doc.id, () => {
     aboveSlug.value = null
 }, { immediate: true });
+
+onBeforeMount(() => {
+    docId.value = docsStore.doc.id
+})
+
+onBeforeUnmount(() => {
+    // @ts-ignore
+    docsStore.docsApi.tryUnlock(docsStore.bookSlug, docId.value)
+
+    docId.value = -1
+})
 </script>
 
 <style scoped>

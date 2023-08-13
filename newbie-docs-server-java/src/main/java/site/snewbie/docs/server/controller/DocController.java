@@ -27,7 +27,7 @@ public class DocController extends BaseAssetController {
     }
 
     private DocVO setPermission(DocVO docVO) {
-        if (docVO == null){
+        if (docVO == null) {
             return null;
         }
 
@@ -117,6 +117,12 @@ public class DocController extends BaseAssetController {
             this.checkBookPermission(doc.getBookId(), PermissionAuthType.EDITOR);
         } else {
             this.checkDocPermission(doc.getId(), PermissionAuthType.EDITOR);
+
+            // 尝试占有编辑锁
+            boolean updateEditingUserResult = docService.tryLock(doc.getId(), loginUser.getUsername() + loginUser.getId());
+            if (!updateEditingUserResult) {
+                return Results.failed(ResultsStatusEnum.FAILED_CLIENT_LOCKED);
+            }
         }
 
         Long id = docService.put(doc, loginUser);
@@ -125,6 +131,35 @@ public class DocController extends BaseAssetController {
         } else {
             docService.submitUpdateDocsAndWordsCountTask(doc.getBookId(), doc.getId());
             return Results.success(id);
+        }
+    }
+
+    @UserOauth
+    @PostMapping(value = {"/tryLock", "/tryUnlock"})
+    public Results<Boolean> tryLock(@RequestBody Doc params) {
+        if (params.getId() == null || params.getId() <= 0) {
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
+        }
+
+        User loginUser = super.getCurrentLoginUser();
+        assert loginUser != null;
+
+        Book book = bookService.get(null, this.getCurrentViewBook());
+        if (book == null) {
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
+        }
+
+        this.checkDocPermission(params.getId(), PermissionAuthType.EDITOR);
+
+        // 判断当前是 lock 还是 unlock
+        if (super.httpRequest.getRequestURI().contains("tryLock")) {
+            boolean result = docService.tryLock(params.getId(), loginUser.getUsername() + loginUser.getId());
+            return Results.success(result);
+        } else if (super.httpRequest.getRequestURI().contains("tryUnlock")) {
+            boolean result = docService.tryUnlock(params.getId(), loginUser.getUsername() + loginUser.getId());
+            return Results.success(result);
+        }else {
+            return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
     }
 

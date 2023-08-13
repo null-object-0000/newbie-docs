@@ -16,6 +16,7 @@ public class Doc {
     private String content;
     private Integer wordsCount;
     private Integer sort;
+    private String editingUser;
     private String creator;
     private String updater;
     private LocalDateTime createTime;
