@@ -74,6 +74,7 @@ export const useDocsStore = defineStore('docs', {
                             style: {
                                 top: '50px',
                             },
+                            duration: 5000,
                         } as NotificationConfig)
                     }
 
@@ -141,6 +142,7 @@ export const useDocsStore = defineStore('docs', {
                                     style: {
                                         top: '50px',
                                     },
+                                    duration: 5000,
                                 } as NotificationConfig)
                             }
 

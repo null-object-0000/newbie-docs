@@ -1,7 +1,8 @@
 <template>
     <div class="home-view">
         <template v-if="loading.get()">
-            <a-spin style="margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot></a-spin>
+            <a-spin style="margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot
+                tip="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;疯狂加载中"></a-spin>
         </template>
         <template v-else>
             <a-row v-if="dir && dir.length > 0" :gutter="40" justify="center">

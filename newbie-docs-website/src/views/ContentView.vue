@@ -15,8 +15,8 @@
 
         <template v-else>
           <template v-if="loading.get()">
-            <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;"
-              dot></a-spin>
+            <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot
+              tip="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;疯狂加载中"></a-spin>
           </template>
           <template v-else-if="docsStore.doc">
             <div v-if="docsStore.doc.slug !== 'home'" class="docs__content"

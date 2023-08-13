@@ -1,6 +1,7 @@
 <template>
     <template v-if="loading.get()">
-        <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot></a-spin>
+        <a-spin style="margin: 0 auto; margin-top: calc(40vh + 28px); justify-content: center; display: flex;" dot
+            tip="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;疯狂加载中"></a-spin>
     </template>
     <div v-else-if="book && book.id" class="docs-content-home"
         :style="{ background: `linear-gradient(rgba(255, 255, 255, 0) 0px, rgb(255, 255, 255) 70vh, rgb(255, 255, 255) 100%), url('${coverImg(book.id)}') center top / 100% no-repeat` }">
@@ -100,6 +101,10 @@
                                 <span class="dashed-line"></span>
                                 <span class="time">{{ node.time }}</span>
                             </div>
+                        </template>
+                        <template #switcher-icon="node, { isLeaf }">
+                            <IconDown v-if="!isLeaf" />
+                            <IconStar v-if="isLeaf" />
                         </template>
                     </a-tree>
                 </div>
@@ -525,6 +530,11 @@ body[arco-theme='dark'] .docs-content-home__body {
 
 .docs-content-home__tree .arco-tree-node .arco-tree-node-title-text {
     width: 100%;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .docs-content-home__tree .arco-tree-node .content {
