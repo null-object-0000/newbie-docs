@@ -2,6 +2,8 @@
     <article class="page" data-module="page">
         <ContentPreviewHeader @on-edit="onEdit"></ContentPreviewHeader>
 
+        <h1 class="page__title">{{ docsStore.doc.title }}</h1>
+
         <section class="page__content">
             <template v-if="docsStore.doc.editor === 2" v-for="block of blocks">
                 <div class="page__content-block">
@@ -114,5 +116,9 @@ onMounted(() => {
 
 .page__content-word-preview input[type="checkbox"] {
     margin-right: 5px;
+}
+
+div[data-w-e-type="video"] video {
+    max-width: 100%;
 }
 </style>

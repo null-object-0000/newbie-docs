@@ -1,5 +1,5 @@
 <template>
-    <section class="content-editor-header" data-module="writing">
+    <!-- <section class="content-editor-header" data-module="writing">
         <header class="writing-header">
             <div class="writing-header__inner-container">
                 <a-form auto-label-width :model="docsStore.doc" layout="inline">
@@ -9,7 +9,7 @@
                 </a-form>
             </div>
         </header>
-    </section>
+    </section> -->
 
     <div class="editor-tools" style="flex: 0 1 15%;">
         <label>&nbsp;&nbsp;&nbsp;</label>
@@ -70,31 +70,6 @@ watch(() => docsStore.doc.id, () => {
 </script>
 
 <style scoped>
-@media (max-width: 1020px) {
-    .content-editor-header {
-        display: none;
-    }
-}
-
-@media (min-width: 1020px) {
-    .content-editor-header {
-        position: fixed;
-        top: 12px;
-        z-index: 10;
-        max-width: var(--layout-width-main-col);
-        min-width: 0;
-        width: 100%;
-    }
-
-    .content-editor-header .writing-header {
-        padding: 0;
-    }
-
-    .content-editor-header label {
-        display: none;
-    }
-}
-
 form.arco-form.arco-form-layout-inline .arco-form-item {
     margin: 0;
     padding: 0;

@@ -1,7 +1,7 @@
 <template>
     <section data-module="writing" class="content-word-ediotr">
         <div class="writing-editor">
-            <div class="word-editor-view" style="border-bottom: 1px solid #e8e8e8;">
+            <div class="word-editor-view">
                 <div style="border-bottom: 1px solid #e8e8e8;">
                     <Toolbar class="editor-toolbar" style="border-bottom: 1px solid #ccc" :editor="editorRef"
                         :defaultConfig="toolbarConfig" :mode="mode" />
@@ -92,7 +92,6 @@ const handleCreated = (editor: any) => {
 }
 
 const onChange = (event: Event, showSuccessTips?: boolean) => {
-    console.log('onChange', event)
     emit('onChange', event, { title: title.value, content: editorRef.value.getHtml(), showSuccessTips })
 }
 
@@ -122,8 +121,13 @@ watch(() => docsStore.doc.id, () => {
 </script>
 
 <style scoped>
+.word-editor-view {
+    background-color: var(--color-fill-2);
+    border-bottom: 1px solid #e8e8e8;
+}
+
 .word-editor-view .editor-toolbar {
-    width: 1350px;
+    width: calc(100% - var(--layout-sidebar-width));
     background-color: var(--color-bg-1);
     margin: 0 auto;
     position: fixed;
@@ -184,5 +188,13 @@ watch(() => docsStore.doc.id, () => {
     right: 16px;
     top: -12px;
     z-index: 9999;
+}
+
+.w-e-scroll .w-e-textarea-video-container video {
+    max-width: 100%;
+}
+
+.w-e-scroll {
+    min-height: 300px;
 }
 </style>

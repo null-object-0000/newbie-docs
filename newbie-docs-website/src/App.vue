@@ -3,9 +3,11 @@
 
   <RouterView v-slot="{ Component }">
     <template v-if="Component">
-      <Suspense>
-        <component :is="Component"></component>
-      </Suspense>
+      <div style="padding-top: var(--layout-height-header);">
+        <Suspense>
+          <component :is="Component"></component>
+        </Suspense>
+      </div>
     </template>
   </RouterView>
 </template>
