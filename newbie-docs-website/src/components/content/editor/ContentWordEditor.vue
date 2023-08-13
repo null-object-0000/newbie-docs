@@ -45,7 +45,11 @@ const title = ref('')
 const docTitle = ref('')
 const valueHtml = ref('')
 
-const toolbarConfig = {}
+const toolbarConfig = {
+    excludeKeys: [
+        "fullScreen"
+    ]
+}
 const editorConfig = {
     placeholder: '请输入正文',
     scroll: false, // 禁止编辑器滚动
