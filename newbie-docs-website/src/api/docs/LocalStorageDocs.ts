@@ -90,9 +90,9 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         // 如果指定了 sort 就用指定的，否则默认插入到当前父级 child 中的最后一位
         if (!doc.sort || doc.sort < 0) {
-            const parent = docs.find(item => item.id === doc.parentId)
-            if (parent) {
-                doc.sort = parent.children?.length || 0
+            const children = docs.filter(item => item.parentId === doc.parentId) as Doc[]
+            if (children && children.length > 0) {
+                doc.sort = children.length || 0
             }
         }
 

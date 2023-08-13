@@ -70,9 +70,9 @@
                 <div v-if="home && (homeDocContent.length > 0 || editHome)" class="home-doc-content">
                     <div v-if="editHome" style="border: 1px solid #ccc;">
                         <Toolbar style="border-bottom: 1px solid #ccc" :editor="editorRef" :defaultConfig="toolbarConfig"
-                            mode="default" />
+                            mode="simple" />
                         <Editor style="height: 188px; overflow-y: hidden;" v-model="home.content"
-                            :defaultConfig="editorConfig" mode="default" @onCreated="handleCreated" />
+                            :defaultConfig="editorConfig" mode="simple" @onCreated="handleCreated" />
                     </div>
                     <div v-else v-html="home.content">
 
@@ -261,7 +261,11 @@ const bookSaved = async (result: boolean) => {
 // 编辑器实例，必须用 shallowRef
 const editorRef = shallowRef()
 
-const toolbarConfig = {}
+const toolbarConfig = {
+    excludeKeys: [
+        "fullScreen", "redo", "undo"
+    ]
+}
 const editorConfig = { placeholder: '请输入内容...' }
 
 // 组件销毁时，也及时销毁编辑器
