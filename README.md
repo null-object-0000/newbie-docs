@@ -14,26 +14,24 @@
 ### v1.0.0
 
 - [x] 基于 `Vue 3.0` 完成 [codex.docs](https://github.com/codex-team/codex.docs) 所有能力
-- [ ] 支持多种类型编辑器
+- [ ] 支持多样的在线编辑器
   - [ ] 基于 [wangEditor 5](https://www.wangeditor.com/) 实现富文本编辑器，参考 [腾讯文档](https://docs.qq.com/)
   - [ ] 基于 [Editor.js](https://github.com/codex-team/editor.js) 实现块式编辑器，参考 [飞书](https://www.feishu.cn/product/docs)
   - [ ] 基于 [mavonEditor](https://github.com/hinesboy/mavonEditor) 实现 Markdown 编辑器
 - [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
-- [x] 实现基于 `LocalStorage` 的客户端存储
-- [x] 实现基于 `Java` 的 RESTful API 用以服务端 `Amazon S3` 存储
+- [x] 实现基于 `LocalStorage` 的客户端存储用于演示
+- [ ] 基于 `Amazon S3` 存储的 `Java` RESTful API 服务端
 - [ ] 支持知识库、文档的权限管理
-- [x] 支持通过 Docker 部署
-  - [x] newbie-docs-website
-  - [x] newbie-docs-server-java
 - [ ] 支持基于 OAuth2 的第三方登录
+- [x] 支持通过 Docker 部署
 
 > `LocalStorage` 存储实现不支持权限管理能力，此时默认所有人都拥有所有知识库、文档的管理员权限
 
 ### v2.0.0
 - [ ] 基于 `YJS` 实现文档协同编辑
-- [ ] 移动端适配 + 暗黑模式
-- [ ] 实现多语言的 RESTful API 用以服务端 `Amazon S3` 存储
-  - [ ] 基于 `Node.js` 的 RESTful API
+- [ ] 完成移动端适配 + 暗黑模式
+- [x] 实现基于 `Amazon S3` 存储的 多语言的 RESTful API 服务端
+  - [ ] 基于 `Node.js` 的 RESTful API 服务端
 
 ### v3.0.0
 - [ ] 支持更丰富的在线编辑器
