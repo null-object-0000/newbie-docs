@@ -56,11 +56,11 @@
                 <icon-more-vertical class="docs-sidebar__tree-node-tools" @click="eventStopPropagation"
                   :style="{ visibility: sidebarData.hoverNode === node.key ? 'visible' : 'hidden' }" />
                 <template #content>
-                  <a-doption value="rename" v-if="isEditorAuth(findDocWithPath(node.key)?.loginUserAuthType)">
+                  <a-doption value="rename" v-if="isEditorAuth(findDocWithField(node.key)?.loginUserAuthType)">
                     <template #icon><icon-loop /></template>重命名</a-doption>
-                  <a-doption value="edit" v-if="isEditorAuth(findDocWithPath(node.key)?.loginUserAuthType)">
+                  <a-doption value="edit" v-if="isEditorAuth(findDocWithField(node.key)?.loginUserAuthType)">
                     <template #icon><icon-edit /></template>编辑文档</a-doption>
-                  <a-doption value="permission" v-if="isAdminerAuth(findDocWithPath(node.key)?.loginUserAuthType)">
+                  <a-doption value="permission" v-if="isAdminerAuth(findDocWithField(node.key)?.loginUserAuthType)">
                     <template #icon><icon-lock /></template>权限管理</a-doption>
                   <a-doption value="copyLink">
                     <template #icon><icon-link /></template>复制链接</a-doption>
@@ -68,7 +68,7 @@
                     <template #icon><icon-launch /></template>在新标签页打开</a-doption>
                   <a-doption value="copy" v-if="isEditorAuth(book?.loginUserAuthType)">
                     <template #icon><icon-copy /></template>复制</a-doption>
-                  <a-doption value="delete" v-if="isAdminerAuth(findDocWithPath(node.key)?.loginUserAuthType)"
+                  <a-doption value="delete" v-if="isAdminerAuth(findDocWithField(node.key)?.loginUserAuthType)"
                     :style="{ color: 'rgb(var(--danger-6))' }">
                     <template #icon><icon-delete /></template>删除
                   </a-doption>
@@ -263,7 +263,6 @@ const search = () => {
         return;
       }
 
-
       if (item.title && item.title.toLowerCase().indexOf(keyword.value.toLowerCase()) > -1) {
         item.children = item.children ? loop(item.children) : [];
         result.push({ ...item });
@@ -291,12 +290,12 @@ function getMatchIndex(title: string) {
   return title.toLowerCase().indexOf(keyword.value.toLowerCase());
 }
 
-const findDocWithPath = (path: string): Doc | undefined => {
+const findDocWithField = (value: any, field: keyof Doc = 'path'): Doc | undefined => {
   const loop = (data: Doc[]): Doc | undefined => {
     let result = undefined
 
     for (const item of data) {
-      if (item.path === path) {
+      if (item[field] === value) {
         result = item
         break
       }
@@ -314,9 +313,41 @@ const findDocWithPath = (path: string): Doc | undefined => {
   }
 
   let doc = loop(sidebarData.rawDir)
-  doc = JSON.parse(JSON.stringify(doc))
+  doc = doc ? JSON.parse(JSON.stringify(doc)) : undefined
   delete doc?.children
   return doc
+}
+
+const preInsertDoc = function (parentKey: string, doc: TreeNodeData) {
+  const loop = (dir: TreeNodeData[], parentKey: string, createDoc: TreeNodeData) => {
+    for (const item of dir) {
+      if (item.key === parentKey) {
+        item.children?.push(createDoc)
+        break
+      }
+
+      if (item.children) {
+        loop(item.children, parentKey, createDoc)
+      }
+    }
+  }
+
+  const nodeKey = Math.random() * 100000000 + '' as string
+  nodesLoading.value[nodeKey] = useLoading()
+  nodesLoading.value[nodeKey].set(true)
+
+  doc.key = nodeKey
+  doc.draggable = false
+
+  if (parentKey === `/${space.value}`) {
+    sidebarData.dir.push(doc)
+  } else {
+    loop(sidebarData.dir, parentKey, doc)
+  }
+
+  nextTick(() => {
+    sidebarTreeRef.value?.expandAll()
+  })
 }
 
 const createDoc = function (value: string | number | Record<string, any> | undefined, ev: Event) {
@@ -325,34 +356,10 @@ const createDoc = function (value: string | number | Record<string, any> | undef
 
 const onCreate = function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
   if (node.key && typeof node.key === 'string' && node.key.indexOf('/') !== -1) {
-    const doc = findDocWithPath(node.key as string) as Doc
+    const doc = findDocWithField(node.key as string) as Doc
 
-    const key = Math.random() * 100000000 + '' as string
-    nodesLoading.value[key] = useLoading()
-    nodesLoading.value[key].set(true)
-
-    const loop = (dir: TreeNodeData[], parentKey: string, createDoc: TreeNodeData) => {
-      for (const item of dir) {
-        if (item.key === parentKey) {
-          item.children?.push(createDoc)
-          break
-        }
-
-        if (item.children) {
-          loop(item.children, parentKey, createDoc)
-        }
-      }
-    }
-
-    loop(sidebarData.dir, node.key, {
-      key,
-      title: '新建文档中......',
-      draggable: false,
-      children: []
-    })
-
-    nextTick(() => {
-      sidebarTreeRef.value?.expandAll()
+    preInsertDoc(node.key, {
+      title: '新建文档中......'
     })
 
     emit("onCreate", ev, {
@@ -360,22 +367,27 @@ const onCreate = function (node: TreeNodeData, value: string | number | Record<s
       editor: value
     })
   } else {
-    const key = Math.random() * 100000000 + '' as string
-    nodesLoading.value[key] = useLoading()
-    nodesLoading.value[key].set(true)
-
     // 预插入到根目录
-    sidebarData.dir.push({
-      key,
-      title: '新建文档中......',
-      draggable: false,
-      children: []
+    preInsertDoc(`/${space.value}`, {
+      title: '新建文档中......'
     })
 
     emit("onCreate", ev, {
       editor: value
     })
   }
+}
+
+const onCopy = (doc: Doc, ev: Event) => {
+  const parentDoc = findDocWithField(doc.parentId, 'id') as Doc
+
+  preInsertDoc(parentDoc?.path || `/${space.value}`, {
+    title: '复制文档中......'
+  })
+
+  emit("onCopy", ev, {
+    id: doc.id
+  })
 }
 
 const docsService = {
@@ -409,7 +421,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
     return
   }
 
-  const doc = findDocWithPath(node.key as string) as Doc
+  const doc = findDocWithField(node.key as string) as Doc
   const options = {
     action: value
   } as { action: string | number | Record<string, any> | undefined }
@@ -425,9 +437,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
     router.push(doc.path)
     configsStore.docEditMode = true
   } else if (options.action === 'copy') {
-    emit("onCopy", ev, {
-      id: doc.id
-    })
+    onCopy(doc, ev)
   } else if (options.action === 'delete') {
     Modal.warning({
       title: `确认框`,
@@ -451,7 +461,7 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
 
 const onRenamed = async function (ev: Event, node: TreeNodeData) {
   if (sidebarData.docTitle && sidebarData.docTitle.length > 0) {
-    const doc = findDocWithPath(node.key as string) as Doc
+    const doc = findDocWithField(node.key as string) as Doc
     doc.title = sidebarData.docTitle
 
     emit("onChangeTitle", ev, {
@@ -482,9 +492,9 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
   }
 
   // 拖拽节点
-  const dragDoc = findDocWithPath(data.dragNode.key as string) as Doc
+  const dragDoc = findDocWithField(data.dragNode.key as string) as Doc
   // 目标节点
-  const dropDoc = findDocWithPath(data.dropNode.key as string) as Doc
+  const dropDoc = findDocWithField(data.dropNode.key as string) as Doc
 
   nodesLoading.value[data.dragNode.key as string].set(true)
   nodesLoading.value[data.dropNode.key as string].set(true)
