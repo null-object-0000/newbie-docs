@@ -1,5 +1,7 @@
 # newbie-docs
 
+基于 Vue 3.0 的开源知识库（文档）管理系统，详细 [业务逻辑](./BusinessLogic.md) 介绍
+
 ## 主要功能
 
 - :ledger: 像书一样的知识库
@@ -7,8 +9,6 @@
 - :running:	便捷的私有化部署
 - :blush:	个人和团队都适用
   
-详细 [业务逻辑](./BusinessLogic.md) 介绍
-
 ## 开发计划
 
 ### v1.0.0
