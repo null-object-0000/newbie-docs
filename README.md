@@ -15,8 +15,8 @@
 
 - [x] 基于 `Vue 3.0` 完成 [codex.docs](https://github.com/codex-team/codex.docs) 所有能力
 - [ ] 支持多样的在线编辑器
-  - [x] 基于 [wangEditor 5](https://www.wangeditor.com/) 实现富文本编辑器，参考 [腾讯文档](https://docs.qq.com/)
-  - [ ] 基于 [Editor.js](https://github.com/codex-team/editor.js) 实现块式编辑器，参考 [飞书](https://www.feishu.cn/product/docs)
+  - [x] 基于 [wangEditor 5](https://www.wangeditor.com/) 实现富文本编辑器
+  - [ ] 基于 [Editor.js](https://github.com/codex-team/editor.js) 实现块式编辑器
   - [ ] 基于 [mavonEditor](https://github.com/hinesboy/mavonEditor) 实现 Markdown 编辑器
 - [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
 - [x] 实现基于 `LocalStorage` 的客户端存储用于演示
