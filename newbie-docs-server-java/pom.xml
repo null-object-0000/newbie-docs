@@ -99,13 +99,4 @@
             </resource>
         </resources>
     </build>
-
-    <repositories>
-        <repository>
-            <id>aliyun-central</id>
-            <name>aliyun central</name>
-            <url>https://maven.aliyun.com/repository/central</url>
-        </repository>
-    </repositories>
-
 </project>
