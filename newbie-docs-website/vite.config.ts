@@ -4,14 +4,8 @@ import { defineConfig, mergeConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import prismjs from 'vite-plugin-prismjs';
 
-// 获取当前时间戳作为构建时间
-const buildTime = new Date().getTime();
-
 // https://vitejs.dev/config/
 export const baseConfig = defineConfig({
-  define: {
-    VITE_BUILD_TIME: buildTime,
-  },
   plugins: [
     vue(),
     prismjs({

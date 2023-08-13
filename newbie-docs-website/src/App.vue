@@ -17,18 +17,10 @@ import { RouterView } from "vue-router";
 import NewbieHeader from "@/components/NewbieHeader.vue";
 import { onBeforeMount } from "vue";
 import { useUsersStore } from "./stores/user";
-import { useDateFormat } from "@vueuse/core";
-
-declare global {
-  interface Window {
-    VITE_BUILD_TIME: number
-  }
-}
 
 const usersStore = useUsersStore();
 
 onBeforeMount(async () => {
-  console.log('Newbie Docs builded as ' + useDateFormat(window.VITE_BUILD_TIME, 'YYYY-MM-DD HH:mm:ss').value)
   await usersStore.refreshCurrentLoginUser();
 })
 </script>
