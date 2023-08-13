@@ -5,8 +5,12 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
 export const baseConfig = defineConfig({
+  define: {
+    VITE_BUILD_TIME: new Date().getTime(),
+  },
   plugins: [
     vue(),
+
   ],
   resolve: {
     alias: {

@@ -326,11 +326,11 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
     return dir.filter(doc => doc.slug !== 'home').map(item => {
         const nowDate = new Date()
         const timeDate = new Date(item.updateTime || item.createTime)
-        let time = useDateFormat(timeDate, 'YYYY-MM-DD HH:mm')
+        let time = useDateFormat(timeDate, 'YYYY-MM-DD HH:mm').value
         if (timeDate.getFullYear() === nowDate.getFullYear() && timeDate.getMonth() === nowDate.getMonth() && timeDate.getDate() === nowDate.getDate()) {
-            time = useDateFormat(timeDate, '今天 HH:mm')
+            time = useDateFormat(timeDate, '今天 HH:mm').value
         } else if (timeDate.getFullYear() === nowDate.getFullYear()) {
-            time = useDateFormat(timeDate, 'MM-DD HH:mm')
+            time = useDateFormat(timeDate, 'MM-DD HH:mm').value
         }
 
         const node = { ...item, time } as TreeNodeData

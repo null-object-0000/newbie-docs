@@ -22,14 +22,14 @@
 
 ### v2.0.0
 - [ ] 基于 `YJS` 实现文档协同编辑
-- [ ] 阅读模式完成移动端适配
-- [ ] 支持暗黑模式
+- [ ] 移动端适配 + 暗黑模式
 - [ ] 实现多语言的 RESTful API 用以服务端 `Amazon S3` 存储
   - [ ] 基于 `Node.js` 的 RESTful API
 
 ### v3.0.0
 - [ ] 支持更丰富的在线编辑器
   - [ ] 基于 [Luckysheet](https://github.com/dream-num/Luckysheet) 的表格编辑能力
+- [ ] 文档的多版本管理 + 支持从各平台导入文档
 
 ## 开发部署
 
