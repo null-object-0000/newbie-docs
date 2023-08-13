@@ -63,4 +63,7 @@ export interface UseDocsApiFunction {
 
     array2tree: (docs?: Doc | Doc[], deepClone = true) => Doc | undefined;
     tree2array: (doc?: Doc, deepClone = true) => Doc[] | undefined;
+
+    async tryLock: (space: string, id: number) => Promise<boolean>;
+    async tryUnlock: (space: string, id: number) => Promise<boolean>;
 }

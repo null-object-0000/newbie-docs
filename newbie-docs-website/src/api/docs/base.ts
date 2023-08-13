@@ -13,6 +13,9 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean>;
     abstract changeTitle(space: string, id: number, newTitle: string): Promise<boolean>;
 
+    abstract tryLock(space: string, id: number): Promise<boolean>;
+    abstract tryUnlock(space: string, id: number): Promise<boolean>;
+
     isValidDoc(docs?: Doc | Doc[]): boolean {
         if (!docs) {
             return false

@@ -265,4 +265,12 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
 
         return wordCount;
     }
+
+    async tryLock(space: string, id: number): Promise<boolean> {
+        return true
+    }
+
+    async tryUnlock(space: string, id: number): Promise<boolean> {
+        return true
+    }
 }
