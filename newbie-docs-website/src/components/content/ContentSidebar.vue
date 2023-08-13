@@ -245,13 +245,6 @@ const sidebar = reactive({
   collapsed: false,
 });
 
-const linkModalData = reactive({
-  visible: false,
-  form: {
-    url: '',
-  }
-})
-
 let shortcutText = ref('Ctrl + J');
 
 // Search initialize with platform specific shortcut.
@@ -327,22 +320,58 @@ const findDocWithPath = (path: string): Doc | undefined => {
 }
 
 const createDoc = function (value: string | number | Record<string, any> | undefined, ev: Event) {
-  if (value === 'link') {
-    linkModalData.visible = true
-    return
-  }
-
-  emit("onCreate", ev, { parentId: -1, editor: value as string })
+  onCreate({}, value, ev)
 }
 
 const onCreate = function (node: TreeNodeData, value: string | number | Record<string, any> | undefined, ev: Event) {
   if (node.key && typeof node.key === 'string' && node.key.indexOf('/') !== -1) {
     const doc = findDocWithPath(node.key as string) as Doc
+
+    const key = Math.random() * 100000000 + '' as string
+    nodesLoading.value[key] = useLoading()
+    nodesLoading.value[key].set(true)
+
+    const loop = (dir: TreeNodeData[], parentKey: string, createDoc: TreeNodeData) => {
+      for (const item of dir) {
+        if (item.key === parentKey) {
+          item.children?.push(createDoc)
+          break
+        }
+
+        if (item.children) {
+          loop(item.children, parentKey, createDoc)
+        }
+      }
+    }
+
+    loop(sidebarData.dir, node.key, {
+      key,
+      title: '新建文档中......',
+      draggable: false,
+      children: []
+    })
+
+    nextTick(() => {
+      sidebarTreeRef.value?.expandAll()
+    })
+
     emit("onCreate", ev, {
       parentId: doc.id,
       editor: value
     })
   } else {
+    const key = Math.random() * 100000000 + '' as string
+    nodesLoading.value[key] = useLoading()
+    nodesLoading.value[key].set(true)
+
+    // 预插入到根目录
+    sidebarData.dir.push({
+      key,
+      title: '新建文档中......',
+      draggable: false,
+      children: []
+    })
+
     emit("onCreate", ev, {
       editor: value
     })
