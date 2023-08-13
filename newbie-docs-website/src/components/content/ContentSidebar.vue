@@ -91,6 +91,10 @@
             <icon-loading v-if="nodesLoading[node.key].get()" class="docs-sidebar__tree-node-tools" />
           </span>
         </template>
+        <template #switcher-icon="node, { isLeaf }">
+          <IconDown v-if="!isLeaf" />
+          <IconStar v-if="isLeaf" />
+        </template>
         <template #extra="node">
           <icon-home style="position: absolute;" v-if="node.key === `/${space}/home`" />
         </template>
@@ -367,45 +371,6 @@ const docsService = {
     } finally {
       nodesLoading.value[nodeKey as string].set(false)
     }
-  },
-
-  onChangeParentId: async (event: Event, value: { id: number, parentId: number }): Promise<boolean> => {
-    if (value.parentId && value.parentId > 0) {
-      return await docsStore.docsApi.changeParentId(space.value, value.id, value.parentId)
-    } else {
-      return false
-    }
-  },
-
-  /**
- * 
- * @param event 
- * @param value { _ 当前 id: number, 目标 targetId: number, -1 为上方，1 为下方 position: number }
- */
-  onChangeSort: async (event: Event, value: { parentId: number, id: number, targetId: number, position: number }): Promise<boolean> => {
-    let currentIndex = await docsStore.docsApi.findIndex(space.value, value.id) as number
-    let aboveIndex = await docsStore.docsApi.findIndex(space.value, value.targetId) as number
-
-    if (currentIndex === undefined || aboveIndex === undefined) {
-      return false
-    }
-
-    if (currentIndex < aboveIndex) {
-      if (value.position === -1) {
-        aboveIndex = aboveIndex - 1
-      }
-    } else {
-      if (value.position === 1) {
-        aboveIndex = aboveIndex + 1
-      }
-    }
-
-    const result = await docsStore.docsApi.splice(space.value, value.id, aboveIndex)
-    if (!result) {
-      Message.error(`置于${value.position > 0 ? '下方' : '上方'}失败`)
-    }
-
-    return result
   }
 }
 
@@ -495,29 +460,7 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
   nodesLoading.value[data.dragNode.key as string].set(true)
   nodesLoading.value[data.dropNode.key as string].set(true)
   try {
-    if (data.dropPosition === 0) {
-      await docsService.onChangeParentId(data.e, {
-        id: dragDoc.id,
-        parentId: dropDoc.id
-      })
-    } else {
-      if (dragDoc.parentId !== dropDoc.parentId) {
-        await docsService.onChangeParentId(data.e, {
-          id: dragDoc.id,
-          parentId: dropDoc.parentId,
-        })
-      }
-
-      await nextTick()
-
-      // -1 为上方，1 为下方
-      await docsService.onChangeSort(data.e, {
-        id: dragDoc.id,
-        parentId: dropDoc.parentId,
-        targetId: dropDoc.id,
-        position: data.dropPosition
-      })
-    }
+    await docsStore.docsApi.move(space.value, data.dropPosition, dragDoc.id, dropDoc.id)
   } catch (error) {
     if (error instanceof AxiosError) {
       Message.error(error.message)

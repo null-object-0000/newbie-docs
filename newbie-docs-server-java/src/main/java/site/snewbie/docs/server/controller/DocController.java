@@ -27,6 +27,10 @@ public class DocController extends BaseAssetController {
     }
 
     private DocVO setPermission(DocVO docVO) {
+        if (docVO == null){
+            return null;
+        }
+
         User loginUser = super.getCurrentLoginUser();
         if (loginUser != null) {
             Permission permission = super.getDataPermission(PermissionDataType.DOC, docVO.getId(), String.format("%s/%s", docVO.getBookSlug(), docVO.getSlug()));
@@ -43,6 +47,10 @@ public class DocController extends BaseAssetController {
     }
 
     private List<DocVO> setPermission(List<DocVO> docs) {
+        if (CollUtil.isEmpty(docs)) {
+            return docs;
+        }
+
         return docs.stream().map(this::setPermission).collect(Collectors.toList());
     }
 
@@ -97,9 +105,9 @@ public class DocController extends BaseAssetController {
         assert loginUser != null;
 
         Book book = bookService.get(null, this.getCurrentViewBook());
-        if (book == null){
+        if (book == null) {
             return Results.failed(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
-        }else{
+        } else {
             doc.setBookId(book.getId());
             doc.setBookSlug(book.getSlug());
         }
@@ -142,18 +150,20 @@ public class DocController extends BaseAssetController {
     }
 
     @UserOauth
-    @PostMapping("/changeParentId")
-    public Results<Boolean> changeParentSlug(@RequestBody ChangeParentSlugRequest params) {
-        if (params.getId() == null || params.getId() <= 0 || params.getParentId() == null || params.getParentId() <= 0) {
+    @PostMapping("/move")
+    public Results<Boolean> move(@RequestBody MoveRequest params) {
+        if (params.getDropPosition() == null
+                || params.getDragDocId() == null || params.getDragDocId() <= 0
+                || params.getDropDocId() == null || params.getDropDocId() <= 0) {
             return Results.failed(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY);
         }
 
         User loginUser = super.getCurrentLoginUser();
         assert loginUser != null;
 
-        this.checkDocPermission(params.getId(), PermissionAuthType.EDITOR);
+        this.checkDocPermission(params.getDragDocId(), PermissionAuthType.EDITOR);
 
-        boolean result = docService.changeParentSlug(params.getId(), params.getParentId(), loginUser);
+        boolean result = docService.move(params.getDropPosition(), params.getDragDocId(), params.getDropDocId(), loginUser);
         return Results.success(result);
     }
 
@@ -174,9 +184,10 @@ public class DocController extends BaseAssetController {
     }
 
     @Data
-    public static class ChangeParentSlugRequest {
-        private Long id;
-        private Long parentId;
+    public static class MoveRequest {
+        private Integer dropPosition;
+        private Long dragDocId;
+        private Long dropDocId;
     }
 
     @Data

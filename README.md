@@ -11,7 +11,7 @@
   - [ ] Markdown 编辑器
 - [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
 - [x] 实现基于 `LocalStorage` 的客户端存储
-- [ ] 实现基于 `Java` 的 RESTful API 用以服务端 `Amazon S3` 存储
+- [x] 实现基于 `Java` 的 RESTful API 用以服务端 `Amazon S3` 存储
 - [ ] 支持知识库、文档的权限管理
 - [x] 支持通过 Docker 部署
   - [x] newbie-docs-website
@@ -22,8 +22,14 @@
 
 ### v2.0.0
 - [ ] 基于 `YJS` 实现文档协同编辑
+- [ ] 阅读模式完成移动端适配
+- [ ] 支持暗黑模式
 - [ ] 实现多语言的 RESTful API 用以服务端 `Amazon S3` 存储
   - [ ] 基于 `Node.js` 的 RESTful API
+
+### v3.0.0
+- [ ] 支持更丰富的在线编辑器
+  - [ ] 基于 [Luckysheet](https://github.com/dream-num/Luckysheet) 的表格编辑能力
 
 ## 开发部署
 
@@ -35,7 +41,7 @@
 - pnpm 8.6
 
 ``` bash
-# 环境配置
+# 环境配置（windows）
 copy .\newbie-docs-website\.env .\newbie-docs-website\.env.local
 
 # 本地运行
@@ -44,8 +50,7 @@ pnpm dev
 
 # 代码提交
 npm install -g commitizen
-git add .
-git cz
+pnpm run website:commit
 
 # 本地构建
 pnpm build

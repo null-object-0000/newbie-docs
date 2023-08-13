@@ -85,7 +85,7 @@
           and is_deleted = 0
     </update>
 
-    <update id="changeParentSlug">
+    <update id="changeParentId">
         update newbie_docs
         set parent_id = #{parentId,jdbcType=BIGINT},
             updater     = #{updater,jdbcType=BIGINT},
@@ -174,5 +174,24 @@
         from newbie_docs
         where id = #{id,jdbcType=BIGINT}
         and is_deleted = 0
+    </select>
+
+    <select id="findIndex" resultType="java.lang.Integer">
+        select details.`index`
+        from (select id, row_number() over (order by sort asc) - 1 as `index`
+              from newbie_docs
+              where parent_id = #{parentId,jdbcType=BIGINT}
+                and is_deleted = 0
+              order by sort asc) details
+        where details.id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="findChildren" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List_Without_Content"/>
+        from newbie_docs
+        where parent_id = #{parentId,jdbcType=BIGINT}
+          and is_deleted = 0
+        order by sort asc
     </select>
 </mapper>

@@ -1,6 +1,7 @@
 package site.snewbie.docs.server.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import lombok.Data;
@@ -15,6 +16,7 @@ import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.vo.BookVO;
 import site.snewbie.docs.server.service.BookService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,10 @@ public class BookController extends BaseAssetController {
     private BookService bookService;
 
     private BookVO book2VO(Book book) {
+        if (book == null) {
+            return null;
+        }
+
         BookVO bookVO = new BookVO();
         BeanUtil.copyProperties(book, bookVO);
 
@@ -40,6 +46,10 @@ public class BookController extends BaseAssetController {
     }
 
     private List<BookVO> book2VO(List<Book> books) {
+        if (CollUtil.isEmpty(books)) {
+            return new ArrayList<>();
+        }
+
         return books.stream().map(this::book2VO).collect(Collectors.toList());
     }
 

@@ -9,13 +9,9 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract put(space: string, doc: Doc): Promise<boolean>;
     abstract exists(space: string, slug: string): Promise<boolean>;
     abstract remove(space: string, id: number): Promise<boolean>;
-    abstract splice(space: string, id: number, index: number): Promise<boolean>;
+    abstract move(space: string, id: number, targetIndex: number, targetParentId: number): Promise<boolean>;
     abstract changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean>;
-    abstract changeParentId(space: string, id: number, parentId: number): Promise<boolean>;
     abstract changeTitle(space: string, id: number, newTitle: string): Promise<boolean>;
-    abstract findIndex(space: string, id: number): Promise<number | undefined>;
-    abstract getTotalDocCount(space: string): Promise<number>;
-    abstract getTotalWordCount(space: string): Promise<number>;
 
     isValidDoc(docs?: Doc | Doc[]): boolean {
         if (!docs) {
@@ -31,6 +27,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
                 && doc.bookId && doc.bookId > 0 && typeof doc.bookId === 'number'
                 && doc.bookSlug && doc.bookSlug.length > 0 && typeof doc.bookSlug === 'string'
                 && doc.slug && doc.slug.length > 0 && typeof doc.slug === 'string'
+                && doc.parentId !== undefined && typeof doc.parentId === 'number'
                 && doc.title && doc.title.length > 0 && typeof doc.title === 'string'
                 && doc.sort !== undefined && typeof doc.sort === 'number'
                 && doc.createTime !== undefined && typeof doc.createTime === 'number'
@@ -197,32 +194,4 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
         return slug;
     }
 
-    async getLevel(space: string, doc: Doc | string): Promise<number | undefined> {
-        if (typeof doc === 'string' && doc === 'root') {
-            return 1
-        }
-
-        const docs = await this.get(space)
-
-        if (typeof doc === 'string') {
-            doc = this.findDocBy(docs, 'slug', doc) as Doc
-        }
-
-        if (!doc) {
-            return
-        }
-
-        let level = 1
-        let parentId = doc.parentId
-        while (parentId) {
-            level++
-            const parentDoc = this.findDocBy(docs, 'id', parentId)
-            if (!parentDoc) {
-                break
-            }
-            parentId = parentDoc.parentId
-        }
-
-        return level
-    }
 }

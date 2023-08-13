@@ -27,11 +27,15 @@ public interface DocDao {
 
     Long selectTotalWordsCount(@Param("bookId") Long bookId);
 
-    boolean changeParentSlug(@Param("id") Long id, @Param("parentId") Long parentId, @Param("updater") String updater);
+    boolean changeParentId(@Param("id") Long id, @Param("parentId") Long parentId, @Param("updater") String updater);
 
     boolean changeTitle(@Param("id") Long id, @Param("newTitle") String newTitle, @Param("updater") String updater);
 
     Doc selectOneWithoutContent(@Param("id") Long id);
 
     Doc selectOneWithContent(@Param("id") Long id);
+
+    Integer findIndex(@Param("parentId") Long parentId, @Param("id") Long id);
+
+    List<Doc> findChildren(@Param("parentId") Long parentId);
 }

@@ -84,7 +84,7 @@ const emitDocContentChange = async (withDirChange: boolean, { propKey, docsApi, 
 
 const reflecttoEmitTasks = {
   dirChange: {
-    methods: ["remove", "splice", "changeSlug", "changeParentId"],
+    methods: ["remove", "move", "changeSlug"],
     actions: async ({ args, propKey, docsApi, space }: { args: any[], propKey: string | symbol, docsApi: UseDocsApiFunction, space: string }) => {
       await emitDirChange({ propKey, docsApi, space });
     }
@@ -127,7 +127,7 @@ export function useDocsApi(storage: ApiStorageEnum, spaceData: Record<string, Do
       break;
   }
 
-  // 代理 put、remove、splice、changeSlug、changeParentId、changeTitle 方法，每次调用成功后触发 dir 变更事件
+  // 代理 put、remove、move、changeSlug、changeTitle 方法，每次调用成功后触发 dir 变更事件
   const proxy = new Proxy(docsApi, {
     get(target, propKey, receiver) {
       const targetMethod = Reflect.get(target, propKey, receiver);

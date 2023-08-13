@@ -128,37 +128,70 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         return this.__updateCache('remove', space, docs)
     }
 
-    async splice(space: string, id: number, index: number): Promise<boolean> {
+    async move(space: string, dropPosition: number, dragDocId: number, dropDocId: number): Promise<boolean> {
         const docs = await this.__get(space) as Doc[]
+        // 拖拽节点
+        const dragDoc = docs.find(item => item.id === dragDocId)
+        // 目标节点
+        const dropDoc = docs.find(item => item.id === dropDocId)
 
-        const doc = await this.getById(space, id)
-        if (!doc || !doc.parentId) {
+        if (!dragDoc || !dropDoc) {
             return false
         }
 
-        let child = await super.findChild(docs, doc.parentId) as Doc[]
-        if (!child) {
-            return false
-        }
+        let parentChild = docs.filter(item => item.parentId === dropDoc.parentId)
+            .sort((a, b) => a.sort - b.sort)
 
-        child = child.filter(item => item.id !== id)
+        let targetParentId = -1;
+        let targetIndex = -1;
+        if (dropPosition === 0) {
+            targetParentId = dropDocId
+        } else {
+            if (dragDoc.parentId != dropDoc.parentId) {
+                targetParentId = dropDoc.parentId
+            }
 
-        child = child.sort((a, b) => a.sort - b.sort)
+            // -1 为上方，1 为下方
+            let currentIndex = parentChild.findIndex(item => item.id === dragDocId)
+            let aboveIndex = parentChild.findIndex(item => item.id === dropDocId)
 
-        child.splice(index, 0, doc)
-
-        for (let index = 0; index < child.length; index++) {
-            const element = child[index];
-            element.sort = index
-
-            for (const item of docs) {
-                if (element.id === item.id) {
-                    item.sort = index
+            if (currentIndex >= 0 && aboveIndex >= 0) {
+                if (currentIndex < aboveIndex) {
+                    if (dropPosition === -1) {
+                        aboveIndex = aboveIndex - 1
+                    }
+                } else {
+                    if (dropPosition === 1) {
+                        aboveIndex = aboveIndex + 1
+                    }
                 }
+            }
+
+            targetIndex = aboveIndex
+        }
+
+        if (targetIndex < 0 && targetParentId <= 0) {
+            return false
+        }
+
+        // 看看是否要改变父级
+        if (targetParentId > 0 && dragDoc.parentId !== targetParentId) {
+            dragDoc.parentId = targetParentId
+        }
+
+        // 看看是否要改变排序
+        if (targetIndex >= 0) {
+            parentChild = parentChild.filter(item => item.id !== dragDocId).sort((a, b) => a.sort - b.sort)
+
+            parentChild.splice(targetIndex, 0, dragDoc)
+
+            for (let index = 0; index < parentChild.length; index++) {
+                const item = parentChild[index];
+                item.sort = index
             }
         }
 
-        return this.__updateCache('splice', space, docs)
+        return this.__updateCache('move', space, docs)
     }
 
     async changeSlug(space: string, oldSlug: string, newSlug: string): Promise<boolean> {
@@ -180,26 +213,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         }
     }
 
-    async changeParentId(space: string, id: number, parentId: number): Promise<boolean> {
-        if (id === parentId) {
-            return false;
-        }
-
-        // TODO: 检查是否存在
-        // if (!this.exists(space, id) || !this.exists(space, parentId)) {
-        //     return false;
-        // }
-
-        let docs = await this.__get(space) as Doc[]
-        const doc = docs.find(item => item.id === id)
-        if (doc) {
-            doc.parentId = parentId
-            return this.__updateCache('changeParentId', space, docs)
-        } else {
-            return false
-        }
-    }
-
     async changeTitle(space: string, id: number, newTitle: string): Promise<boolean> {
         if (!newTitle || newTitle.length <= 0) {
             return false
@@ -214,19 +227,6 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
         } else {
             return false
         }
-    }
-
-    async findIndex(space: string, id: number): Promise<number | undefined> {
-        let docs = await this.__get(space) as Doc[]
-        let current = await this.getById(space, id) as Doc
-        let child = current && current.parentId ? await super.findChild(docs, current.parentId) as Doc[] : undefined
-
-        if (!current || !child) {
-            return
-        }
-
-        child = child.sort((a, b) => a.sort - b.sort)
-        return child.findIndex((item) => item.id === id)
     }
 
     async getMaxSort(space: string, parentId: number): Promise<number> {

@@ -2,6 +2,7 @@ package site.snewbie.docs.server.service;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HtmlUtil;
 import com.alibaba.fastjson2.JSONArray;
@@ -23,6 +24,7 @@ import site.snewbie.docs.server.model.vo.DocVO;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
@@ -84,6 +86,15 @@ public class DocService {
         return docDao.exists(bookSlug, docSlug);
     }
 
+    public Integer findIndex(Long id) {
+        Doc doc = docDao.selectOneWithoutContent(id);
+        if (doc == null) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
+        }
+
+        return docDao.findIndex(doc.getParentId(), id);
+    }
+
     public Long put(Doc doc, User loginUser) {
         Book book = bookDao.selectOne(doc.getBookId(), doc.getBookSlug());
         if (book == null) {
@@ -143,8 +154,115 @@ public class DocService {
         return docDao.delete(id, loginUser.getUsername() + loginUser.getId());
     }
 
-    public boolean changeParentSlug(Long id, Long parentId, User loginUser) {
-        return docDao.changeParentSlug(id, parentId, loginUser.getUsername() + loginUser.getId());
+    /**
+     * TODO: 性能优化
+     */
+    public boolean splice(Long id, Integer index, User loginUser) {
+        Doc doc = docDao.selectOneWithoutContent(id);
+        if (doc == null) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
+        }
+
+        List<Doc> parentChild = docDao.findChildren(doc.getParentId());
+        if (CollUtil.isEmpty(parentChild)) {
+            return false;
+        }
+
+        parentChild = parentChild.stream().filter(d -> ObjectUtil.notEqual(d.getId(), id)).collect(Collectors.toList());
+
+        parentChild = parentChild.stream().sorted(Comparator.comparing(Doc::getSort)).collect(Collectors.toList());
+
+        parentChild.add(index, doc);
+
+        for (int i = 0; i < parentChild.size(); i++) {
+            Doc d = new Doc();
+            d.setId(parentChild.get(i).getId());
+            d.setSort(i);
+            d.setUpdater(loginUser.getUsername() + loginUser.getId());
+            d.setUpdateTime(LocalDateTime.now());
+            docDao.update(d);
+        }
+
+        return true;
+    }
+
+    /**
+     * TODO: 性能优化
+     */
+    public boolean move(Integer dropPosition, Long dragDocId, Long dropDocId, User loginUser) {
+        Doc dragDoc = docDao.selectOneWithoutContent(dragDocId);
+        Doc dropDoc = docDao.selectOneWithoutContent(dropDocId);
+        if (dragDoc == null || dropDoc == null) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
+        }
+
+        List<Doc> parentChild = docDao.findChildren(dropDoc.getParentId());
+        if (CollUtil.isEmpty(parentChild)) {
+            return false;
+        }
+
+        Long targetParentId = null;
+        Integer targetIndex = null;
+        if (Integer.valueOf(0).equals(dropPosition)) {
+            targetParentId = dropDocId;
+        } else {
+            if (ObjectUtil.notEqual(dragDoc.getParentId(), dropDoc.getParentId())) {
+                targetParentId = dropDoc.getParentId();
+            }
+
+            int currentIndex = CollUtil.indexOf(parentChild, d -> ObjectUtil.equal(d.getId(), dragDocId));
+            int aboveIndex = CollUtil.indexOf(parentChild, d -> ObjectUtil.equal(d.getId(), dropDocId));
+
+            // -1 为上方，1 为下方
+            if (currentIndex >= 0 && aboveIndex >= 0) {
+                if (currentIndex < aboveIndex) {
+                    if (Integer.valueOf(-1).equals(dropPosition)) {
+                        aboveIndex = aboveIndex - 1;
+                    }
+                } else {
+                    if (Integer.valueOf(1).equals(dropPosition)) {
+                        aboveIndex = aboveIndex + 1;
+                    }
+                }
+            }
+
+            targetIndex = aboveIndex;
+        }
+
+        if ((targetIndex == null || targetIndex < 0) && (targetParentId == null || targetParentId <= 0)) {
+            return false;
+        }
+
+        // 看看是否要改变父级
+        if (targetParentId != null && targetParentId > 0 && ObjectUtil.notEqual(dragDoc.getParentId(), targetParentId)) {
+            dragDoc.setParentId(targetParentId);
+            boolean result = docDao.changeParentId(dragDocId, targetParentId, loginUser.getUsername() + loginUser.getId());
+            if (!result) {
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
+            }
+        }
+
+        // 看看是否要改变排序
+        if (targetIndex != null && targetIndex >= 0) {
+            List<Doc> newParentChild = parentChild.stream().filter(d -> ObjectUtil.notEqual(d.getId(), dragDocId))
+                    .sorted(Comparator.comparing(Doc::getSort)).collect(Collectors.toList());
+
+            newParentChild.add(targetIndex, dragDoc);
+
+            for (int index = 0; index < newParentChild.size(); index++) {
+                Doc doc = new Doc();
+                doc.setId(newParentChild.get(index).getId());
+                doc.setSort(index);
+                doc.setUpdater(loginUser.getUsername() + loginUser.getId());
+                doc.setUpdateTime(LocalDateTime.now());
+                boolean result = docDao.update(doc);
+                if (!result) {
+                    throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
+                }
+            }
+        }
+
+        return true;
     }
 
     public boolean changeTitle(Long id, String newTitle, User loginUser) {

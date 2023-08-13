@@ -232,24 +232,25 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async splice(space: string, id: number, index: number): Promise<boolean> {
+    async move(space: string, dropPosition: number, dragDocId: number, dropDocId: number): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
             baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/splice',
+            url: '/docs/move',
             headers: {
                 'newbie-docs-book-slug': space
             },
             data: {
                 space,
-                id,
-                index
+                dropPosition,
+                dragDocId,
+                dropDocId
             }
         })
 
         const restful = response && response.code === '0000'
         if (restful) {
-            const localStorage = await this.localStorageDocsApi.splice(space, id, index)
+            const localStorage = await this.localStorageDocsApi.move(space, dropPosition, dragDocId, dropDocId)
             return restful && localStorage
         } else {
             throw new Error(`[${response.code}] ${response.message}`)
@@ -280,30 +281,6 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async changeParentId(space: string, id: number, parentId: number): Promise<boolean> {
-        const { data: response } = await axiso({
-            method: 'post',
-            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/changeParentId',
-            headers: {
-                'newbie-docs-book-slug': space
-            },
-            data: {
-                space,
-                id,
-                parentId
-            }
-        })
-
-        const restful = response && response.code === '0000'
-        if (restful) {
-            const localStorage = await this.localStorageDocsApi.changeParentId(space, id, parentId)
-            return restful && localStorage
-        } else {
-            throw new Error(`[${response.code}] ${response.message}`)
-        }
-    }
-
     async changeTitle(space: string, id: number, newTitle: string): Promise<boolean> {
         const { data: response } = await axiso({
             method: 'post',
@@ -328,64 +305,4 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
     }
 
-    async findIndex(space: string, id: number): Promise<number | undefined> {
-        const { data: response } = await axiso({
-            method: 'get',
-            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/findIndex',
-            headers: {
-                'newbie-docs-book-slug': space
-            },
-            params: {
-                space,
-                id
-            }
-        })
-
-        if (response && response.code === '0000') {
-            return response.result as number
-        } else {
-            throw new AxiosError(response.message, response.code)
-        }
-    }
-
-    async getTotalDocCount(space: string): Promise<number> {
-        const { data: response } = await axiso({
-            method: 'get',
-            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/getTotalDocCount',
-            headers: {
-                'newbie-docs-book-slug': space
-            },
-            params: {
-                space
-            }
-        })
-
-        if (response && response.code === '0000') {
-            return response.result as number
-        } else {
-            throw new Error(`[${response.code}] ${response.message}`)
-        }
-    }
-
-    async getTotalWordCount(space: string): Promise<number> {
-        const { data: response } = await axiso({
-            method: 'get',
-            baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-            url: '/docs/getTotalWordCount',
-            headers: {
-                'newbie-docs-book-slug': space
-            },
-            params: {
-                space
-            }
-        })
-
-        if (response && response.code === '0000') {
-            return response.result as number
-        } else {
-            throw new Error(`[${response.code}] ${response.message}`)
-        }
-    }
 }
