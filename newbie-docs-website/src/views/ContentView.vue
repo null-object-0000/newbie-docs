@@ -1,7 +1,7 @@
 <template>
   <template v-if="(docsStore.dir && docsStore.dir.children && docsStore.dir.children.length > 0) || loading.get()">
     <div class="content-view">
-      <div class="docs">
+      <div class="docs" :class="[`docs_${docsStore.doc.editor}_${configsStore.docEditMode ? 'edit' : 'preview'}`]">
         <CSidebar :space="bookSlug" @on-create="docsService.onCreate" @on-copy="docsService.onCopy"
           @on-change-title="docsService.onChangeTitle">
         </CSidebar>
@@ -31,6 +31,10 @@
                     @on-change="docsService.onEditorChange" @on-preview="onPreview"
                     @on-change-title="docsService.onChangeTitle">
                   </CWordEditor>
+                  <CMarkdownEditor v-else-if="docsStore.doc.editor === 3" :editor-config="{ headerPlaceholder: '请输入标题' }"
+                    @on-change="docsService.onEditorChange" @on-preview="onPreview"
+                    @on-change-title="docsService.onChangeTitle">
+                  </CMarkdownEditor>
                 </template>
                 <template v-else>
                   <CPreview @onEdit="docsService.change2Edit">
@@ -38,7 +42,8 @@
                 </template>
               </div>
 
-              <aside v-if="!configsStore.docEditMode || docsStore.doc.editor !== 1" class="docs__aside-right">
+              <aside v-if="!configsStore.docEditMode || (docsStore.doc.editor !== 1 && docsStore.doc.editor !== 3)"
+                class="docs__aside-right">
                 <COutline></COutline>
               </aside>
             </div>
@@ -66,6 +71,7 @@ import CHome from "@/components/content/ContentHome.vue";
 import CSidebar from "@/components/content/ContentSidebar.vue";
 import CBlockEditor from "@/components/content/editor/ContentBlockEditor.vue";
 import CWordEditor from "@/components/content/editor/ContentWordEditor.vue";
+import CMarkdownEditor from "@/components/content/editor/ContentMarkdownEditor.vue";
 import CPreview from "@/components/content/preview/ContentPreview.vue";
 import COutline from "@/components/content/ContentOutline.vue";
 import { useRoute, useRouter } from "vue-router";

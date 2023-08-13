@@ -10,6 +10,9 @@ import ArcoVue from "@arco-design/web-vue";
 import ArcoVueIcon from '@arco-design/web-vue/es/icon';
 import "@arco-design/web-vue/dist/arco.css";
 
+import mavonEditor from 'mavon-editor'
+import 'mavon-editor/dist/css/index.css'
+
 import Blocks from "./components/blocks/index";
 import DocsIcons from "./components/icons/index";
 
@@ -19,6 +22,8 @@ app.use(createPinia());
 
 app.use(ArcoVue);
 app.use(ArcoVueIcon);
+
+app.use(mavonEditor);
 
 Blocks.install(app)
 DocsIcons.install(app);

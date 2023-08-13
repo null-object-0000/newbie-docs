@@ -143,6 +143,6 @@ const bookSaved = async (result: boolean) => {
     position: fixed;
     right: 16px;
     top: 10px;
-    z-index: 9999;
+    z-index: 1000;
 }
 </style>

@@ -56,7 +56,7 @@ export class Doc {
   updateTime?: number | string;
   sort: number;
   /**
-   * 编辑器类型（1 word、2 block、3 link）
+   * 编辑器类型（1 word、2 block、3 markdown、4 link）
    */
   editor: number;
 

@@ -14,7 +14,7 @@
           <template #content>
             <a-doption :value="1"><template #icon><icon-file /></template>Word</a-doption>
             <a-doption :value="2"><template #icon><icon-code-block /></template>Block</a-doption>
-            <a-doption disabled :value="3"><template #icon><icon-code /></template>Markdown</a-doption>
+            <a-doption :value="3"><template #icon><icon-code /></template>Markdown</a-doption>
             <a-doption disabled :value="4"><template #icon><icon-link /></template>Link</a-doption>
           </template>
         </a-dropdown>
@@ -82,7 +82,7 @@
                 <template #content>
                   <a-doption :value="1"><template #icon><icon-file /></template>Word</a-doption>
                   <a-doption :value="2"><template #icon><icon-code-block /></template>Block</a-doption>
-                  <a-doption disabled :value="3"><template #icon><icon-code /></template>Markdown</a-doption>
+                  <a-doption :value="3"><template #icon><icon-code /></template>Markdown</a-doption>
                   <a-doption disabled :value="4"><template #icon><icon-link /></template>Link</a-doption>
                 </template>
               </a-dropdown>

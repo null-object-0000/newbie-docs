@@ -187,7 +187,7 @@ watch(() => docsStore.doc.id, () => {
     position: fixed;
     right: 16px;
     top: -12px;
-    z-index: 9999;
+    z-index: 1000;
 }
 
 .w-e-scroll .w-e-textarea-video-container video {
