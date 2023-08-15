@@ -144,7 +144,7 @@ const docsService = {
         },
       ] as OutputBlockData[])
     } else if (value.editor === 3) {
-      content = value.content || ''
+      content = value.content || JSON.stringify({ value: '', render: '' })
     } else {
       content = value.content || ''
     }

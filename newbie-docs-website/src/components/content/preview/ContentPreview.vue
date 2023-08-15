@@ -2,18 +2,21 @@
     <article class="page" data-module="page">
         <ContentPreviewHeader @on-edit="onEdit"></ContentPreviewHeader>
 
-        <h1 class="page__title" v-if="docsStore.doc.editor !== 3">{{ docsStore.doc.title }}</h1>
+        <h1 class="page__title" v-if="docsStore.doc.editor !== 3 || !markdown">{{ docsStore.doc.title }}</h1>
 
         <section class="page__content">
+            <!-- block -->
             <template v-if="docsStore.doc.editor === 2" v-for="block of blocks">
                 <div class="page__content-block">
                     <component v-if="isComponentExists('eb-' + block.type)" :is="'eb-' + block.type" :block="block" />
                     <div v-else style="background-color: pink;">eb-{{ block.type }}: {{ block.data }}</div>
                 </div>
             </template>
-            <div class="page__content-markdown-preview markdown-body" v-if="docsStore.doc.editor === 3"
-                v-html="JSON.parse(docsStore.doc.content).render">
+            <!-- markdown -->
+            <div class="page__content-markdown-preview markdown-body" v-else-if="docsStore.doc.editor === 3"
+                v-html="markdown">
             </div>
+            <!-- word -->
             <div class="page__content-word-preview" v-else v-html="docsStore.doc.content"></div>
         </section>
 
@@ -21,9 +24,9 @@
             <span class="updater" v-if="docsStore.doc.updater || docsStore.doc.creator">
                 <icon-user />{{ docsStore.doc.updater || docsStore.doc.creator }}
             </span>
-            <span class="update-time" v-if="docsStore.doc.updateTime || docsStore.doc.createTime">
-                <icon-clock-circle />最后编辑于 {{ useDateFormat(docsStore.doc.updateTime || docsStore.doc.createTime,
-                    'YYYY年MM月DD日 HH:mm:ss').value }}
+            <span class="update-time" v-if="formatTime">
+                <icon-clock-circle />
+                最后编辑于 {{ formatTime }}
             </span>
         </footer>
     </article>
@@ -49,9 +52,23 @@ const onEdit = (event: Event) => {
 };
 
 const blocks = computed(() => {
-    if (docsStore.doc.editor === 2) {
+    if (docsStore.doc.editor === 2 && docsStore.doc.content) {
         return (docsStore.doc.content ? JSON.parse(docsStore.doc.content) : []) as OutputBlockData[];
     }
+});
+
+const markdown = computed(() => {
+    if (docsStore.doc.editor === 3 && docsStore.doc.content) {
+        try {
+            return JSON.parse(docsStore.doc.content).render
+        } catch (error) {
+
+        }
+    }
+});
+
+const formatTime = computed(() => {
+    return useDateFormat(docsStore.doc.updateTime || docsStore.doc.createTime, 'YYYY年MM月DD日 HH:mm:ss').value
 });
 
 const isComponentExists = (name: string, maybeSelfReference?: boolean) => {
