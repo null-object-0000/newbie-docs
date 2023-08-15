@@ -11,7 +11,8 @@
 import { ref, watch } from 'vue';
 import { useDocsStore } from '@/stores/doc';
 import { Message, MessageReturn } from '@arco-design/web-vue';
-import axios from 'axios';
+import { useFilesApi } from '@/api/index';
+import { AxiosError } from 'axios';
 
 const docsStore = useDocsStore();
 
@@ -49,21 +50,16 @@ const onChange = (event: Event, value: string, render: string, showSuccessTips?:
 }
 
 const onImgAddMarkdown = async (pos: number, imgfile: File) => {
-    const formdata = new FormData();
-    formdata.append('file', imgfile);
+    return useFilesApi().uploadImage(imgfile)
+        .then((url) => {
+            mavonEditorRef.value.$img2Url(pos, url)
+        }).catch((error) => {
+            if (error instanceof AxiosError) {
+                Message.error(error.message)
+            }
 
-    const { data: response } = await axios({
-        method: 'post',
-        url: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_IMAGE_API_URL,
-        data: formdata,
-        headers: { 'Content-Type': 'multipart/form-data' }
-    })
-
-    if (response && response.code === '0000') {
-        mavonEditorRef.value.$img2Url(pos, response.result)
-    } else {
-        Message.error(response.message)
-    }
+            console.error(error)
+        })
 }
 
 const onChangeMarkdown = (value: string, render: string) => {

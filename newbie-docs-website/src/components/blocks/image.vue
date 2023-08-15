@@ -1,7 +1,7 @@
 <template>
   <figure class="block-image">
     <div :class="classes()">
-      <img :src="block.data.url" :alt="block.data.caption ? (block.data.caption || block.data.striptags) : ''">
+      <img :src="block.data.file.url" :alt="block.data.caption ? (block.data.caption || block.data.striptags) : ''">
     </div>
     <footer v-if="block.data.caption" class="block-image__caption">
       {{ block.data.caption }}

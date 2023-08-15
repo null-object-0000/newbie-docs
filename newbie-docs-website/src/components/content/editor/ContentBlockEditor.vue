@@ -48,6 +48,9 @@ import { ref, toRefs, watch, type PropType } from "vue";
 import type { CustomEditorConfig } from "@/types/global";
 import ContentEditorHeader from "./ContentEditorHeader.vue";
 import { useDocsStore } from "@/stores/doc";
+import { useFilesApi } from "@/api";
+import { AxiosError } from "axios";
+import { Message } from "@arco-design/web-vue";
 
 const docsStore = useDocsStore();
 
@@ -85,10 +88,38 @@ const defaultConfig = {
             inlineToolbar: true,
             config: {
                 types: 'image/*, video/mp4',
+                field: 'file',
                 endpoints: {
-                    byFile: '/api/transport/image',
+                    byFile: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_IMAGE_API_URL,
                     byUrl: '/api/transport/fetch',
                 },
+                uploader: {
+                    /**
+                     * Upload file to the server and return an uploaded image data
+                     * @param {File} file - file selected from the device or pasted by drag-n-drop
+                     * @return {Promise.<{success, file: {url}}>}
+                     */
+                    async uploadByFile(file: File): Promise<{ success: number; file: { url: string }; }> {
+                        return useFilesApi().uploadImage(file)
+                            .then((url) => {
+                                return {
+                                    success: 1,
+                                    file: { url }
+                                }
+                            }).catch((error) => {
+                                if (error instanceof AxiosError) {
+                                    Message.error(error.message)
+                                }
+
+                                console.error(error)
+
+                                return {
+                                    success: 0,
+                                    file: { url: '' }
+                                }
+                            })
+                    }
+                }
             },
         },
 
