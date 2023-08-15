@@ -53,13 +53,12 @@ public class FileService {
 
         ObjectMetadata meta = new ObjectMetadata();
         meta.setContentLength(uploadFile.available());
-
-        PutObjectRequest request = new PutObjectRequest(bucketName, key, uploadFile, meta)
-                .withCannedAcl(CannedAccessControlList.PublicRead);
-
         if (StrUtil.isNotBlank(contentType)) {
             meta.setContentType(contentType);
         }
+
+        PutObjectRequest request = new PutObjectRequest(bucketName, key, uploadFile, meta)
+                .withCannedAcl(CannedAccessControlList.PublicRead);
 
         PutObjectResult putObjectResult = s3Client.putObject(request);
         if (putObjectResult == null) {

@@ -17,10 +17,10 @@ import site.snewbie.docs.server.dao.BookDao;
 import site.snewbie.docs.server.dao.DocDao;
 import site.snewbie.docs.server.enums.ResultsStatusEnum;
 import site.snewbie.docs.server.model.ResultsException;
+import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.entity.Book;
 import site.snewbie.docs.server.model.entity.Doc;
 import site.snewbie.docs.server.model.entity.Permission;
-import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.vo.DocVO;
 
 import java.time.LocalDateTime;
@@ -199,6 +199,11 @@ public class DocService {
         // 看看是否要改变父级
         if (targetParentId != null && targetParentId > 0 && ObjectUtil.notEqual(dragDoc.getParentId(), targetParentId)) {
             dragDoc.setParentId(targetParentId);
+
+            if (dragDocId.equals(targetParentId)){
+                throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY, "不能将文档移动到自己的子文档下");
+            }
+
             boolean result = docDao.changeParentId(dragDocId, targetParentId, loginUser.getUsername() + loginUser.getId());
             if (!result) {
                 throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
@@ -247,7 +252,7 @@ public class DocService {
     public boolean tryLock(Long id, String editingUser) {
         boolean updateEditingUserResult = docDao.updateEditingUser(id, editingUser);
         if (updateEditingUserResult) {
-            log.info("占有锁成功 {} {}", id, editingUser);
+            log.debug("占有锁成功 {} {}", id, editingUser);
             return true;
         }
 
@@ -279,7 +284,7 @@ public class DocService {
     public boolean tryUnlock(Long id, String editingUser) {
         // 先要判断是否是自己占有的锁
         if (this.tryLock(id, editingUser)) {
-            return docDao.forceUpdateEditingUser(id, StrUtil.EMPTY, Integer.MAX_VALUE);
+            return docDao.forceUpdateEditingUser(id, StrUtil.EMPTY, 0);
         } else {
             return false;
         }
@@ -300,7 +305,12 @@ public class DocService {
                 new ThreadPoolExecutor.DiscardPolicy()));
 
         executor.submit(() -> {
-            this.updateDocsAndWordsCount(finalBookId);
+            try {
+                boolean result = this.updateDocsAndWordsCount(finalBookId);
+                log.info("更新知识库【{}】 文档数量、字数：{} 更新结果：{}", finalBookId, finalBookId, result);
+            } catch (Exception e) {
+                log.error(StrUtil.format("更新文档数量、字数失败 {} {}", finalBookId, e.getMessage()), e);
+            }
         });
 
         return true;

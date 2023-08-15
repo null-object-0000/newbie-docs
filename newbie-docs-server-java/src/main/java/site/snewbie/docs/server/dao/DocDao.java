@@ -41,5 +41,5 @@ public interface DocDao {
 
     boolean updateEditingUser(@Param("id") Long id, @Param("editingUser") String editingUser);
 
-    boolean forceUpdateEditingUser(@Param("id") Long id, @Param("editingUser") String editingUser, @Param("timeout") Integer timeout);
+    boolean forceUpdateEditingUser(@Param("id") Long id, @Param("editingUser") String editingUser, @Param("timeout") int timeout);
 }
