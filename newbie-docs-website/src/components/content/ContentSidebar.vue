@@ -15,7 +15,8 @@
             <a-doption :value="1"><template #icon><icon-file /></template>Word</a-doption>
             <a-doption :value="2"><template #icon><icon-code-block /></template>Block</a-doption>
             <a-doption :value="3"><template #icon><icon-code /></template>Markdown</a-doption>
-            <a-doption disabled :value="4"><template #icon><icon-link /></template>Link</a-doption>
+            <a-doption disabled :value="4"><template #icon><icon-storage /></template>Excel</a-doption>
+            <a-doption disabled :value="5"><template #icon><icon-link /></template>Link</a-doption>
           </template>
         </a-dropdown>
       </span>
@@ -83,7 +84,8 @@
                   <a-doption :value="1"><template #icon><icon-file /></template>Word</a-doption>
                   <a-doption :value="2"><template #icon><icon-code-block /></template>Block</a-doption>
                   <a-doption :value="3"><template #icon><icon-code /></template>Markdown</a-doption>
-                  <a-doption disabled :value="4"><template #icon><icon-link /></template>Link</a-doption>
+                  <a-doption disabled :value="4"><template #icon><icon-storage /></template>Excel</a-doption>
+                  <a-doption disabled :value="5"><template #icon><icon-link /></template>Link</a-doption>
                 </template>
               </a-dropdown>
             </template>
@@ -425,7 +427,9 @@ const onSetting = async function (node: TreeNodeData, value: string | number | R
   const options = {
     action: value
   } as { action: string | number | Record<string, any> | undefined }
-  const docLink = `${location.protocol}//${location.host}${doc.path}`
+
+  const docLink = `${location.protocol}//${location.host}${import.meta.env.BASE_URL}${doc.path.substring(1)}`
+
   if (options.action === 'rename') {
     sidebarData.renameDocSlug = node.key as string
     sidebarData.docTitle = doc.title

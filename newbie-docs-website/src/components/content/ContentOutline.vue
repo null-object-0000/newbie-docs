@@ -36,12 +36,20 @@ const tocElementItemIndent = (number: number) => `table-of-content__list-item--i
 const refreshTags = () => {
     let tags = [] as HTMLElement[]
 
-    if (docsStore.doc.editor == 2) {
+    if (docsStore.doc.editor === 2) {
         tags = Array.from(document.querySelectorAll('.block-header,.ce-header')) as HTMLElement[]
     } else {
         // .page__content 下的所有 h1-h6 标签
         // FIXME: word 模式下没有锚点
         tags = Array.from(document.querySelectorAll('.page__content h1,.page__content h2,.page__content h3,.page__content h4,.page__content h5,.page__content h6')) as HTMLElement[]
+    }
+
+    if (docsStore.doc.editor === 3 && tags.length > 0) {
+        // markdown 模式下，如果第一个是 h1，并且和标题一致，就不显示
+        const firstTag = tags[0]
+        if (firstTag && firstTag.tagName.toLowerCase() === 'h1' && firstTag.innerText.trim() === docsStore.doc.title) {
+            tags.shift()
+        }
     }
 
     config.tags = []

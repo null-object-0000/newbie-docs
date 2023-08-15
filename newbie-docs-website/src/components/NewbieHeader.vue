@@ -152,4 +152,8 @@ watch(() => route.params.bookSlug, async () => {
     display: none;
   }
 }
+
+.docs-header__logo {
+  text-decoration: none;
+}
 </style>

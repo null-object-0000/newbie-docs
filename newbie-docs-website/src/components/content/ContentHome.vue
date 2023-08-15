@@ -122,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, shallowRef, onMounted, ref, reactive, nextTick, onBeforeMount } from "vue";
+import { onBeforeUnmount, watch, computed, shallowRef, onMounted, ref, reactive, nextTick, onBeforeMount } from "vue";
 import { useConfigsStore } from "@/stores/config";
 import PermissionModal from "@/components/modals/PermissionModal.vue";
 import { Message, Modal, TreeInstance, TreeNodeData } from "@arco-design/web-vue";
@@ -136,7 +136,6 @@ import { useDateFormat } from "@vueuse/core";
 import { useDocsEventBus } from "@/events/docs";
 // @ts-ignore
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { computed } from "vue";
 import { AxiosError } from "axios";
 
 const route = useRoute()
@@ -379,7 +378,13 @@ onBeforeMount(async () => {
     }
 })
 
-docsEventBus.onDirChange(bookSlug, (event: Event, value: { space: string, dir: Doc }) => {
+watch(() => docsStore.dir.children, async () => {
+    updateDirData()
+
+    updateDirData(docsStore.dir)
+}, { immediate: true })
+
+docsEventBus.onDirChange(docsStore.bookSlug, (event: Event, value: { space: string, dir: Doc }) => {
     // 先更新成空数据，再更新真实数据，强制触发 tree 的更新
     updateDirData()
 

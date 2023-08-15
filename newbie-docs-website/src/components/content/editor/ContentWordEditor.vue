@@ -73,6 +73,7 @@ const editorConfig = {
         },
         uploadVideo: {
             fieldName: 'file',
+            maxFileSize: 50 * 1024 * 1024, // 50M
             server: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_VIDEO_API_URL,
             customInsert(res: any, insertFn: InsertFnType) {
                 console.log('customInsert', res)

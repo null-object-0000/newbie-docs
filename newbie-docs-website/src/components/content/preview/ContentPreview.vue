@@ -2,7 +2,7 @@
     <article class="page" data-module="page">
         <ContentPreviewHeader @on-edit="onEdit"></ContentPreviewHeader>
 
-        <h1 class="page__title">{{ docsStore.doc.title }}</h1>
+        <h1 class="page__title" v-if="docsStore.doc.editor !== 3">{{ docsStore.doc.title }}</h1>
 
         <section class="page__content">
             <template v-if="docsStore.doc.editor === 2" v-for="block of blocks">
@@ -11,6 +11,9 @@
                     <div v-else style="background-color: pink;">eb-{{ block.type }}: {{ block.data }}</div>
                 </div>
             </template>
+            <div class="page__content-markdown-preview markdown-body" v-if="docsStore.doc.editor === 3"
+                v-html="JSON.parse(docsStore.doc.content).render">
+            </div>
             <div class="page__content-word-preview" v-else v-html="docsStore.doc.content"></div>
         </section>
 
@@ -35,6 +38,7 @@ import { useDateFormat } from '@vueuse/core';
 // @ts-ignore
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
+import { onBeforeMount } from 'vue';
 
 const docsStore = useDocsStore();
 
@@ -54,6 +58,27 @@ const isComponentExists = (name: string, maybeSelfReference?: boolean) => {
     const component = resolveComponent(name, maybeSelfReference);
     return component !== undefined && typeof component !== 'string';
 };
+
+const loadMarkdownCSS = async () => {
+    return new Promise((resolve, reject) => {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css';
+        link.onload = (ev: Event) => {
+            resolve(ev);
+        };
+        link.onerror = () => {
+            reject(new Error('load markdown css failed'));
+        };
+        document.head.appendChild(link);
+    });
+}
+
+onBeforeMount(() => {
+    if (docsStore.doc.editor === 3) {
+        loadMarkdownCSS();
+    }
+});
 
 onMounted(() => {
     Prism.highlightAll();

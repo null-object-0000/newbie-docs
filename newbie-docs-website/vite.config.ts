@@ -6,13 +6,17 @@ import prismjs from 'vite-plugin-prismjs';
 
 // https://vitejs.dev/config/
 export const baseConfig = defineConfig({
+  /**
+   *  BASE_URL_TODO 请一定要以 / 结尾，例如：/mine/
+   */
+  base: '/',
   plugins: [
     vue(),
     prismjs({
-      languages: 'all',
-      plugins: ["line-numbers"], // 配置显示行号插件
-      theme: "solarizedlight", // 主题名称
-      css: true, // 是否需要引入css
+      languages: ['html', 'xml', 'css', 'javascript', 'typescript', 'java', 'groovy', 'dockerfile', 'sql', 'bash'],
+      plugins: [],
+      theme: "solarizedlight",
+      css: true,
     })
   ],
   resolve: {
@@ -22,11 +26,16 @@ export const baseConfig = defineConfig({
   }
 });
 
+
+
 export const proxyConfig = defineConfig({
   mode: 'development',
   server: {
     host: '0.0.0.0',
     proxy: {
+      /**
+       * BASE_URL_TODO 如果修改了项目基础路径，请一定要修改这里，例如：/mine/api
+       */
       '/api': {
         target: 'http://localhost:8188/',
         changeOrigin: true,
