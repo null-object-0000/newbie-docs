@@ -21,8 +21,7 @@
 - [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
 - [x] 实现基于 `LocalStorage` 的客户端存储用于演示
 - [x] 实现基于 `Amazon S3` 存储的 `Java` RESTful API 服务端
-- [ ] 支持知识库、文档的权限管理
-- [ ] 支持基于 OAuth2 的第三方登录
+- [ ] 支持基于 OAuth2 的第三方登录 + 知识库、文档的权限管理
 - [x] 支持通过 Docker 部署
 
 > `LocalStorage` 存储实现不支持权限管理能力，此时默认所有人都拥有所有知识库、文档的管理员权限
@@ -31,13 +30,14 @@
 - [ ] 基于 `YJS` 实现文档协同编辑
 - [ ] 完成移动端适配 + 暗黑模式
 - [ ] 接入 `AIGC` 辅助文档编写
-- [ ] 实现基于 `Amazon S3` 存储的 多语言的 RESTful API 服务端
-  - [ ] 基于 `Node.js` 的 RESTful API 服务端
 
 ### v3.0.0
+- [ ] 支持自定义主题样式
 - [ ] 支持更丰富的在线编辑器
   - [ ] 基于 [Luckysheet](https://github.com/dream-num/Luckysheet) 的表格编辑能力
 - [ ] 文档的多版本管理 + 支持从各平台导入文档
+- [ ] 实现基于 `Amazon S3` 存储的 多语言的 RESTful API 服务端
+  - [ ] 基于 `Node.js` 的 RESTful API 服务端
 
 ## 开发部署
 
