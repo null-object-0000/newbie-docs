@@ -17,7 +17,7 @@ WORKDIR /app
 COPY ./newbie-docs-server-java /app
 COPY --from=build-website /app/dist /app/src/main/resources/public
 
-RUN mvn clean package -Dmaven.test.skip=true -Dspring-boot.run.profiles=production
+RUN mvn clean package -Dmaven.test.skip=true -Pproduction
 
 # 部署
 FROM openjdk:17-jdk-slim
