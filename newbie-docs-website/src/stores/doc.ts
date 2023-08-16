@@ -278,6 +278,8 @@ export const useDocsStore = defineStore('docs', {
                     putingNotification()
                 }
 
+                this.docPuting = forceRemote === true
+
                 // 如果本地与远程版本号不一致就强制更新 doc remote version
                 if (forceRemote === true && window.docEditPutVersion.local !== window.docEditPutVersion.remote) {
                     const remoteDoc = await this.docsApi.getById(this.doc.bookSlug, this.doc.id, true) as Doc
@@ -293,8 +295,6 @@ export const useDocsStore = defineStore('docs', {
                         }
                     }
                 }
-
-                this.docPuting = forceRemote === true
 
                 try {
                     if (await this.docsApi.put(this.bookSlug, doc, forceRemote)) {
