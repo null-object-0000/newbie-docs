@@ -99,20 +99,4 @@
             </resource>
         </resources>
     </build>
-
-    <profiles>
-        <profile>
-            <id>production</id>
-            <properties>
-                <activatedProperties>production</activatedProperties>
-            </properties>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-                <property>
-                    <name>spring.profiles.active</name>
-                    <value>production</value>
-                </property>
-            </activation>
-        </profile>
-    </profiles>
 </project>

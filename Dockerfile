@@ -17,7 +17,7 @@ WORKDIR /app
 COPY ./newbie-docs-server-java /app
 COPY --from=build-website /app/dist /app/src/main/resources/public
 
-RUN mvn clean package -Dmaven.test.skip=true -Pproduction
+RUN mvn clean package -Dmaven.test.skip=true
 
 # 部署
 FROM openjdk:17-jdk-slim
@@ -28,4 +28,4 @@ COPY --from=build-server /app/target/newbie-docs-server-java.jar /app/server.jar
 
 EXPOSE 80
 
-CMD ["java", "-jar", "/app/server.jar"]
+CMD ["java", "-jar", "/app/server.jar", "-Dspring-boot.run.profiles=production"]
