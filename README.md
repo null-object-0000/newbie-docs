@@ -1,6 +1,6 @@
 # newbie-docs
 
-基于 Vue 3.0 的开源知识库（文档）管理系统，详细 [业务逻辑](./BusinessLogic.md) 介绍
+基于 Vue 3.0 的开源知识库（文档）管理系统，详细 [业务逻辑](./BusinessLogic.md) 介绍以及 [常见问题](./Question.md) 请见对应
 
 ## 主要功能
 
@@ -79,10 +79,10 @@ cp src/main/resources/application.properties src/main/resources/application-loca
 
 # 本地运行（windows）
 mvn clean package -Dmaven.test.skip=true
-java -jar .\target\newbie-docs-server-java.jar -Dspring.profiles.active=local
+java -jar -Dspring.profiles.active=local .\target\newbie-docs-server-java.jar
 # 本地运行（linux）
 mvn clean package -Dmaven.test.skip=true
-java -jar target/newbie-docs-server-java.jar -Dspring.profiles.active=local
+java -jar -Dspring.profiles.active=local target/newbie-docs-server-java.jar
 ```
 
 ### Docker 部署

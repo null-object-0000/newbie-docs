@@ -28,4 +28,4 @@ COPY --from=build-server /app/target/newbie-docs-server-java.jar /app/server.jar
 
 EXPOSE 80
 
-CMD ["java", "-jar", "/app/server.jar", "-Dspring.profiles.active=production"]
+CMD ["java", "-jar", "-Dspring.profiles.active=production", "/app/server.jar"]
