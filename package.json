@@ -6,7 +6,7 @@
 		"website:build": "cd newbie-docs-website && pnpm run build",
 		"website:commit": "pnpm run website:build && git add ./newbie-docs-website && git cz",
 		"java-server:dev": "cd newbie-docs-server-java && mvn spring-boot:run -Dspring-boot.run.profiles=local",
-		"java-server:build": "cd newbie-docs-server-java && mvn clean package -Dmaven.test.skip=true -Dspring-boot.run.profiles=production"
+		"java-server:build": "cd newbie-docs-server-java && mvn clean package -Dmaven.test.skip=true"
 	},
 	"config": {
 		"commitizen": {
