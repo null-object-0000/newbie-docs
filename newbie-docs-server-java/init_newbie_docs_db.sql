@@ -9,7 +9,7 @@ CREATE TABLE `newbie_books`
 (
     `id`          bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键标识',
     `slug`        varchar(50)     NOT NULL DEFAULT '' COMMENT '路由标识',
-    `cover`       varchar(255)     NOT NULL DEFAULT '' COMMENT '封面图',
+    `cover`       varchar(255)    NOT NULL DEFAULT '' COMMENT '封面图',
     `title`       varchar(50)     NOT NULL DEFAULT '' COMMENT '标题',
     `description` varchar(50)     NOT NULL DEFAULT '' COMMENT '描述',
     `docs_count`  bigint unsigned NOT NULL DEFAULT 0 COMMENT '文档数量',
@@ -38,6 +38,7 @@ CREATE TABLE `newbie_docs`
     `book_slug`    varchar(50)     NOT NULL DEFAULT '' COMMENT '所属书籍路由标识',
     `parent_id`    bigint unsigned NOT NULL DEFAULT '0' COMMENT '父级目录',
     `title`        varchar(50)     NOT NULL DEFAULT '' COMMENT '标题',
+    `version`      varchar(50)     NOT NULL DEFAULT '' COMMENT '版本号',
     `editor`       int             NOT NULL DEFAULT '0' COMMENT '1 word 2 block 3 link',
     `words_count`  int unsigned    NOT NULL DEFAULT 0 COMMENT '字数统计',
     `creator`      varchar(50)     NOT NULL DEFAULT '' COMMENT '创建人',

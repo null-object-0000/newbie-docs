@@ -8,6 +8,7 @@ import cn.hutool.extra.emoji.EmojiUtil;
 import cn.hutool.http.HtmlUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import jakarta.annotation.Resource;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -46,8 +47,8 @@ public class DocService {
     protected FileService fileService;
 
     public String getS3ObjectKey(Long bookId, Long docId) {
-        if (bookId == null || bookId<=0) {
-            
+        if (bookId == null || bookId <= 0) {
+
         }
         return String.format("books/%d/%d", bookId, docId);
     }
@@ -132,35 +133,33 @@ public class DocService {
 
         if (doc.getId() != null && doc.getId() > 0) {
             boolean updateDocResult = docDao.update(doc);
-            if (updateDocResult) {
-                return doc.getId();
-            } else {
+            if (!updateDocResult) {
                 throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
             }
-        }
+        } else {
+            // 以下是新增 doc 的逻辑
 
-        // 以下是新增 doc 的逻辑
+            doc.setBookId(book.getId());
+            doc.setBookSlug(book.getSlug());
+            doc.setCreator(loginUser.getUsername() + loginUser.getId());
+            doc.setCreateTime(LocalDateTime.now());
+            boolean insertBookResult = docDao.insert(doc);
+            if (!insertBookResult || doc.getId() == null || doc.getId() <= 0) {
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 doc 失败");
+            }
 
-        doc.setBookId(book.getId());
-        doc.setBookSlug(book.getSlug());
-        doc.setCreator(loginUser.getUsername() + loginUser.getId());
-        doc.setCreateTime(LocalDateTime.now());
-        boolean insertBookResult = docDao.insert(doc);
-        if (!insertBookResult || doc.getId() == null || doc.getId() <= 0) {
-            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 doc 失败");
-        }
-
-        // 默认给自己加一个 adminer 权限
-        Permission permission = new Permission();
-        permission.setAuthType(1);
-        permission.setDataType(2);
-        permission.setOwnerType(1);
-        permission.setDataId(doc.getId());
-        permission.setDataSlug(String.format("%s/%s", book.getSlug(), doc.getSlug()));
-        permission.setOwner(loginUser.getUsername() + loginUser.getId());
-        Long addAdminerPermissionResult = permissionService.put(permission, loginUser);
-        if (addAdminerPermissionResult == null || addAdminerPermissionResult <= 0) {
-            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 adminerPermission 失败");
+            // 默认给自己加一个 adminer 权限
+            Permission permission = new Permission();
+            permission.setAuthType(1);
+            permission.setDataType(2);
+            permission.setOwnerType(1);
+            permission.setDataId(doc.getId());
+            permission.setDataSlug(String.format("%s/%s", book.getSlug(), doc.getSlug()));
+            permission.setOwner(loginUser.getUsername() + loginUser.getId());
+            Long addAdminerPermissionResult = permissionService.put(permission, loginUser);
+            if (addAdminerPermissionResult == null || addAdminerPermissionResult <= 0) {
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 adminerPermission 失败");
+            }
         }
 
         boolean uploadStringResult = fileService
@@ -235,7 +234,7 @@ public class DocService {
             boolean result = docDao.changeParentId(dragDocId, targetParentId,
                     loginUser.getUsername() + loginUser.getId());
             if (!result) {
-                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "[changeParentId] 更新 doc 失败");
             }
         }
 
@@ -254,7 +253,7 @@ public class DocService {
                 doc.setUpdateTime(LocalDateTime.now());
                 boolean result = docDao.update(doc);
                 if (!result) {
-                    throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
+                    throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "[update] 更新 doc 失败");
                 }
             }
         }
@@ -357,9 +356,17 @@ public class DocService {
             docVO.setPath(String.format("/%s/%s", doc.getBookSlug(), doc.getSlug()));
         }
 
-        String content = fileService
-                .downloadString(this.getS3ObjectKey(docVO.getBookId(), docVO.getId()));
-        docVO.setContent(StrUtil.isBlank(content) ? StrUtil.EMPTY : EmojiUtil.toUnicode(content));
+        try {
+            String content = fileService
+                    .downloadString(this.getS3ObjectKey(docVO.getBookId(), docVO.getId()));
+            docVO.setContent(StrUtil.isBlank(content) ? StrUtil.EMPTY : EmojiUtil.toUnicode(content));
+        } catch (AmazonS3Exception e) {
+            if ("NoSuchKey".equals(e.getErrorCode())) {
+                docVO.setContent(StrUtil.EMPTY);
+            } else {
+                throw e;
+            }
+        }
 
         return docVO;
     }

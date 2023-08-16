@@ -48,6 +48,7 @@ export class Doc {
   children?: Doc[];
   content: string;
 
+  version: string;
   wordsCount: number;
 
   creator: string;

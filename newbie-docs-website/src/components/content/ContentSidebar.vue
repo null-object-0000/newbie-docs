@@ -518,6 +518,13 @@ const drop = async (data: { e: DragEvent; dragNode: TreeNodeData; dropNode: Tree
 
 const jump2Doc = (path: string | number | undefined, docEditMode: boolean) => {
   if (typeof path === 'string' && path) {
+    // 远程与本地一致性保证相关处理
+    if (configsStore.docEditMode === true) {
+      docsStore.onContentChange(new Event("sidebar change route"), {
+        title: docsStore.doc.title, content: docsStore.doc.content, forceRemote: true
+      })
+    }
+
     configsStore.docEditMode = docEditMode
     router.push(path)
   }

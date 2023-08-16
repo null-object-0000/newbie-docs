@@ -4,34 +4,51 @@ import { useDocsApi } from "@/api/docs";
 import { UseDocsApiFunction } from "@/types/api";
 import { Book, Doc, DocData } from "@/types/global";
 import { useDocsEventBus } from "@/events/docs";
-import { Notification, type NotificationConfig } from '@arco-design/web-vue';
+import { Notification, NotificationReturn, type NotificationConfig } from '@arco-design/web-vue';
 import { AxiosError } from "axios";
+
+// ts Window 添加属性
+declare global {
+    interface Window {
+        docEditPutVersion: {
+            local: string,
+            remote: string,
+            preventDefault: (event: Event) => void
+        }
+    }
+}
+window.docEditPutVersion = {
+    local: '',
+    remote: '',
+    preventDefault: function (event: Event) {
+        console.log('docEditPutVersion', window.docEditPutVersion.local, window.docEditPutVersion.remote)
+        if (window.docEditPutVersion.local === window.docEditPutVersion.remote) {
+            return;
+        } else {
+            event.preventDefault();
+            // @ts-ignore
+            event.returnValue = '';
+        }
+    }
+}
 
 export const useDocsStore = defineStore('docs', {
     state: () => ({
-        bookId: -1,
-        bookSlug: '',
+        bookId: -1 as number,
+        bookSlug: '' as string,
 
-        book: {},
+        book: {} as Book,
 
-        spaceData: {},
-        dir: {},
+        spaceData: {} as Record<string, DocData>,
+        dir: {} as Doc,
 
-        doc: {},
+        doc: {} as Doc,
 
-        docsApi: {},
-    } as {
-        bookId: number,
-        bookSlug: string,
+        docsApi: {} as UseDocsApiFunction,
 
-        book: Book,
-
-        spaceData: Record<string, DocData>,
-        dir: Doc,
-
-        doc: Doc,
-
-        docsApi: UseDocsApiFunction,
+        docPuting: false as boolean,
+        lastDocContent: {} as Record<string, string>,
+        historyNotification: [] as NotificationReturn[]
     }),
 
     actions: {
@@ -156,5 +173,155 @@ export const useDocsStore = defineStore('docs', {
                 return false
             }
         },
+
+
+
+        initContnetCache(doc: Doc) {
+            this.lastDocContent[doc.slug] = doc.title + doc.content
+        },
+        clearContentCache(doc: Doc) {
+            delete this.lastDocContent[doc.slug]
+        },
+        checkContnetIsChanged(doc: Doc) {
+            const content = doc.title + doc.content
+            if (this.lastDocContent[this.doc.slug] !== content) {
+                this.lastDocContent[this.doc.slug] = content;
+                return true;
+            } else {
+                return false;
+            }
+        },
+        async onContentChange(event: Event, { title, content, forceRemote }: { title?: string, content?: string, forceRemote?: boolean }) {
+            const doc = this.doc as Doc;
+            doc.title = title || doc.title;
+            doc.content = content || doc.content;
+            doc.updateTime = new Date().getTime()
+
+            const closeAllHistoryNotification = () => {
+                this.historyNotification.forEach((item) => {
+                    item.close()
+                })
+            }
+
+            const putingNotification = () => {
+                closeAllHistoryNotification()
+
+                return Notification.info({
+                    id: 'newbie-docs-save-notification-' + doc.slug,
+                    title: '正在保存文档',
+                    style: {
+                        top: '50px',
+                    },
+                    duration: 0,
+                } as NotificationConfig)
+            }
+
+            const putSuccessNotification = (more?: boolean) => {
+                if (more === true) {
+                    // 保留最近的 3 个通知
+                    if (this.historyNotification.length > 2) {
+                        this.historyNotification.shift()?.close()
+                    }
+
+                    const notificationInstance = Notification.success({
+                        title: '文档已保存',
+                        style: {
+                            top: '50px',
+                        },
+                        duration: 3000,
+                    } as NotificationConfig)
+
+                    this.historyNotification.push(notificationInstance)
+                } else {
+                    closeAllHistoryNotification()
+
+                    return Notification.success({
+                        id: 'newbie-docs-save-notification-' + doc.slug,
+                        title: '文档已保存',
+                        style: {
+                            top: '50px',
+                        },
+                        duration: 3000,
+                    } as NotificationConfig)
+                }
+            }
+
+            const putFailedNotification = () => {
+                closeAllHistoryNotification()
+
+                return Notification.error({
+                    id: 'newbie-docs-save-notification-' + doc.slug,
+                    title: '文档保存失败',
+                    style: {
+                        top: '50px',
+                    },
+                    duration: 3000,
+                } as NotificationConfig)
+            }
+
+            try {
+                if (this.docPuting === true) {
+                    console.warn('正在保存文档，不需要再次保存')
+                    return
+                }
+
+                if (!this.checkContnetIsChanged(doc) && window.docEditPutVersion.local === window.docEditPutVersion.remote) {
+                    if (forceRemote === true) {
+                        putSuccessNotification(true)
+                    }
+
+                    console.log('文档内容没有变化，不需要保存')
+                    return false;
+                }
+
+                if (forceRemote === true) {
+                    putingNotification()
+                }
+
+                // 如果本地与远程版本号不一致就强制更新 doc remote version
+                if (forceRemote === true && window.docEditPutVersion.local !== window.docEditPutVersion.remote) {
+                    const remoteDoc = await this.docsApi.getById(this.doc.bookSlug, this.doc.id, true) as Doc
+                    if (remoteDoc) {
+                        window.docEditPutVersion.remote = remoteDoc.version
+
+                        // 如果内容一致，就更新本地版本号
+                        if (window.docEditPutVersion.local !== window.docEditPutVersion.remote && remoteDoc.content === this.doc.content) {
+                            window.docEditPutVersion.local = remoteDoc.version
+                            console.warn('本地版本号与远程版本号不一致但是此时内容一致，强制更新本地版本号')
+                        } else {
+                            this.clearContentCache(doc)
+                        }
+                    }
+                }
+
+                this.docPuting = forceRemote === true
+
+                try {
+                    if (await this.docsApi.put(this.bookSlug, doc, forceRemote)) {
+                        if (forceRemote === true) {
+                            putSuccessNotification()
+                        }
+                    } else {
+                        if (forceRemote === true) {
+                            putFailedNotification()
+                        }
+                    }
+                } catch (error: any) {
+                    if (error instanceof AxiosError) {
+                        putFailedNotification()
+                    } else {
+                        throw error
+                    }
+                } finally {
+                    if (forceRemote === true) {
+                        setTimeout(() => {
+                            this.docPuting = false
+                        }, 550);
+                    }
+                }
+            } catch (error) {
+                console.error(error)
+            }
+        }
     },
 })

@@ -1,5 +1,6 @@
 import { Book, Doc } from "@/types/global";
 import { UseDocsApiFunction } from "@/types/api";
+import { v4 as uuidv4 } from 'uuid'
 
 export abstract class BaseUseDocsApi implements UseDocsApiFunction {
     abstract init(space: string): Promise<void>;
@@ -124,6 +125,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
             slug: rootSlug,
             parentId: 0,
             editor: 1,
+            version: uuidv4(),
             wordsCount: 0,
             content: '',
             title: book.title,
@@ -140,6 +142,7 @@ export abstract class BaseUseDocsApi implements UseDocsApiFunction {
                     slug: 'home',
                     parentId: rootId,
                     editor: 1,
+                    version: uuidv4(),
                     wordsCount: 0,
                     content: '',
                     title: "首页",

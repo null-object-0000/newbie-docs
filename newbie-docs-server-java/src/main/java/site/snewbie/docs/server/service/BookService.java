@@ -1,5 +1,6 @@
 package site.snewbie.docs.server.service;
 
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -46,8 +47,9 @@ public class BookService {
         doc.setSlug(slug);
         doc.setParentId(parentId);
         doc.setEditor(1);
-        doc.setWordsCount(0);
         doc.setTitle(title);
+        doc.setVersion(IdUtil.randomUUID());
+        doc.setWordsCount(0);
         doc.setSort(0);
         doc.setCreator(loginUser.getUsername() + loginUser.getId());
         doc.setCreateTime(LocalDateTime.now());

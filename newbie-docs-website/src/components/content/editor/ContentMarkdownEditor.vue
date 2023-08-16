@@ -32,7 +32,7 @@ const checkDocTitle = (content: string) => {
 }
 
 const docTitleEmptyMessageRef = ref<MessageReturn>()
-const onChange = (event: Event, value: string, render: string, showSuccessTips?: boolean) => {
+const onChange = (event: Event, value: string, render: string, forceRemote?: boolean) => {
     if (checkDocTitle(markdown.value) === false) {
         docTitleEmptyMessageRef.value = Message.error({
             id: 'doc_title_empty_message',
@@ -46,7 +46,7 @@ const onChange = (event: Event, value: string, render: string, showSuccessTips?:
     // 提取标题
     const title = markdown.value.split('\n')[0].replace(/^#+\s/, '')
 
-    emit('onChange', event, { title, content: JSON.stringify({ value, render }), showSuccessTips })
+    emit('onChange', event, { title, content: JSON.stringify({ value, render }), forceRemote })
 }
 
 const onImgAddMarkdown = async (pos: number, imgfile: File) => {

@@ -101,20 +101,7 @@ const onPreview = function () {
   configsStore.docEditMode = false;
 };
 
-const lastDocContent = ref({} as Record<string, string>);
-const historyNotification = [] as NotificationReturn[]
-
 const docsService = {
-  checkDocContentIsChanged: (doc: Doc) => {
-    const content = doc.title + doc.content
-    if (lastDocContent.value[doc.slug] !== content) {
-      lastDocContent.value[doc.slug] = content;
-      return true;
-    } else {
-      return false;
-    }
-  },
-
   onCreate: async (event: Event, value: Doc | undefined) => {
     if (value === undefined || value === null) {
       return false
@@ -161,17 +148,13 @@ const docsService = {
       path: `/${bookSlug.value}/${slug}`,
       title: value.title || "无标题文档",
       content,
+      version: '',
       wordsCount: -1,
       children: [],
       creator: loginUser.username + loginUser.id,
       createTime: Date.now(),
       sort: -1,
     };
-
-    if (!docsService.checkDocContentIsChanged(doc)) {
-      console.log('文档内容没有变化，不需要保存')
-      return false;
-    }
 
     try {
       const result = await docsStore.docsApi.put(bookSlug.value, doc);
@@ -214,29 +197,8 @@ const docsService = {
     }
   },
 
-  onEditorChange: async function (event: Event, { title, content, showSuccessTips }: { title?: string, content?: string, showSuccessTips?: boolean }) {
-    const doc = docsStore.doc as Doc;
-    doc.title = title || doc.title;
-    doc.content = content || doc.content;
-    doc.updateTime = new Date().getTime()
-    if (await docsStore.docsApi.put(bookSlug.value, doc)) {
-      if (showSuccessTips) {
-        // 保留最近的 3 个通知
-        if (historyNotification.length > 2) {
-          historyNotification.shift()?.close()
-        }
-
-        const notificationInstance = Notification.success({
-          title: '文档已保存',
-          style: {
-            top: '50px',
-          },
-        } as NotificationConfig)
-        historyNotification.push(notificationInstance)
-      }
-    } else {
-      Notification.error('文档保存失败')
-    }
+  onEditorChange: async function (event: Event, { title, content, forceRemote }: { title?: string, content?: string, forceRemote?: boolean }) {
+    docsStore.onContentChange(event, { title, content, forceRemote })
   },
 
   change2Edit: async () => {
@@ -251,6 +213,7 @@ const docsService = {
 
       await docsStore.refreshCurrentDoc(bookSlug.value, docSlug.value, true)
 
+      docsStore.initContnetCache(docsStore.doc)
       configsStore.docEditMode = true;
     } catch (error) {
       if (error instanceof AxiosError) {

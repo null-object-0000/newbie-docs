@@ -13,6 +13,7 @@ public class Doc {
     private String bookSlug;
     private String title;
     private Integer editor;
+    private String version;
     private Integer wordsCount;
     private Integer sort;
     private String editingUser;

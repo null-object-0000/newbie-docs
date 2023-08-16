@@ -17,6 +17,7 @@
     "mavon-editor": "^3.0.1",
     "pinia": "^2.1.6",
     "prismjs": "^1.29.0",
+    "uuid": "^9.0.0",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4"
   },
@@ -42,6 +43,7 @@
     "@tsconfig/node18": "^2.0.1",
     "@types/node": "^18.17.5",
     "@types/prismjs": "^1.26.0",
+    "@types/uuid": "^9.0.2",
     "@vitejs/plugin-vue": "^4.2.3",
     "@vitejs/plugin-vue-jsx": "^3.0.1",
     "@vue/eslint-config-typescript": "^11.0.3",

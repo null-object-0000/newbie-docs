@@ -92,8 +92,8 @@ const handleCreated = (editor: any) => {
     editorRef.value = editor // 记录 editor 实例，重要！
 }
 
-const onChange = (event: Event, showSuccessTips?: boolean) => {
-    emit('onChange', event, { title: title.value, content: editorRef.value.getHtml(), showSuccessTips })
+const onChange = (event: Event, forceRemote?: boolean) => {
+    emit('onChange', event, { title: title.value, content: editorRef.value.getHtml(), forceRemote })
 }
 
 const onTitleChange = async (event: Event) => {

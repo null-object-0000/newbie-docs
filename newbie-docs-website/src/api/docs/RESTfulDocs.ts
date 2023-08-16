@@ -4,6 +4,8 @@ import axiso, { AxiosError } from "axios";
 import { UseLocalStorageDocsApi } from "./LocalStorageDocs";
 import { BaseUseDocsApi } from "./base";
 import { Message } from "@arco-design/web-vue";
+import { useConfigsStore } from "@/stores/config";
+import { v4 as uuidv4 } from 'uuid'
 
 const lastLocalPutTimes = {} as Record<string, number>
 const lastRemotePutTimes = {} as Record<string, number>
@@ -11,11 +13,13 @@ let syncTask: Promise<void> | undefined
 
 export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunction {
     localStorageDocsApi: UseLocalStorageDocsApi
+    configsStorage: ReturnType<typeof useConfigsStore>
 
     constructor(spaceData: Record<string, any>) {
         super()
 
         this.localStorageDocsApi = new UseLocalStorageDocsApi(spaceData, { localStorageCacheKey: 'newbie_docs_restful' });
+        this.configsStorage = useConfigsStore()
     }
 
     async init(space: string): Promise<void> {
@@ -154,6 +158,10 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
     async put(space: string, doc: Doc, forceRemote?: boolean): Promise<boolean> {
         const isCreate = doc.id === undefined || doc.id === null || doc.id <= 0
 
+        // 远程与本地一致性保证相关处理
+        doc.version = uuidv4()
+        window.docEditPutVersion.local = doc.version
+
         if (isCreate || forceRemote === true) {
             // 新建文档时因为需要获取 id，所以需要先远程 put，再本地 put
             return await this.remotePut(space, doc)
@@ -184,6 +192,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                 title: doc.title,
                 editor: doc.editor,
                 content: doc.editor == 2 && typeof doc.content !== 'string' ? JSON.stringify(doc.content) : doc.content,
+                version: doc.version,
                 sort: doc.sort,
             }
         })
@@ -191,7 +200,11 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         const restful = response && response.code === '0000' && response.result > 0
         if (restful) {
             doc = await this.getById(space, response.result, true) as Doc
-            console.log('remotePut', 'doc', doc.slug, doc.sort)
+
+            // 远程与本地一致性保证相关处理
+            window.docEditPutVersion.remote = doc.version
+            doc.version = ''
+
             const localStorage = await this.localStorageDocsApi.put(space, doc)
             return restful && localStorage
         } else {

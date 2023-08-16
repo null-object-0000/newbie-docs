@@ -21,7 +21,7 @@
                 <template #default>查看</template>
             </a-button>
 
-            <a-button class="editor-tools-btn" @click="onChange" type="secondary">
+            <a-button :loading="loading" class="editor-tools-btn" @click="onChange" type="secondary">
                 <template #icon>
                     <icon-save />
                 </template>
@@ -32,18 +32,21 @@
 </template>
   
 <script setup lang="ts">
-import { ref, watch, onBeforeMount, onBeforeUnmount } from "vue";
+import { ref, watch, onBeforeMount, onBeforeUnmount, computed } from "vue";
 import { useMagicKeys, whenever } from '@vueuse/core'
 import { useDocsStore } from "@/stores/doc"; import { AxiosError } from "axios";
 import { Message } from "@arco-design/web-vue";
-;
+import { useConfigsStore } from "@/stores/config";
 
+const configsStore = useConfigsStore()
 const docsStore = useDocsStore();
 
 const emit = defineEmits(["onChange", "onPreview"]);
 
 let aboveSlug = ref()
 let docId = ref(-1)
+
+const loading = computed(() => docsStore.docPuting)
 
 const { ctrl_s } = useMagicKeys({
     passive: false,
@@ -59,7 +62,9 @@ whenever(ctrl_s, () => {
 })
 
 const onChange = (event: Event) => {
-    emit('onChange', event);
+    if (loading.value !== true) {
+        emit('onChange', event);
+    }
 };
 
 const onPreview = (event: Event) => {
@@ -97,6 +102,15 @@ onBeforeUnmount(() => {
 
     docId.value = -1
 })
+
+// 远程与本地一致性保证相关处理
+watch(() => configsStore.docEditMode, (value) => {
+    if (value) {
+        window.addEventListener('beforeunload', window.docEditPutVersion.preventDefault);
+    } else {
+        window.removeEventListener('beforeunload', window.docEditPutVersion.preventDefault);
+    }
+}, { immediate: true })
 </script>
 
 <style scoped>

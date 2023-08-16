@@ -225,11 +225,11 @@ const defaultConfig = {
 let editor: EditorJS;
 const config = Object.assign(defaultConfig, editorConfig.value)
 
-const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, showSuccessTips?: boolean) => {
+const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, forceRemote?: boolean) => {
     if (editor && typeof editor.save === 'function') {
         editor.save().then((outputData) => {
             docsStore.doc.content = JSON.stringify(outputData.blocks);
-            emit('onChange', event, { content: docsStore.doc.content, showSuccessTips });
+            emit('onChange', event, { content: docsStore.doc.content, forceRemote });
         });
     }
 };
