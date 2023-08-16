@@ -39,20 +39,39 @@ public class DocService {
     private BookDao bookDao;
     @Resource
     private DocDao docDao;
+
     @Resource
     protected PermissionService permissionService;
+    @Resource
+    protected FileService fileService;
+
+    public String getS3ObjectKey(Long bookId, Long docId) {
+        if (bookId == null || bookId<=0) {
+            
+        }
+        return String.format("books/%d/%d", bookId, docId);
+    }
 
     public DocVO dir(String bookSlug) {
-        List<Doc> docs = docDao.selectAllWithoutContent(bookSlug);
+        List<Doc> docs = docDao.selectAll(bookSlug);
         return this.docVOArray2DocVOTree(this.doc2DocVO(docs));
     }
 
     public Doc selectOneWithoutContent(Long id) {
-        return docDao.selectOneWithoutContent(id);
+        return docDao.selectOne(id);
+    }
+
+    public DocVO selectOneVO(Long id) {
+        Doc doc = docDao.selectOne(id);
+        if (doc == null) {
+            return null;
+        }
+
+        return this.doc2DocVO(doc);
     }
 
     public DocVO get(String bookSlug, String docSlug) {
-        List<Doc> docs = docDao.selectAllWithContent(bookSlug);
+        List<Doc> docs = docDao.selectAll(bookSlug);
         DocVO results = this.docVOArray2DocVOTree(this.doc2DocVO(docs));
         if (StrUtil.isBlank(docSlug)) {
             return results;
@@ -69,7 +88,7 @@ public class DocService {
     }
 
     public DocVO getById(String bookSlug, Long id) {
-        List<Doc> docs = docDao.selectAllWithContent(bookSlug);
+        List<Doc> docs = docDao.selectAll(bookSlug);
         DocVO results = this.docVOArray2DocVOTree(this.doc2DocVO(docs));
         if (id == null || id <= 0) {
             return results;
@@ -89,7 +108,7 @@ public class DocService {
         return docDao.exists(bookSlug, docSlug);
     }
 
-    public Long put(Doc doc, User loginUser) {
+    public Long put(DocVO doc, User loginUser) {
         Book book = bookDao.selectOne(doc.getBookId(), doc.getBookSlug());
         if (book == null) {
             return null;
@@ -105,8 +124,10 @@ public class DocService {
         doc.setUpdater(loginUser.getUsername() + loginUser.getId());
         doc.setUpdateTime(LocalDateTime.now());
 
-        doc.setWordsCount(this.getWordsCount(doc));
-        doc.setSort(doc.getSort() == null || doc.getSort() < 0 ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentId()) + 1 : doc.getSort());
+        doc.setWordsCount(this.getWordsCount(doc.getEditor(), doc.getContent()));
+        doc.setSort(doc.getSort() == null || doc.getSort() < 0
+                ? docDao.selectMaxSort(doc.getBookSlug(), doc.getParentId()) + 1
+                : doc.getSort());
         doc.setContent(EmojiUtil.toAlias(doc.getContent()));
 
         if (doc.getId() != null && doc.getId() > 0) {
@@ -142,6 +163,12 @@ public class DocService {
             throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "新增 adminerPermission 失败");
         }
 
+        boolean uploadStringResult = fileService
+                .uploadString(this.getS3ObjectKey(doc.getBookId(), doc.getId()), doc.getContent());
+        if (!uploadStringResult) {
+            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "上传 content 失败");
+        }
+
         return doc.getId();
     }
 
@@ -153,8 +180,8 @@ public class DocService {
      * TODO: 性能优化
      */
     public boolean move(Integer dropPosition, Long dragDocId, Long dropDocId, User loginUser) {
-        Doc dragDoc = docDao.selectOneWithoutContent(dragDocId);
-        Doc dropDoc = docDao.selectOneWithoutContent(dropDocId);
+        Doc dragDoc = docDao.selectOne(dragDocId);
+        Doc dropDoc = docDao.selectOne(dropDocId);
         if (dragDoc == null || dropDoc == null) {
             throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_DATA_NOT_EXIST);
         }
@@ -197,14 +224,16 @@ public class DocService {
         }
 
         // 看看是否要改变父级
-        if (targetParentId != null && targetParentId > 0 && ObjectUtil.notEqual(dragDoc.getParentId(), targetParentId)) {
+        if (targetParentId != null && targetParentId > 0
+                && ObjectUtil.notEqual(dragDoc.getParentId(), targetParentId)) {
             dragDoc.setParentId(targetParentId);
 
-            if (dragDocId.equals(targetParentId)){
+            if (dragDocId.equals(targetParentId)) {
                 throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_PARAM_EMPTY, "不能将文档移动到自己的子文档下");
             }
 
-            boolean result = docDao.changeParentId(dragDocId, targetParentId, loginUser.getUsername() + loginUser.getId());
+            boolean result = docDao.changeParentId(dragDocId, targetParentId,
+                    loginUser.getUsername() + loginUser.getId());
             if (!result) {
                 throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "更新 doc 失败");
             }
@@ -257,7 +286,7 @@ public class DocService {
         }
 
         // 占有失败，说明已被其他用户占有，看一下是否占有超时，是的话就释放锁
-        Doc doc = docDao.selectOneWithoutContent(id);
+        Doc doc = docDao.selectOne(id);
         if (doc == null) {
             log.warn("占有锁失败，文档不存在 {} {}", id, editingUser);
             return false;
@@ -277,7 +306,8 @@ public class DocService {
             return true;
         } else {
             log.warn("占有锁失败，文档已被占有 {} {}", id, editingUser);
-            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_LOCKED, String.format("文档已被 %s 占有", doc.getEditingUser()));
+            throw new ResultsException(ResultsStatusEnum.FAILED_CLIENT_LOCKED,
+                    String.format("文档已被 %s 占有", doc.getEditingUser()));
         }
     }
 
@@ -293,16 +323,17 @@ public class DocService {
     private final static ConcurrentHashMap<Long, ExecutorService> updateDocsAndWordsCountExecutors = new ConcurrentHashMap<>();
 
     public boolean submitUpdateDocsAndWordsCountTask(Long bookId, Long docId) {
-        final Doc doc = docId == null || docId <= 0 ? null : docDao.selectOneWithContent(docId);
+        final Doc doc = docId == null || docId <= 0 ? null : this.selectOneVO(docId);
         final Long finalBookId = bookId == null && doc != null ? doc.getBookId() : bookId;
         if (finalBookId == null || finalBookId <= 0) {
             return false;
         }
 
-        ExecutorService executor = updateDocsAndWordsCountExecutors.computeIfAbsent(finalBookId, k -> new ThreadPoolExecutor(
-                1, 10, 0L, TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(10),
-                new ThreadPoolExecutor.DiscardPolicy()));
+        ExecutorService executor = updateDocsAndWordsCountExecutors.computeIfAbsent(finalBookId,
+                k -> new ThreadPoolExecutor(
+                        1, 10, 0L, TimeUnit.MILLISECONDS,
+                        new ArrayBlockingQueue<>(10),
+                        new ThreadPoolExecutor.DiscardPolicy()));
 
         executor.submit(() -> {
             try {
@@ -326,9 +357,9 @@ public class DocService {
             docVO.setPath(String.format("/%s/%s", doc.getBookSlug(), doc.getSlug()));
         }
 
-        if (StrUtil.isNotBlank(doc.getContent())) {
-            docVO.setContent(EmojiUtil.toUnicode(doc.getContent()));
-        }
+        String content = fileService
+                .downloadString(this.getS3ObjectKey(docVO.getBookId(), docVO.getId()));
+        docVO.setContent(StrUtil.isBlank(content) ? StrUtil.EMPTY : EmojiUtil.toUnicode(content));
 
         return docVO;
     }
@@ -354,7 +385,8 @@ public class DocService {
     }
 
     private DocVO buildDocVOTree(DocVO parent, List<DocVO> docs) {
-        List<DocVO> children = docs.stream().filter(doc -> parent.getId().equals(doc.getParentId())).collect(Collectors.toList());
+        List<DocVO> children = docs.stream().filter(doc -> parent.getId().equals(doc.getParentId()))
+                .collect(Collectors.toList());
         if (CollUtil.isNotEmpty(children)) {
             parent.setChildren(children);
             children.forEach(child -> this.buildDocVOTree(child, docs));
@@ -362,13 +394,13 @@ public class DocService {
         return parent;
     }
 
-    private int getWordsCount(Doc doc) {
-        if (doc == null || StrUtil.isBlank(doc.getContent())) {
+    private int getWordsCount(Integer editor, String content) {
+        if (editor == null || editor <= 0 || StrUtil.isBlank(content)) {
             return 0;
         }
 
-        if (Integer.valueOf(2).equals(doc.getEditor())) {
-            List<OutputBlockData> blocks = JSONArray.parseArray(doc.getContent()).toJavaList(OutputBlockData.class);
+        if (Integer.valueOf(2).equals(editor)) {
+            List<OutputBlockData> blocks = JSONArray.parseArray(content).toJavaList(OutputBlockData.class);
             if (CollUtil.isEmpty(blocks)) {
                 return 0;
             }
@@ -411,8 +443,8 @@ public class DocService {
             }
 
             return wordsCount;
-        } else if (Integer.valueOf(1).equals(doc.getEditor())) {
-            return HtmlUtil.cleanHtmlTag(doc.getContent()).length();
+        } else if (Integer.valueOf(1).equals(editor)) {
+            return HtmlUtil.cleanHtmlTag(content).length();
         }
 
         return 0;

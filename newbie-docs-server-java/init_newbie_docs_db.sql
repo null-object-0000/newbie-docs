@@ -39,7 +39,6 @@ CREATE TABLE `newbie_docs`
     `parent_id`    bigint unsigned NOT NULL DEFAULT '0' COMMENT '父级目录',
     `title`        varchar(50)     NOT NULL DEFAULT '' COMMENT '标题',
     `editor`       int             NOT NULL DEFAULT '0' COMMENT '1 word 2 block 3 link',
-    `content`      longtext        NOT NULL COMMENT '内容',
     `words_count`  int unsigned    NOT NULL DEFAULT 0 COMMENT '字数统计',
     `creator`      varchar(50)     NOT NULL DEFAULT '' COMMENT '创建人',
     `updater`      varchar(50)     NOT NULL DEFAULT '' COMMENT '更新人',

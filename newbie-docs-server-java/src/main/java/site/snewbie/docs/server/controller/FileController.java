@@ -1,11 +1,7 @@
 package site.snewbie.docs.server.controller;
 
-import cn.hutool.core.img.ImgUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.crypto.digest.DigestUtil;
-import cn.hutool.crypto.digest.MD5;
-import com.amazonaws.util.Md5Utils;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,7 +40,6 @@ public class FileController extends BaseController {
     @SneakyThrows
     @PostMapping("/api/files/image/upload")
     public Results<String> uploadImage(@RequestParam(value = "file", required = true) MultipartFile uploadFile) {
-        String id = IdUtil.fastSimpleUUID();
         String md5 = DigestUtil.md5Hex(uploadFile.getInputStream());
 
         String fileName = md5 + "." + FileUtil.extName(uploadFile.getOriginalFilename());
@@ -55,7 +50,6 @@ public class FileController extends BaseController {
     @SneakyThrows
     @PostMapping("/api/files/video/upload")
     public Results<String> uploadVideo(@RequestParam(value = "file", required = true) MultipartFile uploadFile) {
-        String id = IdUtil.fastSimpleUUID();
         String md5 = DigestUtil.md5Hex(uploadFile.getInputStream());
 
         String fileName = md5 + "." + FileUtil.extName(uploadFile.getOriginalFilename());

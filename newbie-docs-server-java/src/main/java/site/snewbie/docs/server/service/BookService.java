@@ -47,7 +47,6 @@ public class BookService {
         doc.setParentId(parentId);
         doc.setEditor(1);
         doc.setWordsCount(0);
-        doc.setContent(StrUtil.EMPTY);
         doc.setTitle(title);
         doc.setSort(0);
         doc.setCreator(loginUser.getUsername() + loginUser.getId());

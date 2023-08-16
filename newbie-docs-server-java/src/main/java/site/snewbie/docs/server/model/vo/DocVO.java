@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class DocVO extends Doc {
+    private String content;
     private String path;
 
     private List<DocVO> children;

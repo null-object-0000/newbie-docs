@@ -1,5 +1,6 @@
 package site.snewbie.docs.server.service;
 
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.Singleton;
 import cn.hutool.core.util.StrUtil;
 import com.amazonaws.ClientConfiguration;
@@ -16,11 +17,10 @@ import com.amazonaws.services.s3.model.PutObjectResult;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-
-import static com.amazonaws.services.s3.AmazonS3Client.S3_SERVICE_NAME;
 
 @Service
 public class FileService {
@@ -32,6 +32,8 @@ public class FileService {
     private String endPoint;
     @Value("${amazon.s3.bucket.name}")
     private String bucketName;
+    @Value("${amazon.s3.object.key.prefix}")
+    private String objectKeyPrefix;
 
     public AmazonS3 getAmazonS3Client() {
         return Singleton.get(AmazonS3.class.getName(), () -> {
@@ -48,16 +50,55 @@ public class FileService {
         });
     }
 
-    public URL upload(InputStream uploadFile, String key, String contentType) throws IOException {
+    public String getFullObjectKey(String key) {
+        if (StrUtil.isBlank(key)) {
+            throw new IllegalArgumentException("key is blank");
+        }
+
+        if (StrUtil.isBlank(objectKeyPrefix)) {
+            return key;
+        }
+
+        return String.format("%s/%s", objectKeyPrefix, key);
+    }
+
+    public boolean uploadString(String key, String data) {
+        AmazonS3 s3Client = this.getAmazonS3Client();
+
+        ByteArrayInputStream uploadStream = new ByteArrayInputStream(data.getBytes());
+
+        ObjectMetadata meta = new ObjectMetadata();
+        meta.setContentLength(uploadStream.available());
+        meta.setContentType("text/plain");
+
+        PutObjectRequest request = new PutObjectRequest(bucketName, this.getFullObjectKey(key), uploadStream, meta)
+                .withCannedAcl(CannedAccessControlList.PublicRead);
+
+        PutObjectResult putObjectResult = s3Client.putObject(request);
+        return putObjectResult != null;
+    }
+
+    public String downloadString(String key) {
+        AmazonS3 s3Client = this.getAmazonS3Client();
+
+        InputStream inputStream = s3Client.getObject(bucketName, this.getFullObjectKey(key)).getObjectContent();
+        if (inputStream == null) {
+            return null;
+        }
+
+        return IoUtil.readUtf8(inputStream);
+    }
+
+    public URL upload(InputStream uploadStream, String key, String contentType) throws IOException {
         AmazonS3 s3Client = this.getAmazonS3Client();
 
         ObjectMetadata meta = new ObjectMetadata();
-        meta.setContentLength(uploadFile.available());
+        meta.setContentLength(uploadStream.available());
         if (StrUtil.isNotBlank(contentType)) {
             meta.setContentType(contentType);
         }
 
-        PutObjectRequest request = new PutObjectRequest(bucketName, key, uploadFile, meta)
+        PutObjectRequest request = new PutObjectRequest(bucketName, this.getFullObjectKey(key), uploadStream, meta)
                 .withCannedAcl(CannedAccessControlList.PublicRead);
 
         PutObjectResult putObjectResult = s3Client.putObject(request);
@@ -65,7 +106,7 @@ public class FileService {
             return null;
         }
 
-        return s3Client.getUrl(bucketName, key);
+        return s3Client.getUrl(bucketName, this.getFullObjectKey(key));
     }
 
 }

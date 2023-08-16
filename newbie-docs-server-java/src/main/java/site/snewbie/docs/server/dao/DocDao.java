@@ -9,11 +9,9 @@ import java.util.List;
 @Mapper
 public interface DocDao {
 
-    List<Doc> selectAllWithoutContent(@Param("bookSlug") String bookSlug);
+    List<Doc> selectAll(@Param("bookSlug") String bookSlug);
 
     boolean exists(@Param("bookSlug") String bookSlug, @Param("docSlug") String docSlug);
-
-    List<Doc> selectAllWithContent(@Param("bookSlug") String bookSlug);
 
     int selectMaxSort(@Param("bookSlug") String bookSlug, @Param("parentId") Long parentId);
 
@@ -31,9 +29,7 @@ public interface DocDao {
 
     boolean changeTitle(@Param("id") Long id, @Param("newTitle") String newTitle, @Param("updater") String updater);
 
-    Doc selectOneWithoutContent(@Param("id") Long id);
-
-    Doc selectOneWithContent(@Param("id") Long id);
+    Doc selectOne(@Param("id") Long id);
 
     Integer findIndex(@Param("parentId") Long parentId, @Param("id") Long id);
 

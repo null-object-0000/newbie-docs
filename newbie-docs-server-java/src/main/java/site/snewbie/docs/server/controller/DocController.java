@@ -100,7 +100,7 @@ public class DocController extends BaseAssetController {
 
     @UserOauth
     @PostMapping("/put")
-    public Results<Long> put(@RequestBody Doc doc) {
+    public Results<Long> put(@RequestBody DocVO doc) {
         User loginUser = super.getCurrentLoginUser();
         assert loginUser != null;
 

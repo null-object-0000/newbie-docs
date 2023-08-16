@@ -1,6 +1,6 @@
 # newbie-docs
 
-基于 Vue 3.0 的开源知识库（文档）管理系统，详细 [业务逻辑](./BusinessLogic.md) 介绍以及 [常见问题](./Question.md) 请见对应
+基于 Vue 3.0 的开源知识库（文档）管理系统，详细 [业务逻辑](./BusinessLogic.md) 介绍以及 [常见问题](./Question.md) 请见对应文档。
 
 ## 主要功能
 
@@ -17,7 +17,7 @@
 - [ ] 支持多样的在线编辑器
   - [x] 基于 [wangEditor 5](https://www.wangeditor.com/) 实现富文本编辑器
   - [ ] 基于 [Editor.js](https://github.com/codex-team/editor.js) 实现块式编辑器
-  - [ ] 基于 [mavonEditor](https://github.com/hinesboy/mavonEditor) 实现 Markdown 编辑器
+  - [x] 基于 [mavonEditor](https://github.com/hinesboy/mavonEditor) 实现 Markdown 编辑器
 - [x] 支持通过知识库管理文档，参考 [语雀](https://www.yuque.com/dashboard)
 - [x] 实现基于 `LocalStorage` 的客户端存储用于演示
 - [x] 实现基于 `Amazon S3` 存储的 `Java` RESTful API 服务端
