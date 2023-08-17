@@ -81,3 +81,7 @@
 div.arco-modal-container div.arco-modal-wrapper.arco-modal-wrapper-align-center div.arco-modal {
     max-width: 90%;
 }
+
+ul.arco-notification-list.arco-notification-list-top-right .newbie-docs-save-notification {
+    top: 50px;
+}

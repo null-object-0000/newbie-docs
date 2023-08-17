@@ -68,6 +68,11 @@ const onChange = (event: Event) => {
 };
 
 const onPreview = (event: Event) => {
+    // 远程与本地一致性保证相关处理
+    docsStore.onContentChange(new Event("on preview"), {
+        title: docsStore.doc.title, content: docsStore.doc.content, forceRemote: true
+    })
+
     emit('onPreview', event)
 }
 

@@ -6,6 +6,8 @@ import { Book, Doc, DocData } from "@/types/global";
 import { useDocsEventBus } from "@/events/docs";
 import { Notification, NotificationReturn, type NotificationConfig } from '@arco-design/web-vue';
 import { AxiosError } from "axios";
+import { h } from "vue";
+import { IconCheckCircleFill, IconCloseCircleFill, IconLoading } from "@arco-design/web-vue/es/icon";
 
 // ts Window 添加属性
 declare global {
@@ -208,10 +210,11 @@ export const useDocsStore = defineStore('docs', {
 
                 return Notification.info({
                     id: 'newbie-docs-save-notification-' + doc.slug,
-                    title: '正在保存文档',
-                    style: {
-                        top: '50px',
+                    class: 'newbie-docs-save-notification',
+                    icon: () => {
+                        return h(IconLoading)
                     },
+                    title: '正在保存文档',
                     duration: 0,
                 } as NotificationConfig)
             }
@@ -224,10 +227,8 @@ export const useDocsStore = defineStore('docs', {
                     }
 
                     const notificationInstance = Notification.success({
+                        class: 'newbie-docs-save-notification',
                         title: '文档已保存',
-                        style: {
-                            top: '50px',
-                        },
                         duration: 3000,
                     } as NotificationConfig)
 
@@ -237,10 +238,11 @@ export const useDocsStore = defineStore('docs', {
 
                     return Notification.success({
                         id: 'newbie-docs-save-notification-' + doc.slug,
-                        title: '文档已保存',
-                        style: {
-                            top: '50px',
+                        class: 'newbie-docs-save-notification',
+                        icon: () => {
+                            return h(IconCheckCircleFill)
                         },
+                        title: '文档已保存',
                         duration: 3000,
                     } as NotificationConfig)
                 }
@@ -251,10 +253,11 @@ export const useDocsStore = defineStore('docs', {
 
                 return Notification.error({
                     id: 'newbie-docs-save-notification-' + doc.slug,
-                    title: '文档保存失败',
-                    style: {
-                        top: '50px',
+                    class: 'newbie-docs-save-notification',
+                    icon: () => {
+                        return h(IconCloseCircleFill)
                     },
+                    title: '文档保存失败',
                     duration: 3000,
                 } as NotificationConfig)
             }
