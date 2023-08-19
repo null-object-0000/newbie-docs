@@ -332,6 +332,8 @@ const formatDirData = (dir: Doc[]): TreeNodeData[] => {
         let time = useDateFormat(timeDate, 'YYYY-MM-DD HH:mm').value
         if (timeDate.getFullYear() === nowDate.getFullYear() && timeDate.getMonth() === nowDate.getMonth() && timeDate.getDate() === nowDate.getDate()) {
             time = useDateFormat(timeDate, '今天 HH:mm').value
+        } else if (timeDate.getFullYear() === nowDate.getFullYear() && timeDate.getMonth() === nowDate.getMonth() && timeDate.getDate() === nowDate.getDate() - 1) {
+            time = useDateFormat(timeDate, '昨天 HH:mm').value
         } else if (timeDate.getFullYear() === nowDate.getFullYear()) {
             time = useDateFormat(timeDate, 'MM-DD HH:mm').value
         }

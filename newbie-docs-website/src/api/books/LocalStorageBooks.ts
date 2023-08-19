@@ -53,7 +53,7 @@ export class UseLocalStorageBooksApi implements UseBooksApiFunction {
     async put(book: Book): Promise<boolean> {
         let books = await this.__get() as Book[] | undefined
 
-        // TODO: 这里应该增加一个是否是当前 doc
+        // TODO: 这里应该增加一个是否是当前 doc 的基础上判断 slug 是否存在
         // if (await this.exists(book.slug)) {
         //     return false
         // }

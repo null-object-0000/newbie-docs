@@ -1,12 +1,11 @@
 {
 	"scripts": {
-		"dev": "pnpm run website:dev",
-		"build": "pnpm run website:build",
+		"build": "pnpm run website:build && pnpm run server:build",
 		"website:dev": "cd newbie-docs-website && pnpm run dev",
 		"website:build": "cd newbie-docs-website && pnpm run build",
 		"website:commit": "pnpm run website:build && git add ./newbie-docs-website && git cz",
-		"java-server:dev": "cd newbie-docs-server-java && mvn spring-boot:run -Dspring-boot.run.profiles=local",
-		"java-server:build": "cd newbie-docs-server-java && mvn clean package -Dmaven.test.skip=true"
+		"server:dev": "cd newbie-docs-server-java && mvn spring-boot:run -Dspring-boot.run.profiles=local",
+		"server:build": "cd newbie-docs-server-java && mvn clean package -Dmaven.test.skip=true"
 	},
 	"config": {
 		"commitizen": {

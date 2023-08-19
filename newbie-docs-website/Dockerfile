@@ -1,5 +1,5 @@
 # 构建
-FROM node:20.4.0 as build
+FROM node:18.17.1 as build
 
 WORKDIR /app
 

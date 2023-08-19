@@ -43,7 +43,8 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
         }
 
         if (syncTask === undefined) {
-            // 每隔 x 秒同步一次，若有新的 put，则同步
+            // 每隔 3 秒同步一次，若有新的 put，则同步
+            // TODO: 后面可以换成 websocket，这样还可以实现协同编辑
             syncTask = submitScheduledTask(async () => {
                 const keys = Object.keys(lastLocalPutTimes)
 
@@ -55,7 +56,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                     const bookSlug = key.split('/')[0]
                     const docSlug = key.split('/')[1]
 
-                    if (lastLocalPutTime - lastRemotePutTime > 1500) {
+                    if (lastLocalPutTime - lastRemotePutTime > 3000) {
                         const localDoc = await this.localStorageDocsApi.get(bookSlug, docSlug)
                         if (localDoc) {
                             try {
@@ -76,7 +77,7 @@ export class UseRESTfulDocsApi extends BaseUseDocsApi implements UseDocsApiFunct
                         }
                     }
                 }
-            }, 500)
+            }, 1000)
         }
     }
 

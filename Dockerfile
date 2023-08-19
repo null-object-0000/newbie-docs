@@ -1,5 +1,5 @@
 # 构建 website
-FROM node:20.4.0 as build-website
+FROM node:18.17.1 as build-website
 
 WORKDIR /app
 

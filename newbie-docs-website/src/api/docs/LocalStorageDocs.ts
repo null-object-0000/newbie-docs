@@ -243,17 +243,31 @@ export class UseLocalStorageDocsApi extends BaseUseDocsApi implements UseDocsApi
             if (item.editor === 2) {
                 const content = (item.content ? JSON.parse(item.content) : []) as OutputBlockData[]
                 wordCount += content.reduce((prev, current) => {
-                    if (current.type === 'list') {
-                        const lengths = current.data.items.map((item: { content: string; }) => item.content.length)
-                        prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
-                    } else if (current.type === 'table') {
-                        const lengths = current.data.content.map((item: string[]) => item.reduce((prev: number, current: string) => prev + current.length, 0))
-                        prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
-                    } else {
-                        prev += current.data.text.length
+                    try {
+                        if (current.type === 'list') {
+                            const lengths = current.data.items.map((item: { content: string; }) => item.content.length)
+                            prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
+                        } else if (current.type === 'checklist') {
+                            const lengths = current.data.items.map((item: { text: string; }) => item.text.length)
+                            prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
+                        } else if (current.type === 'table') {
+                            const lengths = current.data.content.map((item: string[]) => item.reduce((prev: number, current: string) => prev + current.length, 0))
+                            prev += lengths.reduce((prev: number, current: number) => prev + current, 0)
+                        } else {
+                            prev += current.data?.text?.length || 0
+                        }
+                        return prev
+                    } catch (error) {
+                        console.error(current.type, current.data, error)
+                        return prev
                     }
-                    return prev
                 }, 0)
+            } else if (item.editor === 3) {
+                // 去除掉html标签，只保留文字
+                const content = JSON.parse(item.content).render as string
+                const reg = /<[^>]+>/g
+                const text = content.replace(reg, '')
+                wordCount += text.length
             } else if (item.editor === 1) {
                 // 去除掉html标签，只保留文字
                 const content = item.content as string

@@ -1,9 +1,8 @@
 <template>
   <div class="block-code">
-    <div class="block-code__wrapper">
-      <div class="block-code__content">{{ block.data.code || block.data.escape }}</div>
-    </div>
-    <CopyButton classes="block-code__copy-button" :text-to-copy="block.data.code || block.data.escape" aria-label="Copy Code to Clipboard" />
+    <pre><code :class="[block.data.language ? `language-${block.data.language}` : 'language-javascript']">{{ block.data.code || block.data.escape }}</code></pre>
+    <CopyButton classes="block-code__copy-button" :text-to-copy="block.data.code || block.data.escape"
+      aria-label="Copy Code to Clipboard" />
   </div>
 </template>
   

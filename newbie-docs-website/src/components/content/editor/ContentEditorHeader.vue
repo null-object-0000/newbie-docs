@@ -14,7 +14,7 @@
     <div class="editor-tools" style="flex: 0 1 15%;">
         <label>&nbsp;&nbsp;&nbsp;</label>
         <div class="flex_wrap">
-            <a-button class="editor-tools-btn" @click="onPreview" type="primary">
+            <a-button :disabled="loading" class="editor-tools-btn" @click="onPreview" type="primary">
                 <template #icon>
                     <icon-eye />
                 </template>

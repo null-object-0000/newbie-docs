@@ -45,7 +45,7 @@
 
 #### website
 
-- node 20
+- node 18
 - pnpm 8.6
 
 ``` bash
@@ -54,14 +54,14 @@ copy .\newbie-docs-website\.env .\newbie-docs-website\.env.local
 
 # 本地运行
 pnpm install
-pnpm dev
+pnpm website:dev
 
 # 代码提交
 npm install -g commitizen
 pnpm run website:commit
 
 # 本地构建
-pnpm build
+pnpm website:build
 ```
 
 #### java-server
@@ -70,17 +70,31 @@ pnpm build
 - maven 3.9
 
 ``` bash
-cd .\newbie-docs-server-java\
-
 # 环境配置（windows）
+cd .\newbie-docs-server-java\
 copy .\src\main\resources\application.properties .\src\main\resources\application-local.properties
-# 环境配置（linux）
-cp src/main/resources/application.properties src/main/resources/application-local.properties
 
 # 本地运行（windows）
 mvn clean package -Dmaven.test.skip=true
 java -jar -Dspring.profiles.active=local .\target\newbie-docs-server-java.jar
-# 本地运行（linux）
+```
+
+### Codespaces（linux）
+
+``` bash
+nvm install 18
+nvm use 18
+npm install -g npm
+npm install -g pnpm
+
+cp ./newbie-docs-website/.env ./newbie-docs-website/.env.local
+
+sdk install java 17.0.8-ms -y
+sdk use java 17.0.8-ms
+
+cd newbie-docs-server-java/
+cp src/main/resources/application.properties src/main/resources/application-local.properties
+
 mvn clean package -Dmaven.test.skip=true
 java -jar -Dspring.profiles.active=local target/newbie-docs-server-java.jar
 ```

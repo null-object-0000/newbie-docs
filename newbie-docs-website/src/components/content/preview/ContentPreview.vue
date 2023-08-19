@@ -2,9 +2,9 @@
     <article class="page" data-module="page">
         <ContentPreviewHeader @on-edit="onEdit"></ContentPreviewHeader>
 
-        <h1 class="page__title" v-if="docsStore.doc.editor !== 3 || !markdown">{{ docsStore.doc.title }}</h1>
+        <h1 class="page__title">{{ docsStore.doc.title }}</h1>
 
-        <section class="page__content">
+        <section class="page__content" :class="docsStore.doc.editor === 2 ? 'newbie-docs-preview' : ''">
             <!-- block -->
             <template v-if="docsStore.doc.editor === 2" v-for="block of blocks">
                 <div class="page__content-block">
@@ -42,6 +42,8 @@ import { useDateFormat } from '@vueuse/core';
 import Prism from 'prismjs';
 import 'prismjs/themes/prism.css';
 import { onBeforeMount } from 'vue';
+import { watch } from 'vue';
+import { nextTick } from 'vue';
 
 const docsStore = useDocsStore();
 
@@ -60,7 +62,7 @@ const blocks = computed(() => {
 const markdown = computed(() => {
     if (docsStore.doc.editor === 3 && docsStore.doc.content) {
         try {
-            return JSON.parse(docsStore.doc.content).render
+            return JSON.parse(docsStore.doc.content).render.replace(`<h1><a id=\"markdown__0\"></a>${docsStore.doc.title}</h1>\n`, '');
         } catch (error) {
 
         }
@@ -92,14 +94,14 @@ const loadMarkdownCSS = async () => {
 }
 
 onBeforeMount(() => {
-    if (docsStore.doc.editor === 3) {
-        loadMarkdownCSS();
-    }
+    loadMarkdownCSS();
 });
 
-onMounted(() => {
-    Prism.highlightAll();
-});
+watch(() => docsStore.doc.content, () => {
+    nextTick(() => {
+        Prism.highlightAll();
+    });
+}, { immediate: true });
 </script>
 
 <style>

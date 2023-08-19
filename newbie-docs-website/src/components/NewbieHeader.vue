@@ -102,7 +102,7 @@ watch(() => route.params.bookSlug, async () => {
 
   height: var(--layout-height-header);
 
-  z-index: 1;
+  z-index: 2;
 }
 
 .docs-header .docs-header__title {
