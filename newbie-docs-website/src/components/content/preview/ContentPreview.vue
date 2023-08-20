@@ -4,7 +4,8 @@
 
         <h1 class="page__title">{{ docsStore.doc.title }}</h1>
 
-        <section class="page__content" :class="docsStore.doc.editor === 2 ? 'newbie-docs-preview' : ''">
+        <section class="page__content"
+            :class="docsStore.doc.editor === 1 || docsStore.doc.editor === 2 ? 'newbie-docs-preview' : ''">
             <!-- block -->
             <template v-if="docsStore.doc.editor === 2" v-for="block of blocks">
                 <div class="page__content-block">

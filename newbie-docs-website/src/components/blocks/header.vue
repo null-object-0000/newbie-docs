@@ -12,6 +12,7 @@
 import { ref, type PropType } from 'vue';
 import type { OutputBlockData } from '@editorjs/editorjs'
 import CopyButton from '@/components/CopyButton.vue';
+import { computed } from 'vue';
 
 const { block } = defineProps({
   block: {
@@ -22,6 +23,6 @@ const { block } = defineProps({
 });
 
 const id = ref('outline_' + (block.id || (block.data.text || block.data.urlify)))
-const textToCopy = ref(id.value)
+const textToCopy = computed(() => window.location.href.split('#')[0] + '#' + id.value)
 
 </script>

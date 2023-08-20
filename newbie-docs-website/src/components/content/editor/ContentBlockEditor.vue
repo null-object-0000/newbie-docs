@@ -521,10 +521,6 @@ editor = new EditorJS({
         console.log("Editor.js is ready to work!")
         new DragDrop(editor);
 
-        editor.render({
-            blocks: JSON.parse(content.value) as OutputBlockData[],
-        });
-
         docsStore.refreshDocEditor({
             type: 2,
 

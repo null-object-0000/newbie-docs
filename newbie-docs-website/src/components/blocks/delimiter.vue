@@ -6,7 +6,11 @@
 
 <style scoped>
 .block-delimiter-card {
-    padding: 12px 0;
+    padding: 14px 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 .block-delimiter-card .block-delimiter {

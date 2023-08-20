@@ -398,7 +398,7 @@ html {
   background: none;
   border: none;
   cursor: pointer;
-  height: 28px;
+  height: auto;
   padding: 0;
   position: relative;
   transition: opacity 0.2s;
@@ -585,6 +585,8 @@ html {
 
   display: block;
   min-height: 24px;
+  font-size: 15px;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif, 'Segoe UI';
 }
 
 .block-paragraph {
