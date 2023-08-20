@@ -32,8 +32,11 @@ public class FileService {
     private String endPoint;
     @Value("${amazon.s3.bucket.name}")
     private String bucketName;
+
     @Value("${amazon.s3.object.key.prefix}")
     private String objectKeyPrefix;
+    @Value("${amazon.s3.object.cdn.domain}")
+    private String objectCdnDomain;
 
     public AmazonS3 getAmazonS3Client() {
         return Singleton.get(AmazonS3.class.getName(), () -> {
@@ -89,7 +92,7 @@ public class FileService {
         return IoUtil.readUtf8(inputStream);
     }
 
-    public URL upload(InputStream uploadStream, String key, String contentType) throws IOException {
+    public String upload(InputStream uploadStream, String key, String contentType) throws IOException {
         AmazonS3 s3Client = this.getAmazonS3Client();
 
         ObjectMetadata meta = new ObjectMetadata();
@@ -106,7 +109,16 @@ public class FileService {
             return null;
         }
 
-        return s3Client.getUrl(bucketName, this.getFullObjectKey(key));
+        URL url = s3Client.getUrl(bucketName, this.getFullObjectKey(key));
+        if (url == null) {
+            return null;
+        }
+
+        String results = url.toString();
+        if (StrUtil.isNotBlank(objectCdnDomain)) {
+            results = StrUtil.replaceFirst(results, url.getHost(), objectCdnDomain);
+        }
+        return results;
     }
 
 }

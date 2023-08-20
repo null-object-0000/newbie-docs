@@ -1,6 +1,7 @@
 package site.snewbie.docs.server.controller;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
@@ -12,8 +13,6 @@ import site.snewbie.docs.server.enums.ResultsStatusEnum;
 import site.snewbie.docs.server.model.Results;
 import site.snewbie.docs.server.model.ResultsException;
 import site.snewbie.docs.server.service.FileService;
-
-import java.net.URL;
 
 @RestController
 public class FileController extends BaseController {
@@ -29,12 +28,12 @@ public class FileController extends BaseController {
     @PostMapping("/api/files/upload")
     public Results<String> upload(@RequestParam(value = "file", required = true) MultipartFile uploadFile,
                                   @RequestParam(value = "key", required = true) String key) {
-        URL url = fileService.upload(uploadFile.getInputStream(), key, uploadFile.getContentType());
-        if (url == null) {
+        String url = fileService.upload(uploadFile.getInputStream(), key, uploadFile.getContentType());
+        if (StrUtil.isBlank(url)) {
             throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR);
         }
 
-        return Results.success(url.toString());
+        return Results.success(url);
     }
 
     @SneakyThrows
