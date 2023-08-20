@@ -5,6 +5,29 @@
         <docs-icon-book-type-default style="margin-right: 10px" />
         <span class="arco-page-header-title">{{ header.title }}</span>
       </a>
+
+      <a-dropdown trigger="hover" position="bl" v-if="userStore.loginUser?.id">
+        <a-button class="user-menus-icon-btn" size="mini" type="text">
+          <template #icon>
+            <icon-down />
+          </template>
+        </a-button>
+
+        <template #content>
+          <a-doption>
+            <template #icon>
+              <icon-user />
+            </template>
+            <template #default>{{ userStore.loginUser.username + userStore.loginUser.id }}</template>
+          </a-doption>
+          <a-doption>
+            <template #icon>
+              <icon-close />
+            </template>
+            <template #default>退出登录</template>
+          </a-doption>
+        </template>
+      </a-dropdown>
     </div>
     <div class="docs-header__breadcrumb">
       <template v-if="bookSlug && docsStore.spaceData[bookSlug] && docsStore.doc.slug !== 'home'">
@@ -33,8 +56,10 @@ import { useConfigsStore } from "@/stores/config";
 import { useRoute } from 'vue-router';
 import { useDocsStore } from '@/stores/doc';
 import { Doc } from "@/types/global";
+import { useUsersStore } from "@/stores/user";
 
 const configsStore = useConfigsStore();
+const userStore = useUsersStore();
 const docsStore = useDocsStore()
 
 const route = useRoute();
@@ -155,5 +180,13 @@ watch(() => route.params.bookSlug, async () => {
 
 .docs-header__logo {
   text-decoration: none;
+}
+
+.docs-header .user-menus-icon-btn {
+  margin-left: 5px;
+}
+
+.docs-header .user-menus-icon-btn svg.arco-icon.arco-icon-down {
+  color: #8a8f8d;
 }
 </style>

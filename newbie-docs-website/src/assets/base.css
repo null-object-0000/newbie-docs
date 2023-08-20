@@ -76,6 +76,10 @@
     }
 }
 
+::selection {
+    background-color: #d4ecff;
+}
+
 .arco-icon {
     fill: none
 }
