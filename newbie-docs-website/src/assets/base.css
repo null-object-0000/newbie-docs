@@ -194,3 +194,7 @@ ul.arco-notification-list.arco-notification-list-top-right .newbie-docs-save-not
 .writing-editor .ce-delimiter:before {
     display: none;
 }
+
+.writing-editor .cdx-warning .cdx-input.cdx-warning__title[data-placeholder]:before {
+    width: 15px;
+}
