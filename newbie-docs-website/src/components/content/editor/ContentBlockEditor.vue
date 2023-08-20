@@ -334,8 +334,7 @@ const defaultConfig = {
                 types: 'image/*, video/mp4',
                 field: 'file',
                 endpoints: {
-                    byFile: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_IMAGE_API_URL,
-                    byUrl: '/api/transport/fetch',
+                    byUrl: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_IMAGE_API_URL,
                 },
                 uploader: {
                     /**
@@ -373,7 +372,33 @@ const defaultConfig = {
         attaches: {
             class: AttachesTool,
             config: {
-                endpoint: 'http://localhost:8008/uploadFile'
+                uploader: {
+                    /**
+                     * Upload file to the server and return an uploaded image data
+                     * @param {File} file - file selected from the device or pasted by drag-n-drop
+                     * @return {Promise.<{success, file: {url}}>}
+                     */
+                    async uploadByFile(file: File): Promise<{ success: number; file: { url: string }; }> {
+                        return useFilesApi().uploadFile(file)
+                            .then((url) => {
+                                return {
+                                    success: 1,
+                                    file: { url }
+                                }
+                            }).catch((error) => {
+                                if (error instanceof AxiosError) {
+                                    Message.error(error.message)
+                                }
+
+                                console.error(error)
+
+                                return {
+                                    success: 0,
+                                    file: { url: '' }
+                                }
+                            })
+                    }
+                }
             }
         },
 
