@@ -52,8 +52,8 @@ import Table from "@editorjs/table";
 // @ts-ignore
 import DragDrop from 'editorjs-drag-drop';
 
-import { ref, toRefs, watch, type PropType } from "vue";
-import type { CustomEditorConfig } from "@/types/global";
+import { ref, toRefs, type PropType } from "vue";
+import type { CustomEditorConfig, NewbieEditor } from "@/types/global";
 import ContentEditorHeader from "./ContentEditorHeader.vue";
 import { useDocsStore } from "@/stores/doc";
 import { useFilesApi } from "@/api";
@@ -74,8 +74,8 @@ const { editorConfig } = toRefs(props);
 
 const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 
-const title = ref('')
-const docTitle = ref('')
+const docTitle = ref(docsStore.doc.title)
+const content = ref(docsStore.doc.content)
 
 const i18nMessages = {
     "ui": {
@@ -484,15 +484,14 @@ const defaultConfig = {
     },
 };
 
-
 let editor: EditorJS;
 const config = Object.assign(defaultConfig, editorConfig.value)
 
 const onChange = (event?: BlockMutationEvent | BlockMutationEvent[] | Event, forceRemote?: boolean) => {
     if (editor && typeof editor.save === 'function') {
         editor.save().then((outputData) => {
-            docsStore.doc.content = JSON.stringify(outputData.blocks);
-            emit('onChange', event, { title: docTitle.value, content: docsStore.doc.content, forceRemote });
+            content.value = JSON.stringify(outputData.blocks);
+            emit('onChange', event, { title: docTitle.value, content: content.value, forceRemote });
         });
     }
 };
@@ -508,35 +507,38 @@ const onTitleChange = async (event: Event) => {
         return
     }
 
-    title.value = docTitle.value
     docsStore.doc.title = docTitle.value
     onChange(event)
 }
 
-config.data = {
-    blocks: (docsStore.doc.content ? JSON.parse(docsStore.doc.content) : []) as OutputBlockData[],
-};
+editor = new EditorJS({
+    ...config,
 
-config.onReady = () => {
-    console.log("Editor.js is ready to work!")
-    new DragDrop(editor);
-}
+    data: {
+        blocks: (content.value ? JSON.parse(content.value) : []) as OutputBlockData[],
+    },
+    onReady: () => {
+        console.log("Editor.js is ready to work!")
+        new DragDrop(editor);
 
-config.onChange = function (api, event) {
-    onChange(event);
-};
-
-editor = new EditorJS(config);
-
-watch(() => docsStore.doc.id, () => {
-    docTitle.value = docsStore.doc.title
-    title.value = docTitle.value
-    if (editor && typeof editor.render === 'function') {
         editor.render({
-            blocks: JSON.parse(docsStore.doc.content) as OutputBlockData[],
+            blocks: JSON.parse(content.value) as OutputBlockData[],
         });
-    }
-}, { immediate: true });
+
+        docsStore.refreshDocEditor({
+            type: 2,
+
+            getContent: async () => {
+                const outputData = await editor.save()
+                content.value = JSON.stringify(outputData.blocks);
+                return content.value
+            },
+        } as NewbieEditor)
+    },
+    onChange: (api, event) => {
+        onChange(event);
+    },
+});
 </script>
   
 <style>

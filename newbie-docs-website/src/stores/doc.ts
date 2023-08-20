@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { useBooksApi } from "@/api/books";
 import { useDocsApi } from "@/api/docs";
 import { UseDocsApiFunction } from "@/types/api";
-import { Book, Doc, DocData } from "@/types/global";
+import { Book, Doc, DocData, NewbieEditor } from "@/types/global";
 import { useDocsEventBus } from "@/events/docs";
 import { Notification, NotificationReturn, type NotificationConfig } from '@arco-design/web-vue';
 import { AxiosError } from "axios";
@@ -50,7 +50,9 @@ export const useDocsStore = defineStore('docs', {
 
         docPuting: false as boolean,
         lastDocContent: {} as Record<string, string>,
-        historyNotification: [] as NotificationReturn[]
+        historyNotification: [] as NotificationReturn[],
+
+        editor: {} as NewbieEditor,
     }),
 
     actions: {
@@ -177,6 +179,11 @@ export const useDocsStore = defineStore('docs', {
         },
 
 
+        refreshDocEditor(editor: NewbieEditor) {
+            this.editor = editor
+        },
+
+
 
         initContnetCache(doc: Doc) {
             this.lastDocContent[doc.slug] = doc.title + doc.content
@@ -186,18 +193,22 @@ export const useDocsStore = defineStore('docs', {
         },
         checkContnetIsChanged(doc: Doc) {
             const content = doc.title + doc.content
-            if (this.lastDocContent[this.doc.slug] !== content) {
-                this.lastDocContent[this.doc.slug] = content;
+            if (this.lastDocContent[doc.slug] !== content) {
+                this.lastDocContent[doc.slug] = content;
                 return true;
             } else {
                 return false;
             }
         },
         async onContentChange(event: Event, { title, content, forceRemote }: { title?: string, content?: string, forceRemote?: boolean }) {
-            const doc = this.doc as Doc;
+            const doc = JSON.parse(JSON.stringify(this.doc)) as Doc;
             doc.title = title || doc.title;
             doc.content = content || doc.content;
             doc.updateTime = new Date().getTime()
+
+            if (this.editor && this.editor.type === doc.editor) {
+                doc.content = await this.editor.getContent()
+            }
 
             const closeAllHistoryNotification = () => {
                 this.historyNotification.forEach((item) => {
@@ -285,12 +296,12 @@ export const useDocsStore = defineStore('docs', {
 
                 // 如果本地与远程版本号不一致就强制更新 doc remote version
                 if (forceRemote === true && window.docEditPutVersion.local !== window.docEditPutVersion.remote) {
-                    const remoteDoc = await this.docsApi.getById(this.doc.bookSlug, this.doc.id, true) as Doc
+                    const remoteDoc = await this.docsApi.getById(this.bookSlug, doc.id, true) as Doc
                     if (remoteDoc) {
                         window.docEditPutVersion.remote = remoteDoc.version
 
                         // 如果内容一致，就更新本地版本号
-                        if (window.docEditPutVersion.local !== window.docEditPutVersion.remote && remoteDoc.content === this.doc.content) {
+                        if (window.docEditPutVersion.local !== window.docEditPutVersion.remote && remoteDoc.content === doc.content) {
                             window.docEditPutVersion.local = remoteDoc.version
                             console.warn('本地版本号与远程版本号不一致但是此时内容一致，强制更新本地版本号')
                         } else {

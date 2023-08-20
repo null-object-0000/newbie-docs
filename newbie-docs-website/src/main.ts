@@ -38,7 +38,6 @@ app.mount("#app");
 if (import.meta.env.DEV) {
     const mock = import.meta.glob('@/assets/mock.json') as Record<string, () => Promise<unknown>>
     const { books, docs } = await mock['/src/assets/mock.json']() as { books: Book[], docs: Doc[] }
-    console.log("mock", books)
 
     // mock books 写入 localStorage
     const cacheBooks = localStorage.getItem('newbie_books')

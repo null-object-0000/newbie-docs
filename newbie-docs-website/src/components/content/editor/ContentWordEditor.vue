@@ -27,12 +27,13 @@
 <script setup lang="ts">
 import '@wangeditor/editor/dist/css/style.css' // 引入 css
 
-import { ref, shallowRef, watch } from 'vue'
+import { ref, shallowRef } from 'vue'
 // @ts-ignore
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import ContentEditorHeader from "./ContentEditorHeader.vue";
 import { useDocsStore } from '@/stores/doc';
 import { Message } from '@arco-design/web-vue';
+import { NewbieEditor } from '@/types/global';
 
 const docsStore = useDocsStore();
 
@@ -42,9 +43,8 @@ const emit = defineEmits(["onChange", "onPreview", "onChangeTitle"]);
 const editorRef = shallowRef()
 
 // 内容 HTML
-const title = ref('')
-const docTitle = ref('')
-const valueHtml = ref('')
+const docTitle = ref(docsStore.doc.title)
+const valueHtml = ref(docsStore.doc.content)
 
 type InsertFnType = (url: string, alt?: string, href?: string, poster?: string) => void
 
@@ -62,8 +62,6 @@ const editorConfig = {
             fieldName: 'file',
             server: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_IMAGE_API_URL,
             customInsert(res: any, insertFn: InsertFnType) {
-                console.log('customInsert', res)
-
                 if (res.code === '0000') {
                     insertFn(res.result, '', res.result)
                 } else {
@@ -76,8 +74,6 @@ const editorConfig = {
             maxFileSize: 50 * 1024 * 1024, // 50M
             server: import.meta.env.VITE_REST_API_BASE_URL + import.meta.env.VITE_UPLOAD_VIDEO_API_URL,
             customInsert(res: any, insertFn: InsertFnType) {
-                console.log('customInsert', res)
-
                 if (res.code === '0000') {
                     insertFn(res.result, '')
                 } else {
@@ -90,10 +86,18 @@ const editorConfig = {
 
 const handleCreated = (editor: any) => {
     editorRef.value = editor // 记录 editor 实例，重要！
+
+    docsStore.refreshDocEditor({
+        type: 1,
+
+        getContent: async () => {
+            return editorRef.value.getHtml()
+        },
+    } as NewbieEditor)
 }
 
 const onChange = (event: Event, forceRemote?: boolean) => {
-    emit('onChange', event, { title: title.value, content: editorRef.value.getHtml(), forceRemote })
+    emit('onChange', event, { title: docTitle.value, content: editorRef.value.getHtml(), forceRemote })
 }
 
 const onTitleChange = async (event: Event) => {
@@ -103,7 +107,6 @@ const onTitleChange = async (event: Event) => {
         return
     }
 
-    title.value = docTitle.value
     docsStore.doc.title = docTitle.value
     onChange(event)
 }
@@ -113,12 +116,6 @@ const onPreview = (event: Event) => {
 }
 
 const mode = 'default'
-
-watch(() => docsStore.doc.id, () => {
-    docTitle.value = docsStore.doc.title
-    title.value = docTitle.value
-    valueHtml.value = docsStore.doc.content
-}, { immediate: true });
 </script>
 
 <style scoped>

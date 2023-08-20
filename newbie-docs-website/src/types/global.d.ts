@@ -98,3 +98,11 @@ export interface CustomEditorConfig extends EditorConfig {
 }
 
 type ApiStorageEnum = "localStorage" | "restful";
+
+interface NewbieEditor {
+  /**
+   * 编辑器类型（1 word、2 block、3 markdown、4 link）
+   */
+  type: number;
+  async getContent: () => Promise<string>;
+}
