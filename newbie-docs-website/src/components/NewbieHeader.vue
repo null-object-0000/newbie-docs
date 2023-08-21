@@ -18,9 +18,9 @@
             <template #icon>
               <icon-user />
             </template>
-            <template #default>{{ userStore.loginUser.username + userStore.loginUser.id }}</template>
+            <template #default>{{ userStore.loginUser.username }}</template>
           </a-doption>
-          <a-doption>
+          <a-doption disabled>
             <template #icon>
               <icon-close />
             </template>

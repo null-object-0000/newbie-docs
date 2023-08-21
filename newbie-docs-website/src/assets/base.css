@@ -123,8 +123,6 @@ ul.arco-notification-list.arco-notification-list-top-right .newbie-docs-save-not
     margin-bottom: 7.83px;
 }
 
-/* TODO: 文档标题的上下编辑以及文档中第一行的上下边距 */
-
 .newbie-docs-preview div.page__content-block:first-child>*,
 .writing-editor div.ce-block:first-child .ce-block__content>* {
     margin-top: 0;

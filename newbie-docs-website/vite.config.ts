@@ -1,6 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig, mergeConfig } from 'vite'
+import { defineConfig, mergeConfig, ProxyOptions } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import prismjs from 'vite-plugin-prismjs';
 
@@ -26,22 +26,30 @@ export const baseConfig = defineConfig({
   }
 });
 
+const apiProxyUrl = baseConfig.base + 'api'
+const oauth2ProxyUrl = baseConfig.base + 'oauth2'
 
+const proxy = {
+
+} as Record<string, string | ProxyOptions>;
+
+proxy[apiProxyUrl] = {
+  target: 'http://localhost:8188' + baseConfig.base,
+  changeOrigin: true,
+  rewrite: (path) => path.replace(new RegExp(`^${apiProxyUrl.replaceAll('/', '\/')}`), apiProxyUrl),
+}
+
+proxy[oauth2ProxyUrl] = {
+  target: 'http://localhost:8188' + baseConfig.base,
+  changeOrigin: true,
+  rewrite: (path) => path.replace(new RegExp(`^${oauth2ProxyUrl.replaceAll('/', '\/')}`), oauth2ProxyUrl),
+}
 
 export const proxyConfig = defineConfig({
   mode: 'development',
   server: {
     host: '0.0.0.0',
-    proxy: {
-      /**
-       * BASE_URL_TODO 如果修改了项目基础路径，请一定要修改这里，例如：/mine/api
-       */
-      '/api': {
-        target: 'http://localhost:8188/',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
-      }
-    },
+    proxy
   }
 })
 

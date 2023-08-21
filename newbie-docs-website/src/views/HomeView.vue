@@ -40,11 +40,19 @@
         </template>
     </div>
 
-    <a-button class="add-btn" type="primary" v-if="loginUser.isAdminer" @click="editBookModal.visible = true">
+    <a-button class="add-btn" type="primary" v-if="usersStore.loginUser.isAdminer" @click="editBookModal.visible = true">
         <template #icon>
             <icon-plus />
         </template>
         <template #default>新建</template>
+    </a-button>
+    <a-button class="login-btn" type="outline"
+        v-else-if="usersStore.loginUser.isLogin === false && usersStore.loginUser.loginOauth2Url"
+        :href="usersStore.loginUser.loginOauth2Url">
+        <template #icon>
+            <icon-github />
+        </template>
+        <template #default>登录</template>
     </a-button>
 
     <BookSettingsModal v-model:visible="editBookModal.visible" v-model="editBookModal.form" @saved="bookSaved">
@@ -62,7 +70,7 @@ import { useLoading } from '@/hooks';
 import BookSettingsModal from "@/components/modals/BookSettingsModal.vue";
 import { nextTick } from "vue";
 
-const { loginUser } = useUsersStore();
+const usersStore = useUsersStore();
 const configsStore = useConfigsStore();
 
 const booksApi = useBooksApi('localStorage')
@@ -139,7 +147,8 @@ const bookSaved = async (result: boolean) => {
     background-color: rgb(var(--gray-2));
 }
 
-.add-btn {
+.add-btn,
+.login-btn {
     position: fixed;
     right: 16px;
     top: 10px;

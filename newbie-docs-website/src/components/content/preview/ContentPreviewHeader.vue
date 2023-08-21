@@ -7,6 +7,14 @@
         </template>
         <template #default>编辑</template>
     </a-button>
+    <a-button class="login-btn" type="outline"
+        v-else-if="usersStore.loginUser.isLogin === false && usersStore.loginUser.loginOauth2Url"
+        :href="usersStore.loginUser.loginOauth2Url">
+        <template #icon>
+            <icon-github />
+        </template>
+        <template #default>登录</template>
+    </a-button>
 </template>
 
 <script setup lang="ts">
@@ -25,7 +33,8 @@ const onEdit = (event: Event) => {
 </script>
 
 <style>
-.edit-btn {
+.edit-btn,
+.login-btn {
     position: fixed;
     right: 16px;
     top: 10px;

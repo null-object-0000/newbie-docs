@@ -1,28 +1,15 @@
 package site.snewbie.docs.server.controller;
 
-import cn.hutool.core.io.resource.ResourceUtil;
-import cn.hutool.core.lang.Dict;
-import cn.hutool.core.net.NetUtil;
-import cn.hutool.core.util.ArrayUtil;
-import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.db.DbUtil;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import site.snewbie.docs.server.config.OAuth2ContextHolder;
 import site.snewbie.docs.server.enums.PermissionAuthType;
 import site.snewbie.docs.server.enums.PermissionDataType;
 import site.snewbie.docs.server.model.dto.User;
 import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.service.PermissionService;
-
-import javax.sql.DataSource;
-import java.sql.SQLException;
-import java.util.Arrays;
 
 @RestController
 public abstract class BaseController {
@@ -34,60 +21,8 @@ public abstract class BaseController {
     @Resource
     protected PermissionService permissionService;
 
-    @Resource
-    private DataSource dataSource;
-
-    @RequestMapping("/health")
-    public Dict health() throws SQLException {
-        Dict results = new Dict();
-        results.put("status", "UP");
-        results.put("localhost", NetUtil.getLocalhostStr());
-
-        Number dbResult = DbUtil.use(dataSource)
-                .queryNumber("select 1");
-
-        results.put("db", dbResult != null && dbResult.intValue() == 1 ? "UP" : "DOWN");
-
-        // 如果有 DOWN 的情况，就返回 500
-        if (results.values().stream().anyMatch("DOWN"::equals)) {
-            this.httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        }
-
-        return results;
-    }
-
     protected User getCurrentLoginUser() {
-        User mock = new User();
-        mock.setId("10999999");
-        mock.setUsername("张三");
-        mock.setAvatar("https://avatars.githubusercontent.com/u/10999999?v=4");
-        mock.setDepartment("基础研发部");
-        mock.setIsAdminer(true);
-
-        if (ArrayUtil.isNotEmpty(this.httpRequest.getCookies())) {
-            String cookieMockUser = Arrays.stream(this.httpRequest.getCookies())
-                    .filter(cookie -> "mockUser".equals(cookie.getName()))
-                    .findFirst().map(Cookie::getValue).orElse(null);
-
-            if (StrUtil.isNotBlank(cookieMockUser)) {
-                // 中文 + 纯数字，提取出数字
-                String id = cookieMockUser.replaceAll("[^0-9]", "");
-                mock.setId(id);
-                mock.setUsername(StrUtil.removeSuffix(cookieMockUser, id));
-            }
-        }
-
-        return mock;
-    }
-
-    protected String generateSlug(int length) {
-        while (true) {
-            String slug = RandomUtil.randomString(length);
-            // 不能以数字开头
-            if (!slug.matches("^[0-9].*$")) {
-                return slug;
-            }
-        }
+        return OAuth2ContextHolder.getContext().getUser();
     }
 
     protected boolean isAdminer(Permission permission) {
@@ -156,15 +91,4 @@ public abstract class BaseController {
         return result;
     }
 
-    @GetMapping(value = "/error", produces = "text/html")
-    public String error() {
-        String html = ResourceUtil.readUtf8Str("public/index.html");
-        if (StrUtil.isNotBlank(html)) {
-            this.httpResponse.setStatus(HttpServletResponse.SC_OK);
-            return html;
-        } else {
-            this.httpResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return "<h1>404 Not Found</h1>";
-        }
-    }
 }
