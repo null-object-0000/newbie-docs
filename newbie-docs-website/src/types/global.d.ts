@@ -1,13 +1,13 @@
 import type { OutputBlockData, EditorConfig } from "@editorjs/editorjs";
 
 export class User {
-  loginOauth2Url: string;
+  loginOauth2Url?: string;
 
   isLogin: boolean;
 
   id: number;
   username: string;
-  avatar: string;
+  avatarUrl: string;
   department: string;
 
   isAdminer: boolean;

@@ -7,9 +7,9 @@ export const useUsersStore = defineStore('users', {
         loginUser: {
             isLogin: false,
 
-            id: '',
+            id: 0,
             username: '',
-            avatar: '',
+            avatarUrl: '',
             department: '',
 
             isAdminer: false,
@@ -31,9 +31,9 @@ export const useUsersStore = defineStore('users', {
                 user = { ...response.result, isLogin: response.result?.id > 0 } as User
             } else {
                 const mockUser = {
-                    id: '10999999',
+                    id: 10999999,
                     username: '张三',
-                    avatar: 'https://avatars.githubusercontent.com/u/20601604?v=4',
+                    avatarUrl: 'https://avatars.githubusercontent.com/u/20601604?v=4',
                     department: '基础研发部',
                     isAdminer: true,
                 } as User
