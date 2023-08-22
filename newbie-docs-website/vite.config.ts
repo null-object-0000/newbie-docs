@@ -34,13 +34,15 @@ const proxy = {
 } as Record<string, string | ProxyOptions>;
 
 proxy[apiProxyUrl] = {
-  target: 'http://localhost:8188' + baseConfig.base,
+  target: 'http://localhost:8188',
   changeOrigin: true,
   rewrite: (path) => path.replace(new RegExp(`^${apiProxyUrl.replaceAll('/', '\/')}`), apiProxyUrl),
 }
 
+console.log(apiProxyUrl, new RegExp(`^${apiProxyUrl.replaceAll('/', '\/')}`))
+
 proxy[oauth2ProxyUrl] = {
-  target: 'http://localhost:8188' + baseConfig.base,
+  target: 'http://localhost:8188',
   changeOrigin: true,
   rewrite: (path) => path.replace(new RegExp(`^${oauth2ProxyUrl.replaceAll('/', '\/')}`), oauth2ProxyUrl),
 }
