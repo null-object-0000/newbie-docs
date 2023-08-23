@@ -133,6 +133,16 @@ public final class AmazonS3Util {
                 return value;
             }
 
+            value = System.getenv(key.toUpperCase().replace(".", "-").replace("_", "-"));
+            if (StrUtil.isNotBlank(value)) {
+                return value;
+            }
+
+            value = System.getenv(key);
+            if (StrUtil.isNotBlank(value)) {
+                return value;
+            }
+
             // 其次取系统环境变量
             value = System.getProperty(key);
             if (StrUtil.isNotBlank(value)) {
