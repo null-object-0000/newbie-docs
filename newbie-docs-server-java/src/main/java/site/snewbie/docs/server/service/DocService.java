@@ -23,6 +23,7 @@ import site.snewbie.docs.server.model.entity.Book;
 import site.snewbie.docs.server.model.entity.Doc;
 import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.model.vo.DocVO;
+import site.snewbie.docs.server.util.AmazonS3Util;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -43,8 +44,6 @@ public class DocService {
 
     @Resource
     protected PermissionService permissionService;
-    @Resource
-    protected FileService fileService;
 
     public String getS3ObjectKey(Long bookId, Long docId) {
         if (bookId == null || bookId <= 0) {
@@ -162,7 +161,7 @@ public class DocService {
             }
         }
 
-        boolean uploadStringResult = fileService
+        boolean uploadStringResult = AmazonS3Util.getInstance(false)
                 .uploadString(this.getS3ObjectKey(doc.getBookId(), doc.getId()), doc.getContent());
         if (!uploadStringResult) {
             throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR, "上传 content 失败");
@@ -357,7 +356,7 @@ public class DocService {
         }
 
         try {
-            String content = fileService
+            String content = AmazonS3Util.getInstance(false)
                     .downloadString(this.getS3ObjectKey(docVO.getBookId(), docVO.getId()));
             docVO.setContent(StrUtil.isBlank(content) ? StrUtil.EMPTY : EmojiUtil.toUnicode(content));
         } catch (AmazonS3Exception e) {

@@ -1,9 +1,9 @@
 package site.snewbie.docs.server.controller;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
-import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -12,12 +12,13 @@ import org.springframework.web.multipart.MultipartFile;
 import site.snewbie.docs.server.enums.ResultsStatusEnum;
 import site.snewbie.docs.server.model.Results;
 import site.snewbie.docs.server.model.ResultsException;
-import site.snewbie.docs.server.service.FileService;
+import site.snewbie.docs.server.util.AmazonS3Util;
+
+import java.io.File;
 
 @RestController
 public class FileController extends BaseController {
-    @Resource
-    private FileService fileService;
+    private final static String UPLOAD_DIR = "/data/newbie-docs/files/";
 
     /**
      * 上传文件
@@ -26,14 +27,22 @@ public class FileController extends BaseController {
      */
     @SneakyThrows
     @PostMapping("/api/files/upload")
-    public Results<String> upload(@RequestParam(value = "file", required = true) MultipartFile uploadFile,
+    public Results<String> upload(@RequestParam(value = "isPublic", required = true) boolean isPublic,
+                                  @RequestParam(value = "file", required = true) MultipartFile uploadFile,
                                   @RequestParam(value = "key", required = true) String key) {
-        String url = fileService.upload(uploadFile.getInputStream(), key, uploadFile.getContentType());
-        if (StrUtil.isBlank(url)) {
-            throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR);
-        }
+        String dir = UPLOAD_DIR + IdUtil.randomUUID() + "/";
 
-        return Results.success(url);
+        try {
+            File file = FileUtil.writeFromStream(uploadFile.getInputStream(), dir + uploadFile.getOriginalFilename());
+            String url = AmazonS3Util.getInstance(isPublic).upload(file, key);
+            if (StrUtil.isBlank(url)) {
+                throw new ResultsException(ResultsStatusEnum.FAILED_SERVER_ERROR);
+            }
+
+            return Results.success(url);
+        } finally {
+            FileUtil.del(dir);
+        }
     }
 
     @SneakyThrows
@@ -43,7 +52,7 @@ public class FileController extends BaseController {
 
         String fileName = md5 + "." + FileUtil.extName(uploadFile.getOriginalFilename());
 
-        return this.upload(uploadFile, "images/" + fileName);
+        return this.upload(true, uploadFile, "images/" + fileName);
     }
 
     @SneakyThrows
@@ -53,6 +62,6 @@ public class FileController extends BaseController {
 
         String fileName = md5 + "." + FileUtil.extName(uploadFile.getOriginalFilename());
 
-        return this.upload(uploadFile, "videos/" + fileName);
+        return this.upload(true, uploadFile, "videos/" + fileName);
     }
 }
