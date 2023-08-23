@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.net.URL;
 
 public final class AmazonS3Util {
-    private final boolean isPublic;
     private final AmazonS3Config config;
     private final AmazonS3 client;
 
@@ -31,18 +30,16 @@ public final class AmazonS3Util {
         String activeProfile = System.getProperty("spring.profiles.active");
         Props props = PropsUtil.getFirstFound(String.format("application-%s.properties", activeProfile), "application.properties");
 
-        this.isPublic = isPublic;
         this.config = new AmazonS3Config(isPublic, props);
 
         ClientConfiguration clientCfg = new ClientConfiguration();
         clientCfg.setProtocol(this.config.getEndPoint().startsWith(Protocol.HTTPS.toString()) ? Protocol.HTTPS : Protocol.HTTP);
-        clientCfg.setSignerOverride("S3SignerType");
 
         this.client = AmazonS3ClientBuilder.standard()
                 .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(this.config.getAccessKey(), this.config.getSecretKey())))
                 .withClientConfiguration(clientCfg)
                 .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(this.config.getEndPoint(), StrUtil.EMPTY))
-                .withPathStyleAccessEnabled(true)
+                .withPathStyleAccessEnabled(config.getWithPathStyleAccess())
                 .withChunkedEncodingDisabled(true)
                 .build();
     }
@@ -107,23 +104,26 @@ public final class AmazonS3Util {
 
     @Data
     public static class AmazonS3Config {
-        public String accessKey;
-        public String secretKey;
-        public String endPoint;
-        public String bucketName;
-        public String objectKeyPrefix;
-        public String objectCdnDomain;
+        private Boolean withPathStyleAccess;
+        private String accessKey;
+        private String secretKey;
+        private String endPoint;
+        private String bucketName;
+        private String objectKeyPrefix;
+        private String objectCdnDomain;
 
         public AmazonS3Config() {
         }
 
         public AmazonS3Config(boolean isPublic, Props props) {
-            this.accessKey = this.getProp(isPublic, props, "access.key");
-            this.secretKey = this.getProp(isPublic, props, "secret.key");
+            String withPathStyleAccess = this.getProp(isPublic, props, "with-path-style-access");
+            this.withPathStyleAccess = StrUtil.isNotBlank(withPathStyleAccess) && Boolean.parseBoolean(withPathStyleAccess);
+            this.accessKey = this.getProp(isPublic, props, "access-key");
+            this.secretKey = this.getProp(isPublic, props, "secret-key");
             this.endPoint = this.getProp(isPublic, props, "endpoint");
-            this.bucketName = this.getProp(isPublic, props, "bucket.name");
-            this.objectKeyPrefix = this.getProp(isPublic, props, "object.key.prefix");
-            this.objectCdnDomain = this.getProp(isPublic, props, "object.cdn.domain");
+            this.bucketName = this.getProp(isPublic, props, "bucket-name");
+            this.objectKeyPrefix = this.getProp(isPublic, props, "object-key-prefix");
+            this.objectCdnDomain = this.getProp(isPublic, props, "object-cdn-domain");
         }
 
         private String getProp(boolean isPublic, Props props, String key) {

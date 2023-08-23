@@ -17,7 +17,7 @@
             </a-form-item>
             <a-form-item field="cover" label="封面">
                 <a-input disabled v-model="form.cover" placeholder="请上传封面图" />
-                <a-upload :action="uploadImageApiUrl" :show-file-list="false" :preview="false"
+                <a-upload :action="uploadImageApiUrl" :show-file-list="false" :preview="false" accept="image/*"
                     style="width: auto; margin-left: 10px;" @before-upload="() => { form.cover = ''; return true; }"
                     @success="uploadImageFinished" @error="uploadImageFinished" />
             </a-form-item>
