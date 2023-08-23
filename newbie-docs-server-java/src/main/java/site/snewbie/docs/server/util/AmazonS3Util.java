@@ -126,42 +126,15 @@ public final class AmazonS3Util {
             this.objectCdnDomain = this.getProp(isPublic, props, "object-cdn-domain");
         }
 
-        private String getPropWithEnv(Props props, String key) {
-            // 优先取 DOCKER 环境变量
-            String value = System.getenv(key.toUpperCase().replace(".", "_").replace("-", "_"));
-            if (StrUtil.isNotBlank(value)) {
-                return value;
-            }
-
-            value = System.getenv(key.toUpperCase().replace(".", "-").replace("_", "-"));
-            if (StrUtil.isNotBlank(value)) {
-                return value;
-            }
-
-            value = System.getenv(key);
-            if (StrUtil.isNotBlank(value)) {
-                return value;
-            }
-
-            // 其次取系统环境变量
-            value = System.getProperty(key);
-            if (StrUtil.isNotBlank(value)) {
-                return value;
-            }
-
-            // 最后取配置文件
-            return props.getProperty(key);
-        }
-
         private String getProp(boolean isPublic, Props props, String key) {
             if (isPublic) {
-                String value = this.getPropWithEnv(props, String.format("public.amazon.s3.%s", key));
+                String value = SpringUtil.getProperty(String.format("public.amazon.s3.%s", key));
                 if (StrUtil.isNotBlank(value)) {
                     return value;
                 }
             }
 
-            return this.getPropWithEnv(props, String.format("private.amazon.s3.%s", key));
+            return SpringUtil.getProperty(String.format("private.amazon.s3.%s", key));
         }
     }
 }
