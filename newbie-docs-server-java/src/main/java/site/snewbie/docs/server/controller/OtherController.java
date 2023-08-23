@@ -69,8 +69,8 @@ public class OtherController extends BaseController {
 
         JSONObject docker = new JSONObject();
         String keyWithUnderline = key.toUpperCase().replace(".", "_").replace("-", "_");
-        docker.put(keyWithUnderline, keyWithUnderline);
-        docker.put(keyWithUnderline.replace("_", "-"), keyWithUnderline.replace("_", "-"));
+        docker.put(keyWithUnderline, System.getenv(keyWithUnderline));
+        docker.put(keyWithUnderline.replace("_", "-"), System.getenv(keyWithUnderline.replace("_", "-")));
         results.put("docker", docker);
 
         JSONObject hutool = new JSONObject();
