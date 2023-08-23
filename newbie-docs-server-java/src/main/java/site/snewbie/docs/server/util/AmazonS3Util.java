@@ -3,8 +3,7 @@ package site.snewbie.docs.server.util;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.Singleton;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.setting.dialect.Props;
-import cn.hutool.setting.dialect.PropsUtil;
+import cn.hutool.extra.spring.SpringUtil;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -27,10 +26,7 @@ public final class AmazonS3Util {
     private final AmazonS3 client;
 
     private AmazonS3Util(boolean isPublic) {
-        String activeProfile = System.getProperty("spring.profiles.active");
-        Props props = PropsUtil.getFirstFound(String.format("application-%s.properties", activeProfile), "application.properties");
-
-        this.config = new AmazonS3Config(isPublic, props);
+        this.config = new AmazonS3Config(isPublic);
 
         ClientConfiguration clientCfg = new ClientConfiguration();
         clientCfg.setProtocol(this.config.getEndPoint().startsWith(Protocol.HTTPS.toString()) ? Protocol.HTTPS : Protocol.HTTP);
@@ -115,25 +111,26 @@ public final class AmazonS3Util {
         public AmazonS3Config() {
         }
 
-        public AmazonS3Config(boolean isPublic, Props props) {
-            String withPathStyleAccess = this.getProp(isPublic, props, "with-path-style-access");
+        public AmazonS3Config(boolean isPublic) {
+            String withPathStyleAccess = this.getProp(isPublic, "with-path-style-access");
             this.withPathStyleAccess = StrUtil.isNotBlank(withPathStyleAccess) && Boolean.parseBoolean(withPathStyleAccess);
-            this.accessKey = this.getProp(isPublic, props, "access-key");
-            this.secretKey = this.getProp(isPublic, props, "secret-key");
-            this.endPoint = this.getProp(isPublic, props, "endpoint");
-            this.bucketName = this.getProp(isPublic, props, "bucket-name");
-            this.objectKeyPrefix = this.getProp(isPublic, props, "object-key-prefix");
-            this.objectCdnDomain = this.getProp(isPublic, props, "object-cdn-domain");
+            this.accessKey = this.getProp(isPublic, "access-key");
+            this.secretKey = this.getProp(isPublic, "secret-key");
+            this.endPoint = this.getProp(isPublic, "endpoint");
+            this.bucketName = this.getProp(isPublic, "bucket-name");
+            this.objectKeyPrefix = this.getProp(isPublic, "object-key-prefix");
+            this.objectCdnDomain = this.getProp(isPublic, "object-cdn-domain");
         }
 
-        private String getProp(boolean isPublic, Props props, String key) {
+        private String getProp(boolean isPublic, String key) {
             if (isPublic) {
-                if (props.containsKey(String.format("public.amazon.s3.%s", key))) {
-                    return props.getStr(String.format("public.amazon.s3.%s", key));
+                String value = SpringUtil.getProperty(String.format("public.amazon.s3.%s", key));
+                if (StrUtil.isNotBlank(value)) {
+                    return value;
                 }
             }
 
-            return props.getStr(String.format("private.amazon.s3.%s", key));
+            return SpringUtil.getProperty(String.format("private.amazon.s3.%s", key));
         }
     }
 }
