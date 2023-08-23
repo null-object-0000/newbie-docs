@@ -4,6 +4,8 @@ import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.lang.Singleton;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.setting.dialect.Props;
+import cn.hutool.setting.dialect.PropsUtil;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -112,25 +114,44 @@ public final class AmazonS3Util {
         }
 
         public AmazonS3Config(boolean isPublic) {
-            String withPathStyleAccess = this.getProp(isPublic, "with-path-style-access");
+            Props props = PropsUtil.getFirstFound(String.format("application-%s.properties", SpringUtil.getActiveProfile()), "application.properties");
+
+            String withPathStyleAccess = this.getProp(isPublic, props, "with-path-style-access");
             this.withPathStyleAccess = StrUtil.isNotBlank(withPathStyleAccess) && Boolean.parseBoolean(withPathStyleAccess);
-            this.accessKey = this.getProp(isPublic, "access-key");
-            this.secretKey = this.getProp(isPublic, "secret-key");
-            this.endPoint = this.getProp(isPublic, "endpoint");
-            this.bucketName = this.getProp(isPublic, "bucket-name");
-            this.objectKeyPrefix = this.getProp(isPublic, "object-key-prefix");
-            this.objectCdnDomain = this.getProp(isPublic, "object-cdn-domain");
+            this.accessKey = this.getProp(isPublic, props, "access-key");
+            this.secretKey = this.getProp(isPublic, props, "secret-key");
+            this.endPoint = this.getProp(isPublic, props, "endpoint");
+            this.bucketName = this.getProp(isPublic, props, "bucket-name");
+            this.objectKeyPrefix = this.getProp(isPublic, props, "object-key-prefix");
+            this.objectCdnDomain = this.getProp(isPublic, props, "object-cdn-domain");
         }
 
-        private String getProp(boolean isPublic, String key) {
+        private String getPropWithEnv(Props props, String key) {
+            // 优先取 DOCKER 环境变量
+            String value = System.getenv(key.toUpperCase().replace(".", "_").replace("-", "_"));
+            if (StrUtil.isNotBlank(value)) {
+                return value;
+            }
+
+            // 其次取系统环境变量
+            value = System.getProperty(key);
+            if (StrUtil.isNotBlank(value)) {
+                return value;
+            }
+
+            // 最后取配置文件
+            return props.getProperty(key);
+        }
+
+        private String getProp(boolean isPublic, Props props, String key) {
             if (isPublic) {
-                String value = SpringUtil.getProperty(String.format("public.amazon.s3.%s", key));
+                String value = this.getPropWithEnv(props, String.format("public.amazon.s3.%s", key));
                 if (StrUtil.isNotBlank(value)) {
                     return value;
                 }
             }
 
-            return SpringUtil.getProperty(String.format("private.amazon.s3.%s", key));
+            return this.getPropWithEnv(props, String.format("private.amazon.s3.%s", key));
         }
     }
 }
