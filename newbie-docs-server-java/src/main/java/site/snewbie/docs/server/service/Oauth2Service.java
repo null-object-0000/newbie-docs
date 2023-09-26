@@ -51,7 +51,7 @@ public class Oauth2Service {
         try (HttpResponse response = request.execute()) {
             String body = response.body();
             JSONObject jsonObject = JSONObject.parseObject(body);
-            Integer id = jsonObject.getInteger("id");
+            Integer id = jsonObject.getInteger(config.getIdAttributeName());
             if (id == null || id <= 0) {
                 return null;
             }
@@ -64,7 +64,7 @@ public class Oauth2Service {
             user.setUsername(username);
             user.setAvatarUrl(avatarUrl);
             user.setDepartment(null);
-            user.setIsAdminer(null);
+            user.setIsAdminer(StrUtil.split(config.getAdminUserIds(), StrUtil.C_COMMA).contains(id.toString()));
 
             return user;
         }

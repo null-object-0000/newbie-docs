@@ -34,6 +34,11 @@ public class OAuth2Config {
     @Value("${oauth2.user-info-uri}")
     private String userInfoUri;
 
+    @Value("${oauth2.id-attribute-name}")
+    private String idAttributeName;
+    @Value("${oauth2.admin-user-ids}")
+    private String adminUserIds;
+
     @Resource
     private HttpServletRequest httpRequest;
 
