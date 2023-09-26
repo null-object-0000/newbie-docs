@@ -37,7 +37,7 @@ public class Oauth2Controller extends BaseController {
                 .append("&scope=").append(config.getScope())
                 .append("&state=").append(state)
                 .append("&redirect_uri=")
-                .append(URLEncodeUtil.encode(config.getDefaultRedirectUri()));
+                .append(URLEncodeUtil.encodeAll(config.getDefaultRedirectUri()));
 
         super.httpResponse.sendRedirect(builder.toString());
     }

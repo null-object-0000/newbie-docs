@@ -21,6 +21,8 @@ public class OAuth2Config {
     private String clientId;
     @Value("${oauth2.client-secret}")
     private String clientSecret;
+    @Value("${oauth2.grant-type}")
+    private String grantType;
     @Value("${oauth2.redirect-uri}")
     private String redirectUri;
     @Value("${oauth2.scope}")

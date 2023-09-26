@@ -2,12 +2,14 @@ package site.snewbie.docs.server.service;
 
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.Header;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.entity.ContentType;
 import org.springframework.stereotype.Service;
 import site.snewbie.docs.server.config.OAuth2Config;
 import site.snewbie.docs.server.model.dto.User;
@@ -24,13 +26,14 @@ public class Oauth2Service {
 
     public String codeApplyForToken(String code) {
         Dict params = new Dict();
-        params.set("grant_type", "authorization_code");
+        params.set("grant_type", config.getGrantType());
         params.set("client_id", config.getClientId());
         params.set("client_secret", config.getClientSecret());
         params.set("code", code);
         params.set("redirect_uri", config.getDefaultRedirectUri());
 
         HttpRequest request = HttpUtil.createPost(config.getTokenUri())
+                .header(Header.ACCEPT, ContentType.APPLICATION_JSON.getMimeType())
                 .form(params);
 
         try (HttpResponse response = request.execute()) {
