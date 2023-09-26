@@ -25,7 +25,7 @@ export const useUsersStore = defineStore('users', {
                 const { data: response } = await axios({
                     method: 'get',
                     baseURL: import.meta.env.VITE_REST_API_BASE_URL,
-                    url: '/users/current',
+                    url: '/user/current',
                 });
 
                 user = { ...response.result, isLogin: response.result?.id > 0 } as User

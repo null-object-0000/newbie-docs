@@ -7,6 +7,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.db.DbUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
+import site.snewbie.docs.server.controller.base.BaseController;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

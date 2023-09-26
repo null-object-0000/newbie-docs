@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import site.snewbie.docs.server.controller.base.BaseController;
 import site.snewbie.docs.server.enums.ResultsStatusEnum;
 import site.snewbie.docs.server.model.Results;
 import site.snewbie.docs.server.model.ResultsException;

@@ -4,6 +4,7 @@ import jakarta.annotation.Resource;
 import lombok.Data;
 import org.springframework.web.bind.annotation.*;
 import site.snewbie.docs.server.model.UserOauth;
+import site.snewbie.docs.server.controller.base.BaseController;
 import site.snewbie.docs.server.enums.ResultsStatusEnum;
 import site.snewbie.docs.server.model.entity.Permission;
 import site.snewbie.docs.server.model.Results;

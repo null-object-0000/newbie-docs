@@ -1,6 +1,7 @@
 package site.snewbie.docs.server.controller;
 
 import jakarta.annotation.Resource;
+import site.snewbie.docs.server.controller.base.BaseController;
 import site.snewbie.docs.server.enums.PermissionAuthType;
 import site.snewbie.docs.server.enums.PermissionDataType;
 import site.snewbie.docs.server.enums.ResultsStatusEnum;
