@@ -247,6 +247,7 @@ watch(route, async () => {
       console.warn('知识库根路径，跳转知识库首页')
       configsStore.docEditMode = false
       router.push({ path: `/${bookSlug.value}/home` });
+      loading.set(false)
       return
     }
 
